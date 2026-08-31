@@ -1,0 +1,1 @@
+<134>Aug 26 12:33:07 fw-edge-01 iptables[4821]: action=drop src=203.0.113.99 dst=10.0.1.5 sport=44312 dport=22 user=root category=network_activity severity=critical status=failure

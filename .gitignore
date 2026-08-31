@@ -1,0 +1,40 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Databases & Large Data Dumps (>100MB causes GitHub push errors)
+*.duckdb
+*.duckdb.wal
+*.db
+*.sqlite3
+*.jso
+my_result.*
+converted_vbox.json
+
+# Exports
+exports/*.parquet
+exports/*.json
+exports/*.csv
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# IDE & Local config
+.idea/
+*.swp
+*.swo

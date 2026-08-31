@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.1.0",
+  "classes": {
+    "3002": {
+      "name": "Authentication",
+      "category": "Identity & Access Management",
+      "category_uid": 3,
+      "attributes": ["actor", "src_endpoint", "dst_endpoint", "status", "severity", "auth_protocol", "is_mfa"]
+    },
+    "4001": {
+      "name": "Network Activity",
+      "category": "Network Activity",
+      "category_uid": 4,
+      "attributes": ["src_endpoint", "dst_endpoint", "connection_info", "traffic", "status", "severity"]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+# Linux Auth / Syslog Mapping to OCSF
+vendor: "Linux"
+product: "Syslog"
+format: "syslog"
+field_mapping:
+  hostname: "log_name"
+  process: "product"
+  rhost: "src_ip"
+  user: "user"
+  ruser: "user"
+  port: "src_port"

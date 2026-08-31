@@ -1,0 +1,47 @@
+[
+  {
+    "event_id": "evt-00421",
+    "timestamp": "2026-08-26T09:14:32Z",
+    "category": "authentication",
+    "action": "login",
+    "status": "failure",
+    "severity": "high",
+    "source_ip": "203.0.113.42",
+    "destination_ip": "10.0.1.5",
+    "source_port": 49812,
+    "destination_port": 22,
+    "username": "admin",
+    "vendor": "LinuxSSHD",
+    "product": "OpenSSH"
+  },
+  {
+    "event_id": "evt-00422",
+    "timestamp": "2026-08-26T09:15:01Z",
+    "category": "authentication",
+    "action": "login",
+    "status": "success",
+    "severity": "informational",
+    "source_ip": "192.168.1.100",
+    "destination_ip": "10.0.1.5",
+    "source_port": 50213,
+    "destination_port": 22,
+    "username": "deploy_bot",
+    "vendor": "LinuxSSHD",
+    "product": "OpenSSH"
+  },
+  {
+    "event_id": "evt-00423",
+    "timestamp": "2026-08-26T09:17:45Z",
+    "category": "network_activity",
+    "action": "connection",
+    "status": "success",
+    "severity": "low",
+    "source_ip": "172.16.0.88",
+    "destination_ip": "10.0.2.20",
+    "source_port": 61432,
+    "destination_port": 443,
+    "username": "web_service",
+    "vendor": "Nginx",
+    "product": "ReverseProxy"
+  }
+]

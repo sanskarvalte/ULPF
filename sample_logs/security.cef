@@ -1,0 +1,1 @@
+CEF:0|CyberGuard|IDS|4.2.1|1003|Brute Force Login Detected|8|src=185.220.101.42 dst=10.0.5.15 spt=59123 dpt=3389 suser=administrator cat=authentication outcome=failure rt=1724667300000

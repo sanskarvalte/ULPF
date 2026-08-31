@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logEntry>
+  <timestamp>2026-08-26T14:32:07Z</timestamp>
+  <severity>WARNING</severity>
+  <source>InventorySystem</source>
+  <host>db-node-02</host>
+  <message>Low stock threshold reached for SKU-48213</message>
+  <metadata>
+    <userId>svc_inventory</userId>
+    <requestId>req-77213-a1</requestId>
+    <sku>SKU-48213</sku>
+    <currentQuantity>4</currentQuantity>
+  </metadata>
+</logEntry>

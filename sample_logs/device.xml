@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Event id="evt-02001">
+  <Timestamp>2026-08-26T11:05:44Z</Timestamp>
+  <Category>network_activity</Category>
+  <Action>connection</Action>
+  <Status>failure</Status>
+  <Severity>high</Severity>
+  <Source_IP>10.10.10.55</Source_IP>
+  <Destination_IP>172.16.0.1</Destination_IP>
+  <Source_Port>61200</Source_Port>
+  <Destination_Port>8080</Destination_Port>
+  <Username>scanner_bot</Username>
+  <Vendor>PaloAlto</Vendor>
+  <Product>Firewall</Product>
+</Event>

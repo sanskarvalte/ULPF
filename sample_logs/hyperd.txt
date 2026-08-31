@@ -1,0 +1,5 @@
+{"ts":"2023-05-15T12:00:00.000Z","sev":"trace","k":"trace-start","v":{"detail":"initializing"}}
+{"ts":"2023-05-15T12:00:01.000Z","sev":"info","k":"error-handler-initialized","v":{"code":0}}
+{"ts":"2023-05-15T12:00:02.000Z","sev":"warning","k":"high-memory-warning","v":{"used_mb":8192}}
+{"ts":"2023-05-15T12:00:03.000Z","sev":"error","k":"query-failed","v":{"error_code":"QUERY_CANCELED"}}
+{"ts":"2023-05-15T12:00:04.000Z","sev":"fatal","k":"unhandled-exception-shutdown","v":{"reason":"OOM"}}

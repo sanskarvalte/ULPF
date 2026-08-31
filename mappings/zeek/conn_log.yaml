@@ -1,0 +1,12 @@
+# Zeek (Bro) Connection Log Mapping to OCSF
+vendor: "Zeek"
+product: "Conn Log"
+format: "generic"
+field_mapping:
+  "id.orig_h": "src_ip"
+  "id.orig_p": "src_port"
+  "id.resp_h": "dst_ip"
+  "id.resp_p": "dst_port"
+  "proto": "protocol"
+  "orig_bytes": "traffic_bytes"
+  "conn_state": "status"

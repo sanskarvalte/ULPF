@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log SYSTEM "logger.dtd">
+<log>
+<record>
+  <date>2009-05-21T00:00:00</date>
+  <millis>1242878400161</millis>
+  <sequence>1</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>FINE</level>
+  <class>com.ibm.is.security.auth.LoginService</class>
+  <method>login</method>
+  <thread>12</thread>
+  <message>User InformationServerSystemUser logged in successfully</message>
+  <key>info.audit.session.LOGIN</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>InformationServerSystemUser</param>
+  <param>InformationServerSystemUser</param>
+  <param>Server client</param>
+  <param>SwordIFS</param>
+  <param>34BADF15-ABA5-4FA9-AA7D-68D26402C2D6</param>
+</record>
+<record>
+  <date>2009-05-21T00:05:00</date>
+  <millis>1242878700200</millis>
+  <sequence>2</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>INFO</level>
+  <class>com.ibm.is.security.auth.LoginService</class>
+  <method>logout</method>
+  <thread>12</thread>
+  <message>User InformationServerSystemUser logged out</message>
+  <key>info.audit.session.LOGOUT</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>InformationServerSystemUser</param>
+  <param>Server client</param>
+  <param>34BADF15-ABA5-4FA9-AA7D-68D26402C2D6</param>
+</record>
+<record>
+  <date>2009-05-21T00:10:00</date>
+  <millis>1242879000350</millis>
+  <sequence>3</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>FINE</level>
+  <class>com.ibm.is.security.auth.LoginService</class>
+  <method>login</method>
+  <thread>14</thread>
+  <message>User dsadmin logged in successfully</message>
+  <key>info.audit.session.LOGIN</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>dsadmin</param>
+  <param>dsadmin</param>
+  <param>DataStage client</param>
+  <param>Director</param>
+  <param>78CDF216-BCD6-5EB0-BB8E-79E37513D3E7</param>
+</record>
+<record>
+  <date>2009-05-21T00:15:00</date>
+  <millis>1242879300500</millis>
+  <sequence>4</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>INFO</level>
+  <class>com.ibm.is.security.directory.UserService</class>
+  <method>addUser</method>
+  <thread>14</thread>
+  <message>Created new user account 'analyst01'</message>
+  <key>info.audit.user.ADD_USER</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>analyst01</param>
+  <param>dsadmin</param>
+  <param>DataStage client</param>
+</record>
+<record>
+  <date>2009-05-21T00:20:00</date>
+  <millis>1242879600600</millis>
+  <sequence>5</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>INFO</level>
+  <class>com.ibm.is.security.role.RoleService</class>
+  <method>assignRoles</method>
+  <thread>14</thread>
+  <message>Assigned role SuiteUser to user 'analyst01'</message>
+  <key>info.audit.role.ASSIGN_USER_ROLES</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>analyst01</param>
+  <param>SuiteUser</param>
+  <param>dsadmin</param>
+</record>
+<record>
+  <date>2009-05-21T00:25:00</date>
+  <millis>1242879900700</millis>
+  <sequence>6</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>INFO</level>
+  <class>com.ibm.is.security.role.RoleService</class>
+  <method>assignRoles</method>
+  <thread>14</thread>
+  <message>Assigned role DataStageUser to user 'analyst01'</message>
+  <key>info.audit.role.ASSIGN_USER_ROLES</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>analyst01</param>
+  <param>DataStageUser</param>
+  <param>dsadmin</param>
+</record>
+<record>
+  <date>2009-05-21T00:30:00</date>
+  <millis>1242880200800</millis>
+  <sequence>7</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>WARNING</level>
+  <class>com.ibm.is.security.auth.CredentialService</class>
+  <method>setCredential</method>
+  <thread>14</thread>
+  <message>Updated password credential for user 'analyst01'</message>
+  <key>info.audit.user.SET_CREDENTIAL</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>analyst01</param>
+  <param>dsadmin</param>
+</record>
+<record>
+  <date>2009-05-21T00:35:00</date>
+  <millis>1242880500900</millis>
+  <sequence>8</sequence>
+  <logger>com.ibm.is.auditing</logger>
+  <level>INFO</level>
+  <class>com.ibm.is.security.auth.LoginService</class>
+  <method>logout</method>
+  <thread>14</thread>
+  <message>User dsadmin logged out</message>
+  <key>info.audit.session.LOGOUT</key>
+  <catalog>com.ascential.acs.auditing.AuditLogResources</catalog>
+  <param>dsadmin</param>
+  <param>DataStage client</param>
+  <param>78CDF216-BCD6-5EB0-BB8E-79E37513D3E7</param>
+</record>
+</log>

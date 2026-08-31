@@ -1,0 +1,471 @@
+[
+  {
+    "line_id": 1,
+    "raw_log": "00:00:00.008099 main     VirtualBox COM Server 7.2.6 r172322 win.amd64 (Jan 30 2026 17:17:49) release log",
+    "content": "00:00:00.008099 main     VirtualBox COM Server 7.2.6 r172322 win.amd64 (Jan 30 2026 17:17:49) release log",
+    "event_template": "<*>:<*>:<*>.<*> main VirtualBox COM Server <*>.<*>.<*> r172322 win.amd64 (Jan <*> <*> <*>:<*>:<*>) release log",
+    "cluster_id": 1
+  },
+  {
+    "line_id": 2,
+    "raw_log": "00:00:00.008343 main     Log opened 2026-05-07T13:47:53.254175400Z",
+    "content": "00:00:00.008343 main     Log opened 2026-05-07T13:47:53.254175400Z",
+    "event_template": "<*>:<*>:<*>.<*> main Log opened <*>-<*>-07T13:<*>:<*>.254175400Z",
+    "cluster_id": 2
+  },
+  {
+    "line_id": 3,
+    "raw_log": "00:00:00.008346 main     Build Type: release",
+    "content": "00:00:00.008346 main     Build Type: release",
+    "event_template": "<*>:<*>:<*>.<*> main Build Type: release",
+    "cluster_id": 3
+  },
+  {
+    "line_id": 4,
+    "raw_log": "00:00:00.008353 main     OS Product: Windows 11",
+    "content": "00:00:00.008353 main     OS Product: Windows 11",
+    "event_template": "<*>:<*>:<*>.<*> main OS Product: Windows <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 5,
+    "raw_log": "00:00:00.009030 main     OS Release: 10.0.26200.8328",
+    "content": "00:00:00.009030 main     OS Release: 10.0.26200.8328",
+    "event_template": "<*>:<*>:<*>.<*> main OS Release: <*>.<*>.<*>.<*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 6,
+    "raw_log": "00:00:00.009033 main     OS Service Pack: ",
+    "content": "00:00:00.009033 main     OS Service Pack: ",
+    "event_template": "<*>:<*>:<*>.<*> main OS <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 7,
+    "raw_log": "00:00:00.074987 main     DMI Product Name: Nitro AN515-57",
+    "content": "00:00:00.074987 main     DMI Product Name: Nitro AN515-57",
+    "event_template": "<*>:<*>:<*>.<*> main DMI Product Name: Nitro AN515-<*>",
+    "cluster_id": 6
+  },
+  {
+    "line_id": 8,
+    "raw_log": "00:00:00.100377 main     DMI Product Version: V1.20",
+    "content": "00:00:00.100377 main     DMI Product Version: V1.20",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 9,
+    "raw_log": "00:00:00.100386 main     Firmware type: UEFI",
+    "content": "00:00:00.100386 main     Firmware type: UEFI",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 10,
+    "raw_log": "00:00:00.101012 main     Secure Boot: Enabled",
+    "content": "00:00:00.101012 main     Secure Boot: Enabled",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 11,
+    "raw_log": "00:00:00.101370 main     Host RAM: 7955MB (7.7GB) total, 632MB available",
+    "content": "00:00:00.101370 main     Host RAM: 7955MB (7.7GB) total, 632MB available",
+    "event_template": "<*>:<*>:<*>.<*> main Host RAM: 7955MB (<*>.7GB) total, 632MB available",
+    "cluster_id": 7
+  },
+  {
+    "line_id": 12,
+    "raw_log": "00:00:00.101381 main     Executable: C:\\Program Files\\Oracle\\VirtualBox\\VBoxSVC.exe",
+    "content": "00:00:00.101381 main     Executable: C:\\Program Files\\Oracle\\VirtualBox\\VBoxSVC.exe",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 13,
+    "raw_log": "00:00:00.101382 main     Process ID: 13344",
+    "content": "00:00:00.101382 main     Process ID: 13344",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 14,
+    "raw_log": "00:00:00.101382 main     Package type: WINDOWS_64BITS_GENERIC",
+    "content": "00:00:00.101382 main     Package type: WINDOWS_64BITS_GENERIC",
+    "event_template": "<*>:<*>:<*>.<*> main <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 15,
+    "raw_log": "00:00:00.101652 main     Windows Features:",
+    "content": "00:00:00.101652 main     Windows Features:",
+    "event_template": "<*>:<*>:<*>.<*> main Windows Features:",
+    "cluster_id": 8
+  },
+  {
+    "line_id": 16,
+    "raw_log": "00:00:00.101654 main       Core Isolation (Memory Integrity): ENABLED",
+    "content": "00:00:00.101654 main       Core Isolation (Memory Integrity): ENABLED",
+    "event_template": "<*>:<*>:<*>.<*> main Core Isolation (Memory Integrity): ENABLED",
+    "cluster_id": 9
+  },
+  {
+    "line_id": 17,
+    "raw_log": "00:00:00.222754          VirtualBox: object creation starts",
+    "content": "00:00:00.222754          VirtualBox: object creation starts",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 18,
+    "raw_log": "00:00:00.223975          Home directory: 'C:\\Users\\acer\\.VirtualBox'",
+    "content": "00:00:00.223975          Home directory: 'C:\\Users\\acer\\.VirtualBox'",
+    "event_template": "<*>:<*>:<*>.<*> Home directory: 'C:\\Users\\acer\\.VirtualBox'",
+    "cluster_id": 10
+  },
+  {
+    "line_id": 19,
+    "raw_log": "00:00:00.224716          Installed Drivers:",
+    "content": "00:00:00.224716          Installed Drivers:",
+    "event_template": "<*>:<*>:<*>.<*> Installed Drivers:",
+    "cluster_id": 11
+  },
+  {
+    "line_id": 20,
+    "raw_log": "00:00:00.259883          Loading settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:00.259883          Loading settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> Loading settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 21,
+    "raw_log": "00:00:00.276984          usbLibGetDevices: Starting USB device enumeration",
+    "content": "00:00:00.276984          usbLibGetDevices: Starting USB device enumeration",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 22,
+    "raw_log": "00:00:00.320902          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 9",
+    "content": "00:00:00.320902          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 9",
+    "event_template": "<*>:<*>:<*>.<*> Getting USB descriptor (id <*>) failed (dwErr=<*>) on hub USB#ROOT_HUB30#<*>&fb42c6b&<*>&<*>#{<*>} port <*>",
+    "cluster_id": 13
+  },
+  {
+    "line_id": 23,
+    "raw_log": "00:00:00.321593          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 14",
+    "content": "00:00:00.321593          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 14",
+    "event_template": "<*>:<*>:<*>.<*> Getting USB descriptor (id <*>) failed (dwErr=<*>) on hub USB#ROOT_HUB30#<*>&fb42c6b&<*>&<*>#{<*>} port <*>",
+    "cluster_id": 13
+  },
+  {
+    "line_id": 24,
+    "raw_log": "00:00:00.325104          usbLibGetDevices: Found 2 USB devices, 0 captured",
+    "content": "00:00:00.325104          usbLibGetDevices: Found 2 USB devices, 0 captured",
+    "event_template": "<*>:<*>:<*>.<*> usbLibGetDevices: Found <*> USB devices, <*> captured",
+    "cluster_id": 14
+  },
+  {
+    "line_id": 25,
+    "raw_log": "00:00:00.326262          USB: Unknown USB device detected (idVendor: 0x0408, idProduct: 0xa061)",
+    "content": "00:00:00.326262          USB: Unknown USB device detected (idVendor: 0x0408, idProduct: 0xa061)",
+    "event_template": "<*>:<*>:<*>.<*> USB: Unknown USB device detected (idVendor: <*>, idProduct: <*>)",
+    "cluster_id": 15
+  },
+  {
+    "line_id": 26,
+    "raw_log": "00:00:00.328384          USB: Unknown USB device detected (idVendor: 0x8087, idProduct: 0x0026)",
+    "content": "00:00:00.328384          USB: Unknown USB device detected (idVendor: 0x8087, idProduct: 0x0026)",
+    "event_template": "<*>:<*>:<*>.<*> USB: Unknown USB device detected (idVendor: <*>, idProduct: <*>)",
+    "cluster_id": 15
+  },
+  {
+    "line_id": 27,
+    "raw_log": "00:00:00.500321          HostDnsMonitor: initializing",
+    "content": "00:00:00.500321          HostDnsMonitor: initializing",
+    "event_template": "<*>:<*>:<*>.<*> HostDnsMonitor: initializing",
+    "cluster_id": 16
+  },
+  {
+    "line_id": 28,
+    "raw_log": "00:00:00.516366          HostDnsMonitor: updating information",
+    "content": "00:00:00.516366          HostDnsMonitor: updating information",
+    "event_template": "<*>:<*>:<*>.<*> HostDnsMonitor: updating information",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 29,
+    "raw_log": "00:00:00.517234          HostDnsMonitor: old information",
+    "content": "00:00:00.517234          HostDnsMonitor: old information",
+    "event_template": "<*>:<*>:<*>.<*> HostDnsMonitor: <*> information",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 30,
+    "raw_log": "00:00:00.517237            no server entries",
+    "content": "00:00:00.517237            no server entries",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 31,
+    "raw_log": "00:00:00.517238            no domain set",
+    "content": "00:00:00.517238            no domain set",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 32,
+    "raw_log": "00:00:00.517239            no search string entries",
+    "content": "00:00:00.517239            no search string entries",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 33,
+    "raw_log": "00:00:00.517239          HostDnsMonitor: new information",
+    "content": "00:00:00.517239          HostDnsMonitor: new information",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 34,
+    "raw_log": "00:00:00.517240            server 1: 10.200.4.51",
+    "content": "00:00:00.517240            server 1: 10.200.4.51",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 35,
+    "raw_log": "00:00:00.517241            no domain set",
+    "content": "00:00:00.517241            no domain set",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 36,
+    "raw_log": "00:00:00.517241            no search string entries",
+    "content": "00:00:00.517241            no search string entries",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 37,
+    "raw_log": "00:00:00.534547          VD: VDInit finished with VINF_SUCCESS",
+    "content": "00:00:00.534547          VD: VDInit finished with VINF_SUCCESS",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 38,
+    "raw_log": "00:00:00.545128          Platform architecture set to 'x86'",
+    "content": "00:00:00.545128          Platform architecture set to 'x86'",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 39,
+    "raw_log": "00:00:00.567300          Loading settings file \"C:\\Users\\acer\\VirtualBox VMs\\Ubuntu 24.04\\Ubuntu 24.04.vbox\" with version \"1.19-windows\"",
+    "content": "00:00:00.567300          Loading settings file \"C:\\Users\\acer\\VirtualBox VMs\\Ubuntu 24.04\\Ubuntu 24.04.vbox\" with version \"1.19-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> Loading settings file \"C:\\Users\\acer\\VirtualBox VMs\\Ubuntu <*>.<*>\\Ubuntu <*>.<*>.vbox\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 18
+  },
+  {
+    "line_id": 40,
+    "raw_log": "00:00:00.572535          Platform architecture set to 'x86'",
+    "content": "00:00:00.572535          Platform architecture set to 'x86'",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 41,
+    "raw_log": "00:00:00.576717          VirtualBox: object created",
+    "content": "00:00:00.576717          VirtualBox: object created",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 42,
+    "raw_log": "00:00:02.236328          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:02.236328          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 43,
+    "raw_log": "00:00:02.240711          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:02.240711          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 44,
+    "raw_log": "00:00:02.241291          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:02.241291          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 45,
+    "raw_log": "00:00:02.244118          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:02.244118          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 46,
+    "raw_log": "00:00:02.244428          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:02.244428          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 47,
+    "raw_log": "00:00:02.247149          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:02.247149          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 48,
+    "raw_log": "00:00:02.423262          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={The UEFI NVRAM file is not existing for this machine}, preserve=false aResultDetail=0",
+    "content": "00:00:02.423262          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={The UEFI NVRAM file is not existing for this machine}, preserve=false aResultDetail=0",
+    "event_template": "<*>:<*>:<*>.<*> ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (<*>) aIID={<*>} aComponent={NvramStoreWrap} aText={The UEFI NVRAM file is not existing for this machine}, preserve=false aResultDetail=<*>",
+    "cluster_id": 19
+  },
+  {
+    "line_id": 49,
+    "raw_log": "00:00:50.614681          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:50.614681          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 50,
+    "raw_log": "00:00:50.619264          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:50.619264          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 51,
+    "raw_log": "00:00:50.619796          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:50.619796          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 52,
+    "raw_log": "00:00:50.623964          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:50.623964          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 53,
+    "raw_log": "00:00:50.640065 DeleteVM Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:50.640065 DeleteVM Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> DeleteVM Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 20
+  },
+  {
+    "line_id": 54,
+    "raw_log": "00:00:50.654222 DeleteVM Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:50.654222 DeleteVM Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> DeleteVM Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "cluster_id": 21
+  },
+  {
+    "line_id": 55,
+    "raw_log": "00:00:50.656338          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:50.656338          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 56,
+    "raw_log": "00:00:50.658534          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:50.658534          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 57,
+    "raw_log": "00:00:50.665582          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0",
+    "content": "00:00:50.665582          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0",
+    "event_template": "<*>:<*>:<*>.<*> ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (<*>) aIID={<*>} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {<*>}}, preserve=false aResultDetail=<*>",
+    "cluster_id": 22
+  },
+  {
+    "line_id": 58,
+    "raw_log": "00:00:50.673336          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0",
+    "content": "00:00:50.673336          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0",
+    "event_template": "<*>:<*>:<*>.<*> ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (<*>) aIID={<*>} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {<*>}}, preserve=false aResultDetail=<*>",
+    "cluster_id": 22
+  },
+  {
+    "line_id": 59,
+    "raw_log": "00:00:50.720225          ERROR [COM]: aRC=E_FAIL (0x80004005) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={Loading the NVRAM store failed (VERR_PATH_NOT_FOUND)",
+    "content": "00:00:50.720225          ERROR [COM]: aRC=E_FAIL (0x80004005) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={Loading the NVRAM store failed (VERR_PATH_NOT_FOUND)",
+    "event_template": "<*>:<*>:<*>.<*> ERROR [COM]: aRC=E_FAIL (<*>) aIID={<*>} aComponent={NvramStoreWrap} aText={Loading the NVRAM store failed (VERR_PATH_NOT_FOUND)",
+    "cluster_id": 23
+  },
+  {
+    "line_id": 60,
+    "raw_log": "00:00:50.721141          }, preserve=false aResultDetail=0",
+    "content": "00:00:50.721141          }, preserve=false aResultDetail=0",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*>",
+    "cluster_id": 17
+  },
+  {
+    "line_id": 61,
+    "raw_log": "00:00:59.345304          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "content": "00:00:59.345304          Saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"1.12-windows\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\" with version \"<*>.<*>-windows\"",
+    "cluster_id": 12
+  },
+  {
+    "line_id": 62,
+    "raw_log": "00:00:59.347748          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "content": "00:00:59.347748          Finished saving settings file \"C:\\Users\\acer\\.VirtualBox\\VirtualBox.xml\"",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 63,
+    "raw_log": "00:01:05.405655 main     VirtualBox: object deletion starts",
+    "content": "00:01:05.405655 main     VirtualBox: object deletion starts",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 64,
+    "raw_log": "00:01:05.409171 main     HostDnsMonitor: shutting down ...",
+    "content": "00:01:05.409171 main     HostDnsMonitor: shutting down ...",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*> <*>",
+    "cluster_id": 4
+  },
+  {
+    "line_id": 65,
+    "raw_log": "00:01:05.409314 main     HostDnsMonitor: shut down",
+    "content": "00:01:05.409314 main     HostDnsMonitor: shut down",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*>",
+    "cluster_id": 5
+  },
+  {
+    "line_id": 66,
+    "raw_log": "00:01:05.413426 Watcher  ERROR [COM]: aRC=E_ACCESSDENIED (0x80070005) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={The object is not ready}, preserve=false aResultDetail=0",
+    "content": "00:01:05.413426 Watcher  ERROR [COM]: aRC=E_ACCESSDENIED (0x80070005) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={The object is not ready}, preserve=false aResultDetail=0",
+    "event_template": "<*>:<*>:<*>.<*> Watcher ERROR [COM]: aRC=E_ACCESSDENIED (<*>) aIID={<*>} aComponent={VirtualBoxWrap} aText={The object is not ready}, preserve=false aResultDetail=<*>",
+    "cluster_id": 24
+  },
+  {
+    "line_id": 67,
+    "raw_log": "00:01:05.414224 main     VirtualBox: object deleted",
+    "content": "00:01:05.414224 main     VirtualBox: object deleted",
+    "event_template": "<*>:<*>:<*>.<*> <*> <*> <*> <*>",
+    "cluster_id": 5
+  }
+]

@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  ulpf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ulpf:latest
+    container_name: ulpf_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ULPF_DB_PATH=/app/data/ulpf.duckdb
+      - ULPF_EXPORTS_DIR=/app/exports
+    volumes:
+      # Persistent DuckDB database file storage
+      - ./data:/app/data
+      # Exported ZSTD Parquet files folder
+      - ./exports:/app/exports

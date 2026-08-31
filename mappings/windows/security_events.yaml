@@ -1,0 +1,41 @@
+# Windows Security Event Log Mapping to OCSF
+vendor: "Microsoft"
+product: "Windows Security"
+format: "xml"
+event_ids:
+  4624:
+    name: "Successful Logon"
+    category: "Identity & Access Management"
+    class: "Authentication"
+    activity: "Logon"
+    status: "Success"
+    severity: "Informational"
+  4625:
+    name: "Failed Logon"
+    category: "Identity & Access Management"
+    class: "Authentication"
+    activity: "Logon"
+    status: "Failure"
+    severity: "High"
+  4634:
+    name: "Logoff"
+    category: "Identity & Access Management"
+    class: "Authentication"
+    activity: "Logoff"
+    status: "Success"
+    severity: "Informational"
+  4720:
+    name: "User Account Created"
+    category: "Identity & Access Management"
+    class: "Account Change"
+    activity: "Create"
+    status: "Success"
+    severity: "Low"
+
+field_mapping:
+  TargetUserName: "user"
+  TargetDomainName: "user_domain"
+  IpAddress: "src_ip"
+  IpPort: "src_port"
+  LogonType: "logon_type"
+  AuthenticationPackageName: "auth_protocol"

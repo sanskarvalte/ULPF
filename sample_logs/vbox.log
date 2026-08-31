@@ -1,0 +1,67 @@
+00:00:00.008099 main     VirtualBox COM Server 7.2.6 r172322 win.amd64 (Jan 30 2026 17:17:49) release log
+00:00:00.008343 main     Log opened 2026-05-07T13:47:53.254175400Z
+00:00:00.008346 main     Build Type: release
+00:00:00.008353 main     OS Product: Windows 11
+00:00:00.009030 main     OS Release: 10.0.26200.8328
+00:00:00.009033 main     OS Service Pack: 
+00:00:00.074987 main     DMI Product Name: Nitro AN515-57
+00:00:00.100377 main     DMI Product Version: V1.20
+00:00:00.100386 main     Firmware type: UEFI
+00:00:00.101012 main     Secure Boot: Enabled
+00:00:00.101370 main     Host RAM: 7955MB (7.7GB) total, 632MB available
+00:00:00.101381 main     Executable: C:\Program Files\Oracle\VirtualBox\VBoxSVC.exe
+00:00:00.101382 main     Process ID: 13344
+00:00:00.101382 main     Package type: WINDOWS_64BITS_GENERIC
+00:00:00.101652 main     Windows Features:
+00:00:00.101654 main       Core Isolation (Memory Integrity): ENABLED
+00:00:00.222754          VirtualBox: object creation starts
+00:00:00.223975          Home directory: 'C:\Users\acer\.VirtualBox'
+00:00:00.224716          Installed Drivers:
+00:00:00.259883          Loading settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:00.276984          usbLibGetDevices: Starting USB device enumeration
+00:00:00.320902          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 9
+00:00:00.321593          Getting USB descriptor (id 0) failed (dwErr=31) on hub USB#ROOT_HUB30#4&fb42c6b&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8} port 14
+00:00:00.325104          usbLibGetDevices: Found 2 USB devices, 0 captured
+00:00:00.326262          USB: Unknown USB device detected (idVendor: 0x0408, idProduct: 0xa061)
+00:00:00.328384          USB: Unknown USB device detected (idVendor: 0x8087, idProduct: 0x0026)
+00:00:00.500321          HostDnsMonitor: initializing
+00:00:00.516366          HostDnsMonitor: updating information
+00:00:00.517234          HostDnsMonitor: old information
+00:00:00.517237            no server entries
+00:00:00.517238            no domain set
+00:00:00.517239            no search string entries
+00:00:00.517239          HostDnsMonitor: new information
+00:00:00.517240            server 1: 10.200.4.51
+00:00:00.517241            no domain set
+00:00:00.517241            no search string entries
+00:00:00.534547          VD: VDInit finished with VINF_SUCCESS
+00:00:00.545128          Platform architecture set to 'x86'
+00:00:00.567300          Loading settings file "C:\Users\acer\VirtualBox VMs\Ubuntu 24.04\Ubuntu 24.04.vbox" with version "1.19-windows"
+00:00:00.572535          Platform architecture set to 'x86'
+00:00:00.576717          VirtualBox: object created
+00:00:02.236328          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:02.240711          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:02.241291          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:02.244118          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:02.244428          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:02.247149          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:02.423262          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={The UEFI NVRAM file is not existing for this machine}, preserve=false aResultDetail=0
+00:00:50.614681          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:50.619264          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:50.619796          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:50.623964          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:50.640065 DeleteVM Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:50.654222 DeleteVM Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:50.656338          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:50.658534          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:00:50.665582          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0
+00:00:50.673336          ERROR [COM]: aRC=VBOX_E_OBJECT_NOT_FOUND (0x80bb0001) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={Could not find a registered machine with UUID {2df5d3d1-4adf-4b74-a5f8-7f01f79194f6}}, preserve=false aResultDetail=0
+00:00:50.720225          ERROR [COM]: aRC=E_FAIL (0x80004005) aIID={5bfd8965-b81b-469f-8649-f717ce97a5d5} aComponent={NvramStoreWrap} aText={Loading the NVRAM store failed (VERR_PATH_NOT_FOUND)
+00:00:50.721141          }, preserve=false aResultDetail=0
+00:00:59.345304          Saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml" with version "1.12-windows"
+00:00:59.347748          Finished saving settings file "C:\Users\acer\.VirtualBox\VirtualBox.xml"
+00:01:05.405655 main     VirtualBox: object deletion starts
+00:01:05.409171 main     HostDnsMonitor: shutting down ...
+00:01:05.409314 main     HostDnsMonitor: shut down
+00:01:05.413426 Watcher  ERROR [COM]: aRC=E_ACCESSDENIED (0x80070005) aIID={2ce10519-3c09-45d8-a12d-e887786146b7} aComponent={VirtualBoxWrap} aText={The object is not ready}, preserve=false aResultDetail=0
+00:01:05.414224 main     VirtualBox: object deleted

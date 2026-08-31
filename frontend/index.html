@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULPF — Universal Log Pre-processing Framework</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    header.topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .brand h1 { font-size: 22px; font-weight: 700; margin: 2px 0; }
+    .subtitle { font-size: 12px; color: var(--text-muted); }
+    .badge-offline {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .main-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .nav-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .nav-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-tab.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
+
+    button, .btn {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover, .btn:hover { background: #283548; border-color: var(--accent); }
+    .btn-primary { background: #0284c7; border-color: #0284c7; color: #fff; }
+    .btn-primary:hover { background: #0369a1; }
+    .btn-success { background: #059669; border-color: #059669; color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .metric-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+    .metric-value { font-size: 26px; font-weight: 700; color: var(--accent); margin: 4px 0 2px; }
+    .metric-sub { font-size: 11px; color: var(--text-muted); }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .panel-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .stat-row { margin-bottom: 10px; }
+    .stat-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+    .stat-count { color: var(--text-muted); }
+    .progress-bar-bg { background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 3px; }
+
+    .anomaly-card {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-left: 4px solid var(--danger);
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .anomaly-card.clean {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-left: 4px solid var(--success);
+    }
+    .anomaly-window { font-family: monospace; font-weight: 700; font-size: 13px; color: #fca5a5; }
+    .anomaly-card.clean .anomaly-window { color: #86efac; }
+    .anomaly-score-badge {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .table-container { overflow-x: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th {
+      background: rgba(0,0,0,0.25);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .sev-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .sev-critical { background: rgba(220, 38, 38, 0.2); color: #f87171; }
+    .sev-high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .sev-medium { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .sev-low { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .sev-unknown, .sev-informational { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; }
+    .fmt-pill { font-family: monospace; font-size: 11px; background: rgba(255, 255, 255, 0.08); padding: 2px 5px; border-radius: 3px; color: #38bdf8; }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+    textarea { width: 100%; height: 140px; background: #0f172a; border: 1px solid var(--card-border); border-radius: 4px; color: var(--text); padding: 10px; font-family: monospace; font-size: 12px; margin-bottom: 10px; resize: vertical; }
+    .upload-status { margin-top: 8px; font-size: 12px; padding: 10px 14px; border-radius: 6px; display: none; }
+    .upload-status.success { display: block; background: rgba(16,185,129,0.15); color: #86efac; border: 1px solid rgba(16,185,129,0.3); }
+    .upload-status.error { display: block; background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .upload-status.loading { display: block; background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.3); }
+
+    pre { background: #0f172a; border: 1px solid var(--card-border); padding: 10px; border-radius: 6px; color: #38bdf8; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; max-width: 850px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="nav-container"></div>
+    <main id="app-root">
+      <div style="padding: 40px; text-align: center; color: var(--accent);">Initializing ULPF Dashboard...</div>
+    </main>
+  </div>
+  <div id="modal-container"></div>
+
+  <script>
+    function renderNavbar(activePage = 'converter') {
+      return `
+        <header class="topbar">
+          <div class="brand">
+            <div class="eyebrow">National Technical Research Organisation (NTRO) • ULPF</div>
+            <h1>Universal Log Pre-processing Framework</h1>
+            <p class="subtitle">Lossless Normalization • OCSF Taxonomy • Isolation Forest ML • DuckDB Storage</p>
+          </div>
+          <div class="header-actions">
+            <span class="badge-offline">● 100% Offline Air-Gapped</span>
+            <button class="btn btn-primary" onclick="app.refreshCurrentPage()">🔄 Refresh</button>
+          </div>
+        </header>
+        <nav class="main-nav">
+          <button class="nav-tab ${activePage === 'converter' ? 'active' : ''}" onclick="app.navigate('converter')">📄 Convert Single File</button>
+          <button class="nav-tab ${activePage === 'dashboard' ? 'active' : ''}" onclick="app.navigate('dashboard')">📊 Analytics Dashboard</button>
+          <button class="nav-tab ${activePage === 'explorer' ? 'active' : ''}" onclick="app.navigate('explorer')">🔍 Log Explorer</button>
+          <button class="nav-tab ${activePage === 'onboarding' ? 'active' : ''}" onclick="app.navigate('onboarding')">⚡ Batch Onboarding</button>
+          <button class="nav-tab ${activePage === 'mappings' ? 'active' : ''}" onclick="app.navigate('mappings')">🗺️ Mapping Rules</button>
+          <div style="flex:1;"></div>
+          <a href="/docs" target="_blank" class="btn btn-sm">📖 OpenAPI Docs</a>
+        </nav>
+      `;
+    }
+
+    function renderTraceModal() {
+      return `
+        <div id="trace-modal" class="modal">
+          <div class="modal-content">
+            <div class="panel-title">
+              <span>🔍 Forensic Traceability: Normalized vs Raw Log</span>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-sm btn-primary" onclick="app.downloadCurrentModalEvent()">📥 Download Event JSON</button>
+                <button class="btn btn-sm" onclick="app.closeModal()">✕ Close</button>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top:14px;">
+              <div>
+                <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">OCSF Normalized JSON</h4>
+                <pre id="modal-normalized-json" style="max-height:360px; overflow-y:auto;"></pre>
+              </div>
+              <div>
+                <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Untouched Raw Payload (SHA-256 Verified)</h4>
+                <pre id="modal-raw-text" style="max-height:360px; overflow-y:auto; color:#a5f3fc;"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderConverterPage() {
+      return `
+        <div class="panel" style="border-color: var(--accent);">
+          <div class="panel-title">
+            <span>📄 Single File Log to JSON Normalizer</span>
+            <span class="fmt-pill">100% Isolated Output (Only Your File)</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Paste any XML, JSON, Syslog, CEF, LEEF, or CSV snippet, OR choose 1 file. The system will convert <strong>only your input</strong> and provide a direct JSON file download with zero database contamination.
+          </p>
+
+          <div class="grid-2">
+            <div>
+              <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; text-transform:uppercase;">1. Input: Paste Raw Log or Choose File</h4>
+              <textarea id="converter-text-input" placeholder='Paste your XML, Syslog, CEF, or JSON log code here...'></textarea>
+              <div style="margin-bottom:12px;">
+                <input type="file" id="converter-file-input" style="font-size:12px; color:var(--text-muted);">
+              </div>
+              <button id="converter-btn" class="btn btn-primary" style="font-size:14px; padding:10px 18px;" onclick="app.handleSingleFileConvert()">
+                ⚡ Convert & Download JSON
+              </button>
+              <div id="converter-status" class="upload-status"></div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <h4 style="font-size:12px; color:var(--success); text-transform:uppercase;">2. Normalized Output (Your File Only)</h4>
+                <button id="copy-json-btn" class="btn btn-sm" style="display:none;" onclick="app.copyConverterJSON()">📋 Copy JSON</button>
+              </div>
+              <pre id="converter-preview" style="height:210px; overflow-y:auto; color:#4ade80;">// Your normalized JSON output will appear here...</pre>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMetricCards(stats = {}, anomalyData = {}) {
+      const totalNorm = (stats.total_normalized_events || 0).toLocaleString();
+      const totalRaw = (stats.total_raw_events || 0).toLocaleString();
+      const anomalies = anomalyData.anomalies_detected || 0;
+      return `
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Normalized Events</div>
+            <div class="metric-value">${totalNorm}</div>
+            <div class="metric-sub">Standardized OCSF schema</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Lossless Raw Events</div>
+            <div class="metric-value">${totalRaw}</div>
+            <div class="metric-sub">SHA-256 deduplicated store</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">ML Anomaly Windows</div>
+            <div class="metric-value" style="color: ${anomalies > 0 ? 'var(--danger)' : 'var(--success)'};">${anomalies}</div>
+            <div class="metric-sub">Isolation Forest detections</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Storage Backend</div>
+            <div class="metric-value" style="font-size: 20px; color: var(--text);">DuckDB (Local)</div>
+            <div class="metric-sub">In-process SQL & Parquet engine</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDashboardPage(stats = {}, anomalyData = {}, recentEvents = []) {
+      const metricsHtml = renderMetricCards(stats, anomalyData);
+
+      const catRows = (stats.by_category || []).map(c => {
+        const pct = stats.total_normalized_events > 0 ? ((c.count / stats.total_normalized_events) * 100).toFixed(1) : 0;
+        return `
+          <div class="stat-row">
+            <div class="stat-header">
+              <span>${c.category}</span>
+              <span class="stat-count">${c.count.toLocaleString()} (${pct}%)</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%; background:#38bdf8;"></div></div>
+          </div>
+        `;
+      }).join('') || '<div style="color:var(--text-muted); font-size:13px;">No events ingested yet.</div>';
+
+      const sevColors = { critical:'#dc2626', high:'#ef4444', medium:'#f59e0b', low:'#3b82f6', informational:'#64748b', unknown:'#475569' };
+      const sevRows = (stats.by_severity || []).map(s => {
+        const color = sevColors[(s.severity || 'unknown').toLowerCase()] || '#64748b';
+        const pct = stats.total_normalized_events > 0 ? ((s.count / stats.total_normalized_events) * 100).toFixed(1) : 0;
+        return `
+          <div class="stat-row">
+            <div class="stat-header">
+              <span style="text-transform:capitalize;">${s.severity}</span>
+              <span class="stat-count">${s.count.toLocaleString()} (${pct}%)</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+          </div>
+        `;
+      }).join('') || '<div style="color:var(--text-muted); font-size:13px;">No severity data.</div>';
+
+      const anomaliesHtml = (anomalyData.anomalies || []).map(a => `
+        <div class="anomaly-card">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="anomaly-window">⏱ Window: ${a.time_window}</span>
+              <span class="sev-badge sev-high">${a.high_severity_events} ERRORS</span>
+            </div>
+            <div style="font-size:13px; color:var(--text); margin-top:4px;">${a.description}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Volume: ${a.total_events} events • Source: ${a.vendors} (${a.categories})</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="anomaly-score-badge">Score: ${(a.anomaly_score * 100).toFixed(0)}%</div>
+          </div>
+        </div>
+      `).join('') || `
+        <div class="anomaly-card clean">
+          <div>
+            <div class="anomaly-window">✅ Statistical Baseline Normal</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">No abnormal spikes or intrusion patterns detected by Isolation Forest.</div>
+          </div>
+          <span class="badge-offline">Normal</span>
+        </div>
+      `;
+
+      return `
+        ${metricsHtml}
+        <div class="panel" style="border-color: rgba(239, 68, 68, 0.4); margin-bottom: 24px;">
+          <div class="panel-title">
+            <span>🚨 AI/ML Anomaly Detection (Isolation Forest)</span>
+            <span style="font-size:12px; color:var(--text-muted);">${anomalyData.anomalies_detected || 0} flagged window(s) of ${anomalyData.total_windows_analyzed || 0} evaluated</span>
+          </div>
+          <div style="max-height: 280px; overflow-y: auto;">${anomaliesHtml}</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-title"><span>Event Categories (DuckDB SQL)</span></div>
+            ${catRows}
+          </div>
+          <div class="panel">
+            <div class="panel-title"><span>Severity Distribution</span></div>
+            ${sevRows}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize = 100, formatFilter = 'all', sortOrder = 'created_at', searchVal = '') {
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      const startIdx = total > 0 ? (page - 1) * pageSize + 1 : 0;
+      const endIdx = Math.min(page * pageSize, total);
+
+      const rows = events.map(e => {
+        const sevClass = 'sev-' + (e.severity || 'unknown').toLowerCase();
+        const ts = e.timestamp ? e.timestamp.replace('T', ' ').slice(0, 23) : (e.created_at ? e.created_at.replace('T', ' ').slice(0, 19) : '—');
+        const msg = e.message ? (e.message.slice(0, 55) + (e.message.length > 55 ? '...' : '')) : (e.raw_event ? (e.raw_event.slice(0, 55) + '...') : '—');
+        const vendorProd = [e.vendor, e.product].filter(Boolean).join(' / ') || '—';
+        return `
+          <tr>
+            <td style="font-family: monospace; font-size: 11px; white-space: nowrap;">${ts}</td>
+            <td>${e.category_name || '—'}</td>
+            <td><span class="sev-badge ${sevClass}">${e.severity || 'UNKNOWN'}</span></td>
+            <td><span class="fmt-pill">${(e.log_format || 'GENERIC').toUpperCase()}</span></td>
+            <td style="font-family: monospace; font-size: 11px;">${e.src_ip || '—'}</td>
+            <td style="font-size: 12px; font-weight: 500;">${e.user || '—'}</td>
+            <td>${vendorProd}</td>
+            <td style="font-size: 12px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${(e.message || e.raw_event || '').replace(/"/g, '&quot;')}">${msg}</td>
+            <td><button class="btn btn-sm" onclick="app.inspectEvent('${e.event_id}')">🔍 Trace</button></td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="9" style="text-align:center; padding: 24px; color:var(--text-muted);">No matching events found. Try changing filters or ingesting logs.</td></tr>';
+
+      return `
+        <div class="panel">
+          <div class="panel-title">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span>🔍 Normalized Log Explorer</span>
+              <span class="badge-offline">${total.toLocaleString()} Total DB Events</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-sm" onclick="app.refreshExplorer()"><span style="font-size:14px;">🔄</span> Refresh</button>
+              <button class="btn btn-sm btn-success" onclick="app.exportExplorerJSON()" title="Export currently filtered normalized events as JSON">📥 Export JSON</button>
+              <button class="btn btn-sm" onclick="app.exportExplorerParquet()">📦 Parquet</button>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls Bar -->
+          <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; align-items:center; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; border:1px solid var(--card-border);">
+            <div style="flex: 2; min-width: 240px;">
+              <input type="text" id="explorer-search" class="search-input" style="margin:0; width:100%;" value="${searchVal}" placeholder="Search logs by keyword, IP, user, message, subsystem..." onkeydown="if(event.key==='Enter') app.onSearchSubmit()">
+            </div>
+            <div style="flex: 1; min-width: 140px;">
+              <select id="explorer-format-filter" class="search-input" style="margin:0; width:100%;" onchange="app.onFilterChange()">
+                <option value="all" ${formatFilter === 'all' ? 'selected' : ''}>📁 All Formats</option>
+                <option value="syslog" ${formatFilter === 'syslog' ? 'selected' : ''}>Syslog (BSD/Mac/Linux)</option>
+                <option value="android" ${formatFilter === 'android' ? 'selected' : ''}>Android Logcat</option>
+                <option value="json" ${formatFilter === 'json' ? 'selected' : ''}>JSON</option>
+                <option value="cef" ${formatFilter === 'cef' ? 'selected' : ''}>CEF</option>
+                <option value="leef" ${formatFilter === 'leef' ? 'selected' : ''}>LEEF</option>
+                <option value="csv" ${formatFilter === 'csv' ? 'selected' : ''}>CSV</option>
+                <option value="xml" ${formatFilter === 'xml' ? 'selected' : ''}>XML</option>
+                <option value="generic" ${formatFilter === 'generic' ? 'selected' : ''}>Generic Text</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 170px;">
+              <select id="explorer-sort-order" class="search-input" style="margin:0; width:100%;" onchange="app.onSortChange()">
+                <option value="created_at" ${sortOrder === 'created_at' ? 'selected' : ''}>⏱️ Recently Ingested First</option>
+                <option value="timestamp" ${sortOrder === 'timestamp' ? 'selected' : ''}>📅 Event Timestamp (Newest)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="app.onSearchSubmit()">Filter</button>
+            ${searchVal || formatFilter !== 'all' ? `<button class="btn btn-sm" onclick="app.resetExplorerFilters()">Clear</button>` : ''}
+          </div>
+
+          <!-- Results Summary & Pagination Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+            <div>
+              Showing <strong>${startIdx}–${endIdx}</strong> of <strong>${total.toLocaleString()}</strong> records
+              ${formatFilter !== 'all' ? ` [Format: <span style="color:#38bdf8; font-weight:600;">${formatFilter.toUpperCase()}</span>]` : ''}
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-sm" ${page <= 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="app.changePage(${page - 1})">◀ Prev</button>
+              <span style="font-weight:600; color:var(--text);">Page ${page} of ${totalPages}</span>
+              <button class="btn btn-sm" ${page >= totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="app.changePage(${page + 1})">Next ▶</button>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp (UTC)</th>
+                  <th>Category</th>
+                  <th>Severity</th>
+                  <th>Format</th>
+                  <th>Source IP</th>
+                  <th>User</th>
+                  <th>Vendor / Product</th>
+                  <th>Message / Content</th>
+                  <th>Traceability</th>
+                </tr>
+              </thead>
+              <tbody id="explorer-table-body">${rows}</tbody>
+            </table>
+          </div>
+
+          <!-- Bottom Pagination Controls -->
+          <div style="display:flex; justify-content:flex-end; align-items:center; margin-top:12px; gap:8px;">
+            <button class="btn btn-sm" ${page <= 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="app.changePage(${page - 1})">◀ Prev</button>
+            <span style="font-size:12px; color:var(--text-muted);">Page ${page} of ${totalPages}</span>
+            <button class="btn btn-sm" ${page >= totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="app.changePage(${page + 1})">Next ▶</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSourceOnboardingPage(sources = [], lastBatch = null) {
+      const sourceRows = sources.map(s => `
+        <tr>
+          <td style="font-family: monospace; color: #38bdf8;">${s.source_name}</td>
+          <td><span class="fmt-pill">${s.format.toUpperCase()}</span></td>
+          <td>${s.vendor || '—'}</td>
+          <td>${s.product || '—'}</td>
+          <td style="font-size: 11px; color: var(--text-muted);">${s.created_at ? s.created_at.slice(0, 19) : '—'}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No custom sources registered yet.</td></tr>';
+
+      let lastBatchBanner = '';
+      if (lastBatch) {
+        const previewRows = (lastBatch.events || []).slice(0, 5).map(item => {
+          const ev = item.normalized_event || {};
+          return `
+            <tr>
+              <td style="font-family:monospace; font-size:11px;">${ev.timestamp ? String(ev.timestamp).slice(0, 19) : '—'}</td>
+              <td><span class="fmt-pill">${(item.detected_format || 'GENERIC').toUpperCase()}</span></td>
+              <td>${ev.category_name || '—'}</td>
+              <td style="font-size:11px;">${ev.message ? ev.message.slice(0, 45) + '...' : (ev.raw_event ? ev.raw_event.slice(0, 45) + '...' : '—')}</td>
+              <td><button class="btn btn-sm" onclick="app.inspectEvent('${item.event_id}')">🔍 View</button></td>
+            </tr>
+          `;
+        }).join('');
+
+        lastBatchBanner = `
+          <div class="panel" style="border-left: 4px solid var(--success); background: rgba(16, 185, 129, 0.05); margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <div style="font-size:15px; font-weight:700; color:var(--success);">✅ Batch Successfully Ingested into Database!</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                  Ingested <strong>${lastBatch.event_count} events</strong> from <code>${lastBatch.file_name}</code> (Detected Format: <span class="fmt-pill">${lastBatch.detected_format.toUpperCase()}</span>)
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-success" onclick="app.downloadLastBatchJSON()">
+                  📥 Download Ingested JSON (${lastBatch.event_count} events)
+                </button>
+                <button class="btn btn-primary" onclick="app.jumpToLogExplorer('${lastBatch.detected_format}')">
+                  🔍 Open in Log Explorer ➔
+                </button>
+              </div>
+            </div>
+            ${previewRows ? `
+              <div style="margin-top:12px;">
+                <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Sample Ingested Records Preview:</div>
+                <div class="table-container">
+                  <table>
+                    <thead><tr><th>Timestamp</th><th>Format</th><th>Category</th><th>Message Preview</th><th>Action</th></tr></thead>
+                    <tbody>${previewRows}</tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      return `
+        ${lastBatchBanner}
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-title"><span>⚡ Batch Log Ingestion & DB Storage</span></div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Ingest log batches directly into DuckDB database for instant querying in Log Explorer & Analytics:</p>
+            <textarea id="raw-log-input" placeholder='Paste multi-line log batch here (Syslog, Android, JSON, CEF, XML, CSV, etc.)...'></textarea>
+            <div style="margin-bottom:12px;">
+              <input type="file" id="log-file-input" style="font-size:12px; color:var(--text-muted);">
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button id="ingest-btn" class="btn btn-primary" onclick="app.handleUpload()">🚀 Ingest into Database</button>
+              <button class="btn btn-sm" onclick="app.navigate('explorer')">🔍 Go to Log Explorer</button>
+            </div>
+            <div id="upload-status" class="upload-status"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title"><span>Register Custom Log Source</span></div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+              <input type="text" id="new-src-name" class="search-input" style="margin:0;" placeholder="Source Name (e.g. corp-firewall-01)">
+              <select id="new-src-format" class="search-input" style="margin:0;">
+                <option value="syslog">Syslog (RFC 3164/5424)</option>
+                <option value="android">Android Logcat</option>
+                <option value="json">JSON</option>
+                <option value="cef">CEF (Common Event Format)</option>
+                <option value="leef">LEEF (Log Event Extended Format)</option>
+                <option value="xml">XML / Windows EventLog</option>
+                <option value="csv">CSV</option>
+                <option value="generic">Generic Unstructured Text</option>
+              </select>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" id="new-src-vendor" class="search-input" style="margin:0;" placeholder="Vendor (e.g. Cisco)">
+                <input type="text" id="new-src-product" class="search-input" style="margin:0;" placeholder="Product (e.g. ASA)">
+              </div>
+              <button class="btn" onclick="app.registerSource()">Save Source</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title"><span>Registered Source Catalog</span></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Source Name</th><th>Format</th><th>Vendor</th><th>Product</th><th>Registered At</th></tr></thead>
+              <tbody>${sourceRows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMappingReviewPage(mappings = {}) {
+      const mappingCards = Object.entries(mappings).map(([key, map]) => {
+        const rows = Object.entries(map.field_mapping || {}).map(([src, dst]) => `
+          <tr><td style="font-family:monospace; color:#38bdf8;">${src}</td><td style="font-family:monospace; color:#4ade80;">${dst}</td></tr>
+        `).join('');
+        return `
+          <div class="panel">
+            <div class="panel-title">
+              <span>${map.vendor} ${map.product}</span>
+              <span class="fmt-pill">${key}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">OCSF Class: <strong>${map.class_name} (${map.class_uid})</strong></div>
+            <table><thead><tr><th>Vendor Field</th><th>OCSF Target</th></tr></thead><tbody>${rows}</tbody></table>
+          </div>
+        `;
+      }).join('') || '<div style="color:var(--text-muted);">No vendor mappings loaded.</div>';
+
+      return `
+        <div class="panel" style="margin-bottom: 20px;">
+          <div class="panel-title"><span>🤖 AI Automated Schema Field Mapping Assistant</span></div>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Enter comma-separated field keys from unparsed logs to predict standard OCSF attributes:</p>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="ai-sample-keys" class="search-input" style="margin:0;" placeholder="e.g. client_ip, suser, dport, status_code, logon_type">
+            <button class="btn btn-primary" onclick="app.suggestMapping()">Suggest Mappings</button>
+          </div>
+          <div id="ai-mapping-result" style="margin-top:12px;"></div>
+        </div>
+        <div class="panel-title"><span>Pre-Configured Vendor Mapping Rules</span></div>
+        <div class="grid-2">${mappingCards}</div>
+      `;
+    }
+
+    // ── Application State & Controller ─────────────────────────────────────
+    class ULPFApp {
+      constructor() {
+        this.currentPage = 'converter';
+        this.state = {
+          stats: {},
+          anomalies: {},
+          events: [],
+          totalEvents: 0,
+          sources: [],
+          mappings: {}
+        };
+        this.explorerState = {
+          page: 1,
+          pageSize: 100,
+          formatFilter: 'all',
+          sortOrder: 'created_at',
+          searchVal: ''
+        };
+        this.lastConvertedJSON = null;
+        this.lastBatchResult = null;
+        this.currentModalEvent = null;
+      }
+
+      async init() {
+        document.getElementById('nav-container').innerHTML = renderNavbar(this.currentPage);
+        document.getElementById('modal-container').innerHTML = renderTraceModal();
+        this.renderView();
+        await this.refreshCurrentPage();
+      }
+
+      async navigate(page) {
+        this.currentPage = page;
+        document.getElementById('nav-container').innerHTML = renderNavbar(this.currentPage);
+        this.renderView();
+        if (page === 'explorer') {
+          await this.loadExplorerEvents();
+        } else if (page === 'dashboard' || page === 'onboarding') {
+          await this.refreshCurrentPage();
+        }
+      }
+
+      async jumpToLogExplorer(format = 'all') {
+        this.explorerState.page = 1;
+        this.explorerState.sortOrder = 'created_at';
+        this.explorerState.searchVal = '';
+        this.explorerState.formatFilter = format || 'all';
+        await this.navigate('explorer');
+      }
+
+      async refreshCurrentPage() {
+        try {
+          const [statsRes, anomalyRes, eventsRes, sourcesRes, mappingsRes] = await Promise.all([
+            fetch('/stats'),
+            fetch('/anomalies'),
+            fetch(`/events?limit=${this.explorerState.pageSize}&offset=0&order_by=${this.explorerState.sortOrder}`),
+            fetch('/sources'),
+            fetch('/mappings'),
+          ]);
+
+          if (statsRes.ok) this.state.stats = await statsRes.json();
+          if (anomalyRes.ok) this.state.anomalies = await anomalyRes.json();
+          if (eventsRes.ok) {
+            const data = await eventsRes.json();
+            this.state.events = data.events || [];
+            this.state.totalEvents = data.total || this.state.events.length;
+          }
+          if (sourcesRes.ok) {
+            const data = await sourcesRes.json();
+            this.state.sources = data.sources || [];
+          }
+          if (mappingsRes.ok) this.state.mappings = await mappingsRes.json();
+
+          if (this.currentPage !== 'converter') {
+            this.renderView();
+          }
+        } catch (err) {
+          console.error('Error refreshing state:', err);
+        }
+      }
+
+      async loadExplorerEvents() {
+        try {
+          const offset = (this.explorerState.page - 1) * this.explorerState.pageSize;
+          const params = new URLSearchParams({
+            limit: this.explorerState.pageSize,
+            offset: offset,
+            order_by: this.explorerState.sortOrder,
+            direction: 'desc'
+          });
+          if (this.explorerState.formatFilter && this.explorerState.formatFilter !== 'all') {
+            params.append('format', this.explorerState.formatFilter);
+          }
+          if (this.explorerState.searchVal) {
+            params.append('search', this.explorerState.searchVal);
+          }
+
+          const res = await fetch('/events?' + params.toString());
+          if (res.ok) {
+            const data = await res.json();
+            this.state.events = data.events || [];
+            this.state.totalEvents = data.total || 0;
+            this.renderView();
+          }
+        } catch (err) {
+          console.error('Error loading explorer events:', err);
+        }
+      }
+
+      onFilterChange() {
+        const sel = document.getElementById('explorer-format-filter');
+        if (sel) {
+          this.explorerState.formatFilter = sel.value;
+          this.explorerState.page = 1;
+          this.loadExplorerEvents();
+        }
+      }
+
+      onSortChange() {
+        const sel = document.getElementById('explorer-sort-order');
+        if (sel) {
+          this.explorerState.sortOrder = sel.value;
+          this.explorerState.page = 1;
+          this.loadExplorerEvents();
+        }
+      }
+
+      onSearchSubmit() {
+        const inp = document.getElementById('explorer-search');
+        if (inp) {
+          this.explorerState.searchVal = inp.value.trim();
+          this.explorerState.page = 1;
+          this.loadExplorerEvents();
+        }
+      }
+
+      resetExplorerFilters() {
+        this.explorerState.formatFilter = 'all';
+        this.explorerState.sortOrder = 'created_at';
+        this.explorerState.searchVal = '';
+        this.explorerState.page = 1;
+        this.loadExplorerEvents();
+      }
+
+      changePage(newPage) {
+        if (newPage < 1) return;
+        this.explorerState.page = newPage;
+        this.loadExplorerEvents();
+      }
+
+      refreshExplorer() {
+        this.loadExplorerEvents();
+      }
+
+      renderView() {
+        const root = document.getElementById('app-root');
+        switch (this.currentPage) {
+          case 'converter':
+            root.innerHTML = renderConverterPage();
+            break;
+          case 'dashboard':
+            root.innerHTML = renderDashboardPage(this.state.stats, this.state.anomalies, this.state.events);
+            break;
+          case 'explorer':
+            root.innerHTML = renderLogExplorerPage(
+              this.state.events,
+              this.state.totalEvents,
+              this.explorerState.page,
+              this.explorerState.pageSize,
+              this.explorerState.formatFilter,
+              this.explorerState.sortOrder,
+              this.explorerState.searchVal
+            );
+            break;
+          case 'onboarding':
+            root.innerHTML = renderSourceOnboardingPage(this.state.sources, this.lastBatchResult);
+            break;
+          case 'mappings':
+            root.innerHTML = renderMappingReviewPage(this.state.mappings);
+            break;
+          default:
+            root.innerHTML = renderConverterPage();
+        }
+      }
+
+      downloadJSON(obj, filename = 'normalized_result.json') {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      }
+
+      exportExplorerJSON() {
+        const params = new URLSearchParams();
+        if (this.explorerState.formatFilter && this.explorerState.formatFilter !== 'all') {
+          params.set('format', this.explorerState.formatFilter);
+        }
+        if (this.explorerState.searchVal) {
+          params.set('search', this.explorerState.searchVal);
+        }
+        params.set('order_by', this.explorerState.sortOrder || 'created_at');
+        params.set('direction', 'desc');
+        window.location.href = `/export/json?${params.toString()}`;
+      }
+
+      exportExplorerParquet() {
+        window.location.href = `/export/parquet`;
+      }
+
+      downloadLastBatchJSON() {
+        if (!this.lastBatchResult || !this.lastBatchResult.processed_events) {
+          alert('No recent batch found to download.');
+          return;
+        }
+        const events = this.lastBatchResult.processed_events.map(item => item.normalized_event);
+        const rawName = (this.lastBatchResult.file_name || 'batch_events').replace(/\.[^/.]+$/, "");
+        const fileName = `${rawName}_normalized.json`;
+        this.downloadJSON(events, fileName);
+      }
+
+      async handleSingleFileConvert() {
+        const fileInput = document.getElementById('converter-file-input');
+        const textInput = document.getElementById('converter-text-input');
+        const statusBox = document.getElementById('converter-status');
+        const previewBox = document.getElementById('converter-preview');
+        const copyBtn = document.getElementById('copy-json-btn');
+        const btn = document.getElementById('converter-btn');
+
+        const formData = new FormData();
+        let label = 'direct_snippet.json';
+        if (fileInput?.files?.length > 0) {
+          formData.append('file', fileInput.files[0]);
+          label = fileInput.files[0].name.replace(/\.[^/.]+$/, "") + "_normalized.json";
+        } else if (textInput?.value?.trim()) {
+          formData.append('raw_text', textInput.value.trim());
+          label = 'single_snippet_normalized.json';
+        } else {
+          alert('Please enter or select a log file/snippet first.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = '⏳ Converting...';
+        statusBox.className = 'upload-status loading';
+        statusBox.innerText = 'Converting single file to normalized JSON...';
+
+        try {
+          const res = await fetch('/convert', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(await res.text());
+          const jsonText = await res.text();
+          const parsedData = JSON.parse(jsonText);
+          this.lastConvertedJSON = parsedData;
+
+          previewBox.innerText = JSON.stringify(parsedData, null, 2);
+          if (copyBtn) copyBtn.style.display = 'inline-flex';
+
+          statusBox.className = 'upload-status success';
+          statusBox.innerHTML = `
+            <div style="font-weight:600; margin-bottom:4px;">✅ Converted ${parsedData.length} event(s) successfully!</div>
+            <div style="font-size:11px; margin-bottom:8px;">Only your single file/snippet was processed.</div>
+            <button class="btn btn-sm btn-success" onclick="app.downloadJSON(app.lastConvertedJSON, '${label}')">📥 Download ${label}</button>
+          `;
+
+          // Automatically trigger download
+          this.downloadJSON(parsedData, label);
+        } catch (err) {
+          statusBox.className = 'upload-status error';
+          statusBox.innerText = '❌ Error converting: ' + err.message;
+        } finally {
+          btn.disabled = false;
+          btn.innerText = '⚡ Convert & Download JSON';
+        }
+      }
+
+      copyConverterJSON() {
+        if (this.lastConvertedJSON) {
+          navigator.clipboard.writeText(JSON.stringify(this.lastConvertedJSON, null, 2));
+          alert('Copied normalized JSON to clipboard!');
+        }
+      }
+
+      downloadCurrentModalEvent() {
+        if (this.currentModalEvent) {
+          this.downloadJSON(this.currentModalEvent, `event_${this.currentModalEvent.event_id || 'normalized'}.json`);
+        }
+      }
+
+      async inspectEvent(eventId) {
+        try {
+          const res = await fetch('/events/' + eventId);
+          if (!res.ok) throw new Error('Event not found');
+          const data = await res.json();
+          this.currentModalEvent = Object.assign({}, data);
+          const rawText = data.raw_text || data.raw_event || 'No raw text attached';
+          delete data.raw_text;
+          delete data.raw_received_at;
+          delete data.source_file;
+
+          document.getElementById('modal-normalized-json').innerText = JSON.stringify(data, null, 2);
+          document.getElementById('modal-raw-text').innerText = rawText;
+          document.getElementById('trace-modal').classList.add('active');
+        } catch (err) {
+          alert('Traceability error: ' + err.message);
+        }
+      }
+
+      closeModal() {
+        document.getElementById('trace-modal').classList.remove('active');
+      }
+
+      async handleUpload() {
+        const fileInput = document.getElementById('log-file-input');
+        const textInput = document.getElementById('raw-log-input');
+        const statusBox = document.getElementById('upload-status');
+        const btn = document.getElementById('ingest-btn');
+
+        const formData = new FormData();
+        let label = '';
+        if (fileInput?.files?.length > 0) {
+          formData.append('file', fileInput.files[0]);
+          label = fileInput.files[0].name;
+        } else if (textInput?.value?.trim()) {
+          formData.append('raw_text', textInput.value.trim());
+          label = 'Direct Text';
+        } else {
+          alert('Please choose a file or enter log text.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = '⏳ Ingesting...';
+        statusBox.className = 'upload-status loading';
+        statusBox.innerText = `Ingesting ${label}...`;
+
+        try {
+          const res = await fetch('/upload', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+
+          this.lastBatchResult = data;
+          this.renderView();
+
+          // Also refresh general stats in background
+          const statsRes = await fetch('/stats');
+          if (statsRes.ok) this.state.stats = await statsRes.json();
+        } catch (err) {
+          statusBox.className = 'upload-status error';
+          statusBox.innerText = '❌ Error: ' + err.message;
+        } finally {
+          const curBtn = document.getElementById('ingest-btn');
+          if (curBtn) {
+            curBtn.disabled = false;
+            curBtn.innerText = '🚀 Ingest into Database';
+          }
+        }
+      }
+
+      async registerSource() {
+        const name = document.getElementById('new-src-name').value;
+        const fmt = document.getElementById('new-src-format').value;
+        const vendor = document.getElementById('new-src-vendor').value;
+        const prod = document.getElementById('new-src-product').value;
+
+        try {
+          const res = await fetch('/sources', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_name: name, format: fmt, vendor, product: prod }),
+          });
+          if (!res.ok) throw new Error(await res.text());
+          alert('Source registered successfully!');
+          await this.refreshCurrentPage();
+        } catch (err) {
+          alert('Failed to register: ' + err.message);
+        }
+      }
+
+      async suggestMapping() {
+        const input = document.getElementById('ai-sample-keys').value;
+        if (!input.trim()) return;
+        const keys = input.split(',').map(s => s.trim()).filter(Boolean);
+        const resBox = document.getElementById('ai-mapping-result');
+        resBox.innerHTML = '<span style="color:#7dd3fc;">Running AI confidence matching...</span>';
+
+        try {
+          const res = await fetch('/mappings/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sample_keys: keys, sample_values: {} }),
+          });
+          const data = await res.json();
+          const rows = data.mappings.map(m => `
+            <tr>
+              <td style="font-family:monospace; color:#38bdf8;">${m.source_field}</td>
+              <td style="font-family:monospace; color:#4ade80;">${m.suggested_ocsf_field}</td>
+              <td><span class="sev-badge ${m.confidence >= 0.8 ? 'sev-low' : 'sev-medium'}">${(m.confidence*100).toFixed(0)}%</span></td>
+            </tr>
+          `).join('');
+
+          resBox.innerHTML = `
+            <div style="font-size:12px; margin-bottom:6px;">Overall Alignment Confidence: <strong>${(data.overall_confidence*100).toFixed(0)}%</strong></div>
+            <table>
+              <thead><tr><th>Source Key</th><th>Suggested OCSF Attribute</th><th>Confidence</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          `;
+        } catch (err) {
+          resBox.innerHTML = `<span style="color:#f87171;">Error: ${err.message}</span>`;
+        }
+      }
+    }
+
+    const app = new ULPFApp();
+    window.app = app;
+    window.addEventListener('DOMContentLoaded', () => app.init());
+  </script>
+</body>
+</html>

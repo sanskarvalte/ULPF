@@ -1,0 +1,20 @@
+# OSSEM (Open Source Security Events Metadata) Field Dictionary Reference
+name: "OSSEM Security Event Mapping"
+version: "1.0"
+entities:
+  - name: "process"
+    fields:
+      - process_name: "The name of the process."
+      - process_path: "The full path of the process executable."
+      - process_command_line: "Command-line arguments passed to the process."
+  - name: "network"
+    fields:
+      - src_ip: "Source IP address."
+      - dst_ip: "Destination IP address."
+      - src_port: "Source TCP/UDP port."
+      - dst_port: "Destination TCP/UDP port."
+      - protocol: "Transport protocol."
+  - name: "user"
+    fields:
+      - user_name: "Name of the user account."
+      - user_domain: "Domain name for user account."

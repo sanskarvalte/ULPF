@@ -1,0 +1,4 @@
+event_id,timestamp,category,action,status,severity,source_ip,destination_ip,source_port,destination_port,username,vendor,product
+evt-01001,2026-08-26T10:22:18Z,authentication,login,failure,high,198.51.100.77,10.0.3.10,52340,443,jdoe,Apache,WebServer
+evt-01002,2026-08-26T10:23:05Z,authentication,login,failure,high,198.51.100.77,10.0.3.10,52341,443,jdoe,Apache,WebServer
+evt-01003,2026-08-26T10:24:59Z,authentication,login,success,low,192.168.5.20,10.0.3.10,49870,443,admin,Apache,WebServer

@@ -1,0 +1,46 @@
+{
+  "HDFS": {
+    "log_format": "<Date> <Time> <Pid> <Level> <Component>: <Content>",
+    "regex": ["blk_-?[0-9]+", "(/|)([0-9]+\\.){3}[0-9]+(:[0-9]+|)(:|)"]
+  },
+  "Hadoop": {
+    "log_format": "<Date> <Time> <Level> \\[\\[<Process>\\]\\] <Component>: <Content>",
+    "regex": ["(/|)([0-9]+\\.){3}[0-9]+(:[0-9]+|)(:|)"]
+  },
+  "Spark": {
+    "log_format": "<Date> <Time> <Level> <Component>: <Content>",
+    "regex": ["(\\d+\\.){3}\\d+", "\\b[0-9a-fA-F]{8}\\b"]
+  },
+  "Zookeeper": {
+    "log_format": "<Date> <Time> - <Level>  \\[<Node>:<Component>@<Id>\\] - <Content>",
+    "regex": ["(/|)([0-9]+\\.){3}[0-9]+(:[0-9]+|)(:|)"]
+  },
+  "BGL": {
+    "log_format": "<Alert> <Timestamp> <Node> <Date> <NodeRepeat> <Type> <Component> <Level> <Content>",
+    "regex": ["core\\.\\d+"]
+  },
+  "Linux": {
+    "log_format": "<Month> <Date> <Time> <Level> <Component>(\\[<PID>\\])?: <Content>",
+    "regex": ["(\\d+\\.){3}\\d+", "\\d{2}:\\d{2}:\\d{2}"]
+  },
+  "Windows": {
+    "log_format": "<Date> <Time>, <Level>                  <Component> <Content>",
+    "regex": ["0x[0-9a-fA-F]+"]
+  },
+  "Android": {
+    "log_format": "<Date> <Time>  <Pid>  <Tid> <Level> <Component>: <Content>",
+    "regex": ["(/|)([0-9]+\\.){3}[0-9]+(:[0-9]+|)(:|)"]
+  },
+  "Apache": {
+    "log_format": "\\[<Time>\\] \\[\\[<Level>\\]\\] <Content>",
+    "regex": ["(\\d+\\.){3}\\d+"]
+  },
+  "OpenSSH": {
+    "log_format": "<Date> <Time> <Level> <Component>(\\[<PID>\\])?: <Content>",
+    "regex": ["(\\d+\\.){3}\\d+", "[a-zA-Z0-9_.-]+@"]
+  },
+  "OpenStack": {
+    "log_format": "<Logrecord> <Date> <Time> <Pid> <Level> <Component> \\[<ReqId> <UserId> <TenantId>\\] <Content>",
+    "regex": ["(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"]
+  }
+}

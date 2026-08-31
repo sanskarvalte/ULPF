@@ -1,0 +1,13 @@
+# Sysmon Event Mapping to OCSF
+vendor: "Microsoft"
+product: "Sysmon"
+format: "xml"
+field_mapping:
+  Image: "message"
+  CommandLine: "message"
+  User: "user"
+  SourceIp: "src_ip"
+  SourcePort: "src_port"
+  DestinationIp: "dst_ip"
+  DestinationPort: "dst_port"
+  Protocol: "protocol"
