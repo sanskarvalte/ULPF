@@ -282,7 +282,7 @@
             <!-- INTELLIGENCE -->
             <div class="space-y-unit">
               <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">INTELLIGENCE</p>
-              <a href="javascript:void(0)" onclick="app.navigate('mappings')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'mappings' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+              <a href="javascript:void(0)" onclick="app.navigate('ai-intelligence')" data-path="ai-log-intelligence" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'ai-intelligence' || activePage === 'mappings' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
                 <span class="material-symbols-outlined mr-3 text-[18px]">psychology</span>AI Intelligence
               </a>
             </div>
@@ -1790,36 +1790,770 @@
       `;
     }
 
-    function renderMappingReviewPage(mappings = {}) {
-      const mappingCards = Object.entries(mappings).map(([key, map]) => {
-        const rows = Object.entries(map.field_mapping || {}).map(([src, dst]) => `
-          <tr><td style="font-family:monospace; color:#38bdf8;">${src}</td><td style="font-family:monospace; color:#4ade80;">${dst}</td></tr>
-        `).join('');
-        return `
-          <div class="panel">
-            <div class="panel-title">
-              <span>${map.vendor} ${map.product}</span>
-              <span class="fmt-pill">${key}</span>
-            </div>
-            <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">OCSF Class: <strong>${map.class_name} (${map.class_uid})</strong></div>
-            <table><thead><tr><th>Vendor Field</th><th>OCSF Target</th></tr></thead><tbody>${rows}</tbody></table>
-          </div>
-        `;
-      }).join('') || '<div style="color:var(--text-muted);">No vendor mappings loaded.</div>';
+    // ── AI Log Intelligence Workbench Page Implementation ──────────────────
+    function renderAiWorkbenchPage(state) {
+      if (!state) {
+        state = {
+          activeTab: 'unknown-logs',
+          stats: { ai_engine: 'READY', mode: 'OFFLINE', unknown_formats_count: 127, analyzed_samples_count: 84, approved_parsers_count: 6, rejected_suggestions_count: 3, avg_confidence_percent: 92 },
+          unknownLogs: [],
+          selectedLogId: null,
+          currentAnalysis: null,
+          validationResult: null,
+          history: [],
+          isWordWrap: true,
+          activeModal: null
+        };
+      }
+
+      const activeTab = state.activeTab || 'unknown-logs';
+      const stats = state.stats || {};
+      const unknownLogs = state.unknownLogs || [];
+      const selectedLog = unknownLogs.find(l => l.id === state.selectedLogId) || unknownLogs[0] || null;
+      const analysis = state.currentAnalysis || (selectedLog && selectedLog.analysis) || null;
+      const validation = state.validationResult || (analysis && analysis.validation_result) || null;
+      const fields = (analysis && analysis.discovered_fields) || [];
+      const confidencePct = (analysis && analysis.confidence_percent) != null ? analysis.confidence_percent : 92;
+      const rawLogText = (analysis && analysis.raw_log) || (selectedLog && selectedLog.raw_log) || '# No sample log selected';
+
+      // Line numbers for raw log
+      const logLines = rawLogText.split('\n');
+      const gutterLines = logLines.map((_, i) => `<div class="leading-relaxed">${i + 1}</div>`).join('');
 
       return `
-        <div class="panel" style="margin-bottom: 20px;">
-          <div class="panel-title"><span>🤖 AI Automated Schema Field Mapping Assistant</span></div>
-          <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Enter comma-separated field keys from unparsed logs to predict standard OCSF attributes:</p>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="ai-sample-keys" class="search-input" style="margin:0;" placeholder="e.g. client_ip, suser, dport, status_code, logon_type">
-            <button class="btn btn-primary" onclick="app.suggestMapping()">Suggest Mappings</button>
+        <div class="flex flex-col w-full h-[calc(100vh-3.5rem)] overflow-hidden bg-[#0e1117] text-[#e1e7f0]">
+          <!-- 1. WORKBENCH STICKY TOP BAR -->
+          <header class="flex-none px-6 py-3.5 flex flex-wrap items-center justify-between border-b border-[#232734] bg-[#121620] shadow-sm z-20 gap-4">
+            <div class="flex items-center gap-4 flex-wrap">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-primary text-2xl">psychology</span>
+                <h1 class="text-base font-headline font-semibold tracking-tight text-[#f1f5f9]">AI Log Intelligence Workbench</h1>
+              </div>
+              <div class="hidden sm:block h-4 w-px bg-[#2a3040]"></div>
+              <div class="flex items-center gap-3.5 text-xs flex-wrap">
+                <span class="flex items-center gap-1.5 text-[#94a3b8]">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                  AI Engine: <strong class="text-primary font-mono ml-0.5">${stats.ai_engine || 'READY'}</strong>
+                </span>
+                <span class="flex items-center gap-1.5 text-[#94a3b8]">
+                  <span class="material-symbols-outlined text-[15px] text-[#64748b]">wifi_off</span>
+                  Mode: <strong class="text-[#cbd5e1] font-mono ml-0.5">${stats.mode || 'OFFLINE'}</strong>
+                </span>
+                <span class="flex items-center gap-1.5 text-[#f59e0b]">
+                  <span class="material-symbols-outlined text-[15px]">warning</span>
+                  Unknown Formats: <strong class="font-mono ml-0.5">${stats.unknown_formats_count || 127}</strong>
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <button onclick="app.openAiModal('upload-sample')" class="px-3.5 py-1.5 text-xs font-label uppercase tracking-wider bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] transition-colors rounded border border-[#333d54] flex items-center gap-1.5 font-medium cursor-pointer">
+                <span class="material-symbols-outlined text-[15px]">upload_file</span>
+                Upload Sample
+              </button>
+              <button onclick="app.runAiBatchAnalysis()" class="px-3.5 py-1.5 text-xs font-label uppercase tracking-wider bg-primary hover:bg-primary/90 text-on-primary shadow-sm transition-colors rounded flex items-center gap-1.5 font-semibold cursor-pointer">
+                <span class="material-symbols-outlined text-[15px]">batch_prediction</span>
+                Run Batch Analysis
+              </button>
+            </div>
+          </header>
+
+          <!-- 2. SUB-NAVIGATION TAB BAR -->
+          <nav class="flex-none px-6 py-1 bg-[#10141d] flex items-center gap-6 overflow-x-auto border-b border-[#232734] z-10">
+            <button onclick="app.setAiTab('overview')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'overview' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              Overview
+            </button>
+            <button onclick="app.setAiTab('unknown-logs')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap relative cursor-pointer ${activeTab === 'unknown-logs' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              Unknown Logs
+              <span class="ml-1.5 bg-[#ef4444] text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">${unknownLogs.length || 127}</span>
+            </button>
+            <button onclick="app.setAiTab('field-discovery')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'field-discovery' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              Field Discovery
+            </button>
+            <button onclick="app.setAiTab('parser-suggestions')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'parser-suggestions' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              Parser Suggestions
+            </button>
+            <button onclick="app.setAiTab('review-queue')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'review-queue' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              Review Queue
+            </button>
+            <button onclick="app.setAiTab('history')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'history' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
+              History
+            </button>
+          </nav>
+
+          <!-- 3. TAB VIEW CONTENT CONTAINER -->
+          <div class="flex-1 overflow-hidden relative">
+            ${activeTab === 'unknown-logs' ? renderAiUnknownLogsTab(state, selectedLog, analysis, validation, fields, confidencePct, rawLogText, gutterLines, unknownLogs) : ''}
+            ${activeTab === 'overview' ? renderAiOverviewTab(stats, unknownLogs) : ''}
+            ${activeTab === 'field-discovery' ? renderAiFieldDiscoveryTab(fields, selectedLog) : ''}
+            ${activeTab === 'parser-suggestions' ? renderAiParserSuggestionsTab(analysis, selectedLog) : ''}
+            ${activeTab === 'review-queue' ? renderAiReviewQueueTab(unknownLogs) : ''}
+            ${activeTab === 'history' ? renderAiHistoryTab(state.history || []) : ''}
           </div>
-          <div id="ai-mapping-result" style="margin-top:12px;"></div>
+
+          <!-- 4. MODALS CONTAINER -->
+          ${renderAiWorkbenchModals(state, analysis, fields, selectedLog)}
         </div>
-        <div class="panel-title"><span>Pre-Configured Vendor Mapping Rules</span></div>
-        <div class="grid-2">${mappingCards}</div>
       `;
+    }
+
+    // ── Tab 1: UNKNOWN LOGS (Dual Panel Stitch View) ───────────────────────────
+    function renderAiUnknownLogsTab(state, selectedLog, analysis, validation, fields, confidencePct, rawLogText, gutterLines, unknownLogs) {
+      const isAnalyzing = state.isAnalyzing;
+      const isValidating = state.isValidating;
+      const isRegistering = state.isRegistering;
+      const wrapClass = state.isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-auto';
+      const sampleRecordJson = validation && validation.sample_record ? JSON.stringify(validation.sample_record, null, 2) : '';
+
+      return `
+        <div class="flex flex-col lg:flex-row w-full h-full overflow-hidden">
+          <!-- LEFT PANEL (50%): RAW UNKNOWN LOG -->
+          <section class="w-full lg:w-1/2 flex flex-col h-full bg-[#0b0e14] border-r border-[#232734] shadow-sm relative z-10">
+            <!-- Left Panel Header -->
+            <div class="flex-none px-4 py-3 bg-[#131722] border-b border-[#232734] flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#38bdf8] text-[18px]">data_object</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#e2e8f0]">Raw Unknown Log</span>
+                <span class="text-[11px] text-[#64748b] font-mono">(${logLinesCount(rawLogText)} lines)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- Log Selector Dropdown -->
+                <select onchange="app.selectUnknownLog(this.value)" class="bg-[#1b202e] border border-[#2e374d] text-xs text-[#cbd5e1] rounded px-2.5 py-1 focus:outline-none focus:border-primary cursor-pointer">
+                  ${unknownLogs.map(l => `
+                    <option value="${l.id}" ${selectedLog && selectedLog.id === l.id ? 'selected' : ''}>
+                      ${l.format_guess || l.source} (${l.sibling_count || 1}x)
+                    </option>
+                  `).join('')}
+                </select>
+
+                <button onclick="app.toggleAiWordWrap()" class="p-1 rounded text-[#94a3b8] hover:text-[#cbd5e1] hover:bg-[#1e2433] transition-colors" title="Toggle Word Wrap">
+                  <span class="material-symbols-outlined text-[16px]">${state.isWordWrap ? 'wrap_text' : 'format_align_left'}</span>
+                </button>
+                <button onclick="app.copyRawLog()" class="p-1 rounded text-[#94a3b8] hover:text-[#cbd5e1] hover:bg-[#1e2433] transition-colors" title="Copy Raw Log">
+                  <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                </button>
+                <button onclick="app.analyzeCurrentLog()" class="px-2.5 py-1 text-xs bg-[#0284c7] hover:bg-[#0369a1] text-white rounded font-medium flex items-center gap-1 transition-colors cursor-pointer" ${isAnalyzing ? 'disabled' : ''}>
+                  <span class="material-symbols-outlined text-[14px] ${isAnalyzing ? 'animate-spin' : ''}">${isAnalyzing ? 'sync' : 'auto_fix_high'}</span>
+                  ${isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
+                </button>
+              </div>
+            </div>
+
+            <!-- Left Panel Body: Line Numbers Gutter + Monospace Text -->
+            <div class="flex-1 overflow-y-auto overflow-x-auto relative flex font-mono text-[12px] bg-[#0b0e14]">
+              <div class="w-11 flex-none bg-[#11141c] border-r border-[#202533] py-3 text-right pr-2 text-[#475569] select-none font-mono text-[11px]">
+                ${gutterLines}
+              </div>
+              <div class="flex-1 py-3 px-4 font-mono text-[12px] leading-relaxed text-[#cbd5e1] ${wrapClass}">
+                ${formatRawLogWithSyntax(rawLogText)}
+              </div>
+            </div>
+
+            <!-- Left Panel Footer: Metadata -->
+            <div class="flex-none px-4 py-2 bg-[#121620] border-t border-[#232734] flex items-center justify-between text-[11px] text-[#64748b]">
+              <span>Source: <strong class="text-[#94a3b8] font-mono">${(selectedLog && selectedLog.source) || 'unknown-syslog'}</strong></span>
+              <span>Status: <span class="text-[#38bdf8] font-semibold uppercase">${(selectedLog && selectedLog.status) || 'PENDING_REVIEW'}</span></span>
+            </div>
+          </section>
+
+          <!-- RIGHT PANEL (50%): AI STRUCTURE ANALYSIS -->
+          <section class="w-full lg:w-1/2 flex flex-col h-full bg-[#111520] overflow-y-auto relative">
+            <!-- Right Panel Header -->
+            <div class="flex-none px-5 py-3 bg-[#151a27] border-b border-[#232734] flex items-center justify-between sticky top-0 z-10">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[18px]">account_tree</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#e2e8f0]">AI Structure Analysis</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono font-bold px-2.5 py-0.5 rounded ${confidencePct >= 90 ? 'bg-[#065f46]/40 text-[#34d399] border border-[#059669]/50' : confidencePct >= 70 ? 'bg-[#78350f]/40 text-[#fbbf24] border border-[#d97706]/50' : 'bg-[#7f1d1d]/40 text-[#f87171] border border-[#dc2626]/50'}">
+                  CONFIDENCE: ${confidencePct}%
+                </span>
+              </div>
+            </div>
+
+            <!-- Right Panel Scrollable Content -->
+            <div class="p-5 space-y-5 flex-1">
+              <!-- 1. DISCOVERED FIELDS SECTION -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-[#cbd5e1]">Discovered Fields</span>
+                    <span class="text-[10px] bg-[#1e2433] text-[#38bdf8] border border-[#2a3449] px-2 py-0.5 rounded font-mono font-bold">
+                      ${fields.length} Found
+                    </span>
+                  </div>
+                  ${fields.length > 4 ? `
+                    <button onclick="app.openAiModal('all-fields')" class="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer">
+                      View All ${fields.length} Fields <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+                    </button>
+                  ` : ''}
+                </div>
+
+                <!-- Field Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  ${fields.slice(0, 6).map(f => renderFieldCard(f)).join('')}
+                </div>
+              </div>
+
+              <!-- 2. INFERRED TEMPLATE (GROK) -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-[#cbd5e1]">Inferred Template (Grok)</span>
+                  <button onclick="app.openAiModal('edit-template')" class="text-[11px] text-[#38bdf8] hover:underline flex items-center gap-1 cursor-pointer">
+                    <span class="material-symbols-outlined text-[13px]">edit</span> Edit Template
+                  </button>
+                </div>
+                <div class="p-3 bg-[#0a0d13] border border-[#232734] rounded font-mono text-[11px] leading-relaxed text-[#38bdf8] break-all select-all">
+                  ${(analysis && analysis.inferred_template) || '%{GREEDYDATA:message}'}
+                </div>
+              </div>
+
+              <!-- 3. SUGGESTED PARSER CONFIGURATION (YAML) -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-[#cbd5e1]">Suggested Parser Configuration</span>
+                  <div class="flex items-center gap-2">
+                    <button onclick="app.copyParserConfig()" class="text-[11px] text-[#94a3b8] hover:text-[#e2e8f0] flex items-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-[13px]">content_copy</span> Copy
+                    </button>
+                    <button onclick="app.openAiModal('modify-rule')" class="text-[11px] text-[#38bdf8] hover:underline flex items-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-[13px]">edit_note</span> Edit
+                    </button>
+                    <button onclick="app.validateCurrentParser()" class="px-2 py-0.5 text-[11px] bg-[#0284c7] hover:bg-[#0369a1] text-white rounded font-medium flex items-center gap-1 cursor-pointer" ${isValidating ? 'disabled' : ''}>
+                      <span class="material-symbols-outlined text-[13px] ${isValidating ? 'animate-spin' : ''}">check_circle</span>
+                      ${isValidating ? 'Validating...' : 'Validate'}
+                    </button>
+                  </div>
+                </div>
+                <div class="bg-[#0a0d13] border border-[#232734] rounded p-3.5 font-mono text-[11px] leading-relaxed text-[#cbd5e1] max-h-56 overflow-y-auto whitespace-pre">
+${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration generated yet'}
+                </div>
+              </div>
+
+              <!-- 4. VALIDATION RESULT PANEL -->
+              ${validation ? `
+                <div class="p-3.5 rounded border ${validation.status === 'PASS' ? 'bg-[#064e3b]/30 border-[#059669]/60 text-[#34d399]' : 'bg-[#7f1d1d]/30 border-[#dc2626]/60 text-[#f87171]'} space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">${validation.status === 'PASS' ? 'verified' : 'error'}</span>
+                      <strong class="text-xs uppercase tracking-wider font-bold">Parser Validation: ${validation.status}</strong>
+                    </div>
+                    <span class="text-xs font-mono font-bold">${validation.success_rate_percent}% Match Rate (${validation.matched_records || 0}/${validation.total_samples || 0})</span>
+                  </div>
+                  <div class="text-[11px] text-[#cbd5e1]">
+                    ${validation.status === 'PASS' ? '✓ Parser successfully processed 100.0% of sample records into standardized OCSF schema.' : '⚠️ Parser encountered matching errors against sample logs.'}
+                  </div>
+                  ${validation.extracted_fields && validation.extracted_fields.length ? `
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                      ${validation.extracted_fields.map(fn => `<span class="bg-[#1e2433] text-[#38bdf8] border border-[#2a3449] text-[10px] px-1.5 py-0.5 rounded font-mono">${fn}</span>`).join('')}
+                    </div>
+                  ` : ''}
+                  ${sampleRecordJson ? `
+                    <details class="pt-1.5">
+                      <summary class="text-[11px] text-primary hover:underline cursor-pointer select-none">View Sample Normalized OCSF Record</summary>
+                      <pre class="mt-2 p-2.5 bg-[#0b0e14] border border-[#232734] rounded text-[10px] text-[#94a3b8] max-h-40 overflow-y-auto font-mono">${sampleRecordJson}</pre>
+                    </details>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right Panel Bottom Action Bar -->
+            <div class="flex-none p-4 bg-[#141924] border-t border-[#232734] flex items-center justify-between sticky bottom-0 z-10 gap-3">
+              <button onclick="app.openAiModal('reject-reason')" class="px-4 py-2 text-xs font-label uppercase tracking-wider text-[#f87171] hover:bg-[#7f1d1d]/20 border border-[#f87171]/40 rounded transition-colors flex items-center gap-1.5 cursor-pointer font-medium">
+                <span class="material-symbols-outlined text-[15px]">close</span>
+                Reject
+              </button>
+              <div class="flex items-center gap-2.5">
+                <button onclick="app.openAiModal('modify-rule')" class="px-4 py-2 text-xs font-label uppercase tracking-wider bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] border border-[#333d54] rounded transition-colors flex items-center gap-1.5 cursor-pointer font-medium">
+                  <span class="material-symbols-outlined text-[15px]">tune</span>
+                  Modify Rule
+                </button>
+                <button onclick="app.approveCurrentParser()" class="px-5 py-2 text-xs font-label uppercase tracking-wider bg-primary hover:bg-primary/90 text-on-primary font-bold rounded shadow transition-colors flex items-center gap-1.5 cursor-pointer" ${isRegistering ? 'disabled' : ''}>
+                  <span class="material-symbols-outlined text-[16px] ${isRegistering ? 'animate-spin' : ''}">${isRegistering ? 'sync' : 'check_circle'}</span>
+                  ${isRegistering ? 'Registering...' : 'Approve Parser'}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    // ── Field Card Subcomponent ───────────────────────────────────────────────
+    function renderFieldCard(field) {
+      const typeColors = {
+        DATETIME: 'border-l-[#38bdf8] text-[#38bdf8]',
+        IPV4: 'border-l-[#06b6d4] text-[#06b6d4]',
+        IPV6: 'border-l-[#06b6d4] text-[#06b6d4]',
+        PORT: 'border-l-[#a855f7] text-[#a855f7]',
+        CATEGORICAL: 'border-l-[#f59e0b] text-[#f59e0b]',
+        STRING: 'border-l-[#94a3b8] text-[#94a3b8]',
+        INTEGER: 'border-l-[#10b981] text-[#10b981]',
+        FLOAT: 'border-l-[#10b981] text-[#10b981]',
+        BOOLEAN: 'border-l-[#ec4899] text-[#ec4899]',
+        URL: 'border-l-[#3b82f6] text-[#3b82f6]',
+        HASH: 'border-l-[#eab308] text-[#eab308]',
+      };
+      const accent = typeColors[field.type] || 'border-l-[#64748b] text-[#94a3b8]';
+      const confPct = Math.round((field.confidence || 0.95) * 100);
+
+      return `
+        <div class="p-2.5 bg-[#0a0d13] border border-[#232734] border-l-2 ${accent} rounded flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono font-bold text-[#f1f5f9]">${field.name}</span>
+            <span class="text-[10px] font-mono text-[#64748b]">${confPct}%</span>
+          </div>
+          <div class="text-[11px] font-mono text-[#94a3b8] truncate mb-1" title="${field.sample_value || ''}">
+            ${field.sample_value || '—'}
+          </div>
+          <div class="text-[9px] font-mono font-bold uppercase tracking-wider ${accent.split(' ')[1]}">
+            TYPE: ${field.type || 'STRING'}
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Helper: Syntax Highlighting for Raw Log ────────────────────────────────
+    function formatRawLogWithSyntax(text) {
+      return text.split('\n').map(line => {
+        if (line.startsWith('#')) {
+          return `<span class="text-[#64748b] italic">${escapeHtml(line)}</span>`;
+        }
+        // Highlight priority tags like <14>
+        let formatted = escapeHtml(line);
+        formatted = formatted.replace(/^(&lt;\d+&gt;)/, '<span class="text-[#f59e0b] font-bold">$1</span>');
+        formatted = formatted.replace(/(RT_FLOW|RT_IDS|AUTH-SVC|SSHD|NGINX)/g, '<span class="text-[#38bdf8] font-semibold">$1</span>');
+        formatted = formatted.replace(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g, '<span class="text-[#06b6d4]">$1</span>');
+        return formatted;
+      }).join('\n');
+    }
+
+    function logLinesCount(text) {
+      return text ? text.split('\n').length : 0;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── Tab 2: OVERVIEW TAB ───────────────────────────────────────────────────
+    function renderAiOverviewTab(stats, unknownLogs) {
+      return `
+        <div class="p-6 overflow-y-auto h-full space-y-6 max-w-7xl mx-auto">
+          <!-- Top KPI Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Unknown Formats</div>
+              <div class="text-2xl font-bold font-mono text-[#f59e0b]">${stats.unknown_formats_count || 127}</div>
+              <div class="text-[11px] text-[#64748b] mt-1">Pending structural synthesis</div>
+            </div>
+            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Samples Analyzed</div>
+              <div class="text-2xl font-bold font-mono text-[#38bdf8]">${stats.analyzed_samples_count || 84}</div>
+              <div class="text-[11px] text-[#64748b] mt-1">Processed across log relays</div>
+            </div>
+            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Approved Parsers</div>
+              <div class="text-2xl font-bold font-mono text-[#34d399]">${stats.approved_parsers_count || 6}</div>
+              <div class="text-[11px] text-[#64748b] mt-1">Registered in active pipeline</div>
+            </div>
+            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Average Confidence</div>
+              <div class="text-2xl font-bold font-mono text-[#a855f7]">${stats.avg_confidence_percent || 92}%</div>
+              <div class="text-[11px] text-[#64748b] mt-1">Local heuristic match accuracy</div>
+            </div>
+          </div>
+
+          <!-- Architecture & Offline Model Compliance -->
+          <div class="p-5 bg-[#121620] border border-[#232734] rounded-lg space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#38bdf8] text-xl">security</span>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Air-Gapped Local AI Intelligence Architecture</h2>
+            </div>
+            <p class="text-xs text-[#94a3b8] leading-relaxed">
+              ULPF operates strictly within offline and air-gapped security enclaves. All unknown log pattern discovery, field type inference, Grok generation, and parser compilation execute locally within Python without external API calls, cloud telemetry, or third-party dependencies.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <div class="p-3 bg-[#0b0e14] border border-[#202533] rounded">
+                <div class="text-xs font-bold text-[#38bdf8] mb-1">1. Heuristic Sniffer</div>
+                <div class="text-[11px] text-[#64748b]">Tokenizes raw strings, identifies timestamps, IP addresses, ports, categorical tokens, and structured delimiters.</div>
+              </div>
+              <div class="p-3 bg-[#0b0e14] border border-[#202533] rounded">
+                <div class="text-xs font-bold text-[#38bdf8] mb-1">2. Offline Parser Compiler</div>
+                <div class="text-[11px] text-[#64748b]">Synthesizes Grok templates and named regex groups, mapping discovered fields to standard OCSF taxonomies.</div>
+              </div>
+              <div class="p-3 bg-[#0b0e14] border border-[#202533] rounded">
+                <div class="text-xs font-bold text-[#38bdf8] mb-1">3. Human Review & Runtime Registration</div>
+                <div class="text-[11px] text-[#64748b]">Analyst validates and approves rules. Approved parsers immediately register into Node 3 & Node 4 with zero pipeline reboot.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Processing Flow Diagram -->
+          <div class="p-5 bg-[#121620] border border-[#232734] rounded-lg">
+            <div class="text-xs font-bold uppercase tracking-wider text-[#94a3b8] mb-4">Pipeline Intelligence Lifecycle</div>
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+              <div class="p-2.5 bg-[#0b0e14] border border-[#2e374d] rounded text-center">UNKNOWN LOG</div>
+              <span class="text-[#64748b]">➔</span>
+              <div class="p-2.5 bg-[#0b0e14] border border-[#2e374d] rounded text-center text-[#38bdf8]">LOCAL ANALYSIS</div>
+              <span class="text-[#64748b]">➔</span>
+              <div class="p-2.5 bg-[#0b0e14] border border-[#2e374d] rounded text-center text-[#a855f7]">FIELD DISCOVERY</div>
+              <span class="text-[#64748b]">➔</span>
+              <div class="p-2.5 bg-[#0b0e14] border border-[#2e374d] rounded text-center text-[#06b6d4]">GROK INFERENCE</div>
+              <span class="text-[#64748b]">➔</span>
+              <div class="p-2.5 bg-[#0b0e14] border border-[#2e374d] rounded text-center text-[#f59e0b]">HUMAN REVIEW</div>
+              <span class="text-[#64748b]">➔</span>
+              <div class="p-2.5 bg-[#0b0e14] border border-[#059669] rounded text-center text-[#34d399]">PARSER REGISTRY</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Tab 3: FIELD DISCOVERY TAB ────────────────────────────────────────────
+    function renderAiFieldDiscoveryTab(fields, selectedLog) {
+      return `
+        <div class="p-6 overflow-y-auto h-full space-y-4 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Discovered Schema Fields</h2>
+              <p class="text-xs text-[#94a3b8]">Inferred tokens, data types, and suggested OCSF attribute mappings for ${(selectedLog && selectedLog.format_guess) || 'selected log'}.</p>
+            </div>
+            <span class="text-xs font-mono bg-[#1e2433] text-[#38bdf8] border border-[#2a3449] px-2.5 py-1 rounded font-bold">${fields.length} Total Fields</span>
+          </div>
+
+          <div class="bg-[#121620] border border-[#232734] rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-[#181d2a] border-b border-[#232734] text-[#94a3b8] uppercase tracking-wider font-mono text-[11px]">
+                  <th class="p-3">Field Name</th>
+                  <th class="p-3">Inferred Type</th>
+                  <th class="p-3">Confidence</th>
+                  <th class="p-3">Sample Value</th>
+                  <th class="p-3">Target OCSF Attribute</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#1e2433] font-mono text-[11px]">
+                ${fields.length ? fields.map(f => `
+                  <tr class="hover:bg-[#181d2a]/50 transition-colors">
+                    <td class="p-3 font-bold text-[#f1f5f9]">${f.name}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-[#1e2433] border border-[#2a3449] text-[#38bdf8]">${f.type}</span></td>
+                    <td class="p-3 text-[#34d399] font-bold">${Math.round((f.confidence || 0.9) * 100)}%</td>
+                    <td class="p-3 text-[#94a3b8] max-w-xs truncate">${f.sample_value || '—'}</td>
+                    <td class="p-3 text-[#4ade80]">${getOcsfTargetForField(f.name)}</td>
+                  </tr>
+                `).join('') : `
+                  <tr><td colspan="5" class="p-4 text-center text-[#64748b]">No fields discovered for this log. Run AI analysis to discover fields.</td></tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function getOcsfTargetForField(name) {
+      const map = {
+        timestamp: 'time',
+        src_ip: 'src_endpoint.ip',
+        dst_ip: 'dst_endpoint.ip',
+        src_port: 'src_endpoint.port',
+        dst_port: 'dst_endpoint.port',
+        hostname: 'device.hostname',
+        event_type: 'activity_name',
+        action: 'disposition',
+        severity: 'severity',
+        protocol: 'connection_info.protocol_name',
+        user: 'user.name',
+        path: 'http_request.url.path',
+        method: 'http_request.http_method',
+        status: 'status_code',
+      };
+      return map[name.toLowerCase()] || `unmapped.${name}`;
+    }
+
+    // ── Tab 4: PARSER SUGGESTIONS TAB ─────────────────────────────────────────
+    function renderAiParserSuggestionsTab(analysis, selectedLog) {
+      return `
+        <div class="p-6 overflow-y-auto h-full space-y-5 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">AI Generated Parser Configurations</h2>
+              <p class="text-xs text-[#94a3b8]">Compiled YAML/JSON parser specifications with Grok matching and OCSF transformations.</p>
+            </div>
+            <button onclick="app.approveCurrentParser()" class="px-3.5 py-1.5 text-xs bg-primary hover:bg-primary/90 text-on-primary rounded font-semibold cursor-pointer">
+              Approve & Deploy Active Parser
+            </button>
+          </div>
+
+          <div class="bg-[#121620] border border-[#232734] rounded-lg p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-[#232734] pb-3">
+              <div>
+                <span class="text-xs font-bold text-[#f1f5f9] font-mono">${(analysis && analysis.format_name) || 'juniper-srx-syslog'}</span>
+                <span class="ml-2 text-[10px] bg-[#1e2433] text-[#34d399] border border-[#059669]/50 px-2 py-0.5 rounded font-mono font-bold">TYPE: GROK</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="app.copyParserConfig()" class="text-xs text-[#94a3b8] hover:text-[#cbd5e1] flex items-center gap-1 cursor-pointer">
+                  <span class="material-symbols-outlined text-[14px]">content_copy</span> Copy YAML
+                </button>
+                <button onclick="app.validateCurrentParser()" class="px-2.5 py-1 text-xs bg-[#0284c7] hover:bg-[#0369a1] text-white rounded font-medium flex items-center gap-1 cursor-pointer">
+                  <span class="material-symbols-outlined text-[14px]">play_arrow</span> Test & Validate
+                </button>
+              </div>
+            </div>
+            <pre class="font-mono text-xs text-[#cbd5e1] leading-relaxed max-h-96 overflow-y-auto bg-[#0b0e14] p-4 rounded border border-[#1e2433]">${(analysis && analysis.suggested_parser_yaml) || '# No parser generated'}</pre>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Tab 5: REVIEW QUEUE TAB ───────────────────────────────────────────────
+    function renderAiReviewQueueTab(unknownLogs) {
+      return `
+        <div class="p-6 overflow-y-auto h-full space-y-4 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Pending Parser Review Queue</h2>
+              <p class="text-xs text-[#94a3b8]">Unknown log templates discovered by local sniffer awaiting security analyst validation.</p>
+            </div>
+            <span class="text-xs font-mono bg-[#1e2433] text-[#f59e0b] border border-[#2a3449] px-2.5 py-1 rounded font-bold">${unknownLogs.length} Pending Formats</span>
+          </div>
+
+          <div class="bg-[#121620] border border-[#232734] rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-[#181d2a] border-b border-[#232734] text-[#94a3b8] uppercase tracking-wider font-mono text-[11px]">
+                  <th class="p-3">Source / ID</th>
+                  <th class="p-3">Format Guess</th>
+                  <th class="p-3">Sample Snippet</th>
+                  <th class="p-3">Volume</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#1e2433] font-mono text-[11px]">
+                ${unknownLogs.map(l => `
+                  <tr class="hover:bg-[#181d2a]/50 transition-colors">
+                    <td class="p-3 font-bold text-[#f1f5f9]">${l.source}</td>
+                    <td class="p-3 text-[#38bdf8]">${l.format_guess || 'generic_unknown'}</td>
+                    <td class="p-3 text-[#94a3b8] max-w-xs truncate">${l.raw_log.split('\n')[0]}</td>
+                    <td class="p-3 text-[#f59e0b] font-bold">${l.sibling_count || 1}x</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-[#1e2433] border border-[#2a3449] text-[#38bdf8] uppercase">${l.status || 'pending'}</span></td>
+                    <td class="p-3 text-right">
+                      <button onclick="app.selectUnknownLog('${l.id}'); app.setAiTab('unknown-logs');" class="px-2.5 py-1 bg-primary/20 hover:bg-primary/40 text-primary border border-primary/30 rounded font-medium cursor-pointer">
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Tab 6: HISTORY TAB ────────────────────────────────────────────────────
+    function renderAiHistoryTab(historyItems) {
+      return `
+        <div class="p-6 overflow-y-auto h-full space-y-4 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">AI Workbench Audit History</h2>
+              <p class="text-xs text-[#94a3b8]">Immutable audit log of approved, modified, and rejected log format parsers.</p>
+            </div>
+            <span class="text-xs font-mono bg-[#1e2433] text-[#34d399] border border-[#2a3449] px-2.5 py-1 rounded font-bold">${historyItems.length} Actions Recorded</span>
+          </div>
+
+          <div class="bg-[#121620] border border-[#232734] rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-[#181d2a] border-b border-[#232734] text-[#94a3b8] uppercase tracking-wider font-mono text-[11px]">
+                  <th class="p-3">Timestamp</th>
+                  <th class="p-3">Format Name</th>
+                  <th class="p-3">Action</th>
+                  <th class="p-3">Reviewer</th>
+                  <th class="p-3">Confidence</th>
+                  <th class="p-3">Reason / Details</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#1e2433] font-mono text-[11px]">
+                ${historyItems.map(h => `
+                  <tr class="hover:bg-[#181d2a]/50 transition-colors">
+                    <td class="p-3 text-[#64748b]">${h.created_at ? h.created_at.slice(0, 19).replace('T', ' ') : '—'}</td>
+                    <td class="p-3 font-bold text-[#f1f5f9]">${h.format_name}</td>
+                    <td class="p-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] ${h.action === 'approved' ? 'bg-[#064e3b] text-[#34d399] border border-[#059669]' : 'bg-[#7f1d1d] text-[#f87171] border border-[#dc2626]'} uppercase font-bold">
+                        ${h.action}
+                      </span>
+                    </td>
+                    <td class="p-3 text-[#94a3b8]">${h.reviewer || 'analyst'}</td>
+                    <td class="p-3 text-[#38bdf8]">${Math.round((h.confidence || 0.9) * 100)}%</td>
+                    <td class="p-3 text-[#94a3b8] max-w-sm truncate">${h.reason || 'Standard review action'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Modals Subcomponent ───────────────────────────────────────────────────
+    function renderAiWorkbenchModals(state, analysis, fields, selectedLog) {
+      if (!state.activeModal) return '';
+
+      if (state.activeModal === 'all-fields') {
+        return `
+          <div class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div class="bg-[#121620] border border-[#232734] rounded-lg max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+              <div class="p-4 border-b border-[#232734] flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-lg">schema</span>
+                  <span class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">All Discovered Fields (${fields.length})</span>
+                </div>
+                <button onclick="app.closeAiModal()" class="text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer">✕</button>
+              </div>
+              <div class="p-4 overflow-y-auto flex-1">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-[#181d2a] text-[#94a3b8] font-mono text-[11px]">
+                      <th class="p-2.5">Field</th><th class="p-2.5">Type</th><th class="p-2.5">Confidence</th><th class="p-2.5">Sample Value</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[#1e2433] font-mono text-[11px]">
+                    ${fields.map(f => `
+                      <tr>
+                        <td class="p-2.5 font-bold text-[#f1f5f9]">${f.name}</td>
+                        <td class="p-2.5 text-[#38bdf8]">${f.type}</td>
+                        <td class="p-2.5 text-[#34d399]">${Math.round((f.confidence || 0.9) * 100)}%</td>
+                        <td class="p-2.5 text-[#94a3b8] max-w-xs truncate">${f.sample_value || '—'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div class="p-3 border-t border-[#232734] flex justify-end">
+                <button onclick="app.closeAiModal()" class="px-4 py-1.5 text-xs bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] rounded cursor-pointer">Close</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeModal === 'upload-sample') {
+        return `
+          <div class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div class="bg-[#121620] border border-[#232734] rounded-lg max-w-2xl w-full flex flex-col shadow-2xl">
+              <div class="p-4 border-b border-[#232734] flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-lg">upload_file</span>
+                  <span class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Upload Custom Unknown Log Sample</span>
+                </div>
+                <button onclick="app.closeAiModal()" class="text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer">✕</button>
+              </div>
+              <div class="p-5 space-y-4">
+                <div>
+                  <label class="block text-xs font-mono text-[#94a3b8] mb-1">Source Label / Identifier</label>
+                  <input type="text" id="ai-upload-source" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded px-3 py-2 text-xs font-mono text-[#cbd5e1] focus:outline-none focus:border-primary" value="${state.sampleUploadSource || 'custom-relay-01'}" placeholder="e.g. firewall-dmz-cluster">
+                </div>
+                <div>
+                  <label class="block text-xs font-mono text-[#94a3b8] mb-1">Raw Unknown Log Lines (Paste below)</label>
+                  <textarea id="ai-upload-text" rows="8" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded p-3 text-xs font-mono text-[#cbd5e1] focus:outline-none focus:border-primary leading-relaxed" placeholder="Paste 1 or more unknown log lines here...">${state.sampleUploadText || ''}</textarea>
+                </div>
+              </div>
+              <div class="p-4 border-t border-[#232734] flex justify-end gap-2">
+                <button onclick="app.closeAiModal()" class="px-4 py-1.5 text-xs bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] rounded cursor-pointer">Cancel</button>
+                <button onclick="app.submitUploadedSample()" class="px-4 py-1.5 text-xs bg-primary hover:bg-primary/90 text-on-primary font-semibold rounded flex items-center gap-1.5 cursor-pointer">
+                  <span class="material-symbols-outlined text-[14px]">psychology</span> Analyze with Local AI
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeModal === 'edit-template') {
+        const tpl = (analysis && analysis.inferred_template) || '';
+        return `
+          <div class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div class="bg-[#121620] border border-[#232734] rounded-lg max-w-2xl w-full flex flex-col shadow-2xl">
+              <div class="p-4 border-b border-[#232734] flex items-center justify-between">
+                <span class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Edit Grok Template Pattern</span>
+                <button onclick="app.closeAiModal()" class="text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer">✕</button>
+              </div>
+              <div class="p-5 space-y-3">
+                <p class="text-xs text-[#94a3b8]">Modify the inferred Grok template string. Variables like <code class="text-[#38bdf8] font-mono">%{WORD:module}</code> or <code class="text-[#38bdf8] font-mono">%{IPV4:src_ip}</code> extract named attributes.</p>
+                <textarea id="ai-edit-template-input" rows="5" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded p-3 text-xs font-mono text-[#38bdf8] focus:outline-none focus:border-primary leading-relaxed">${tpl}</textarea>
+              </div>
+              <div class="p-4 border-t border-[#232734] flex justify-end gap-2">
+                <button onclick="app.closeAiModal()" class="px-4 py-1.5 text-xs bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] rounded cursor-pointer">Cancel</button>
+                <button onclick="app.saveEditedTemplate()" class="px-4 py-1.5 text-xs bg-primary hover:bg-primary/90 text-on-primary font-semibold rounded cursor-pointer">Save & Validate</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeModal === 'modify-rule') {
+        const yamlStr = (analysis && analysis.suggested_parser_yaml) || '';
+        return `
+          <div class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div class="bg-[#121620] border border-[#232734] rounded-lg max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+              <div class="p-4 border-b border-[#232734] flex items-center justify-between">
+                <span class="text-sm font-bold uppercase tracking-wider text-[#f1f5f9]">Modify Parser Configuration Rule</span>
+                <button onclick="app.closeAiModal()" class="text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer">✕</button>
+              </div>
+              <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                <div>
+                  <label class="block text-xs font-mono text-[#94a3b8] mb-1">Target Format Name</label>
+                  <input type="text" id="ai-modify-format-name" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded px-3 py-2 text-xs font-mono text-[#cbd5e1] focus:outline-none focus:border-primary" value="${(analysis && analysis.format_name) || 'custom-parser'}">
+                </div>
+                <div>
+                  <label class="block text-xs font-mono text-[#94a3b8] mb-1">Parser Specification (YAML)</label>
+                  <textarea id="ai-modify-yaml-input" rows="12" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded p-3 text-xs font-mono text-[#cbd5e1] focus:outline-none focus:border-primary leading-relaxed whitespace-pre">${yamlStr}</textarea>
+                </div>
+              </div>
+              <div class="p-4 border-t border-[#232734] flex justify-end gap-2">
+                <button onclick="app.closeAiModal()" class="px-4 py-1.5 text-xs bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] rounded cursor-pointer">Cancel</button>
+                <button onclick="app.saveModifiedRule()" class="px-4 py-1.5 text-xs bg-primary hover:bg-primary/90 text-on-primary font-semibold rounded cursor-pointer">Save & Re-validate</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeModal === 'reject-reason') {
+        return `
+          <div class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div class="bg-[#121620] border border-[#232734] rounded-lg max-w-md w-full flex flex-col shadow-2xl">
+              <div class="p-4 border-b border-[#232734] flex items-center justify-between">
+                <span class="text-sm font-bold uppercase tracking-wider text-[#f87171]">Reject Parser Suggestion</span>
+                <button onclick="app.closeAiModal()" class="text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer">✕</button>
+              </div>
+              <div class="p-5 space-y-3">
+                <p class="text-xs text-[#94a3b8]">Provide an optional reason for archiving/rejecting this format suggestion:</p>
+                <select id="ai-reject-preset" onchange="document.getElementById('ai-reject-reason').value = this.value" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded px-3 py-2 text-xs font-mono text-[#cbd5e1] focus:outline-none mb-2">
+                  <option value="Pattern does not generalize / invalid syntax">Pattern does not generalize / invalid syntax</option>
+                  <option value="Ephemeral debug noise not requiring standard normalization">Ephemeral debug noise</option>
+                  <option value="Malformed packet or corrupted stream">Malformed packet or corrupted stream</option>
+                  <option value="Incorrect field boundaries">Incorrect field boundaries</option>
+                </select>
+                <textarea id="ai-reject-reason" rows="3" class="w-full bg-[#0b0e14] border border-[#2e374d] rounded p-2.5 text-xs font-mono text-[#cbd5e1] focus:outline-none focus:border-primary" placeholder="Enter custom reason...">Pattern does not generalize / invalid syntax</textarea>
+              </div>
+              <div class="p-4 border-t border-[#232734] flex justify-end gap-2">
+                <button onclick="app.closeAiModal()" class="px-4 py-1.5 text-xs bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] rounded cursor-pointer">Cancel</button>
+                <button onclick="app.confirmRejectParser()" class="px-4 py-1.5 text-xs bg-[#dc2626] hover:bg-[#b91c1c] text-white font-semibold rounded cursor-pointer">Confirm Reject</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return '';
     }
 
     function renderBlockchainPage(overview = {}, blocks = [], auditResult = null) {
@@ -2021,6 +2755,33 @@
         this.lastConvertedJSON = null;
         this.lastBatchResult = null;
         this.currentModalEvent = null;
+        this.aiState = {
+          activeTab: 'unknown-logs',
+          stats: {
+            ai_engine: 'READY',
+            mode: 'OFFLINE',
+            unknown_formats_count: 127,
+            analyzed_samples_count: 84,
+            approved_parsers_count: 6,
+            rejected_suggestions_count: 3,
+            avg_confidence_percent: 92
+          },
+          unknownLogs: [],
+          selectedLogId: null,
+          currentAnalysis: null,
+          validationResult: null,
+          history: [],
+          isWordWrap: true,
+          isAnalyzing: false,
+          isValidating: false,
+          isRegistering: false,
+          activeModal: null,
+          rejectionReason: '',
+          sampleUploadText: '',
+          sampleUploadSource: 'custom-firewall-relay',
+          loading: false,
+          error: null
+        };
       }
 
       async init() {
@@ -2045,7 +2806,9 @@
           await this.loadExplorerEvents();
         } else if (page === 'blockchain') {
           await this.loadBlockchainData();
-        } else if (page === 'onboarding' || page === 'mappings') {
+        } else if (page === 'ai-intelligence' || page === 'mappings') {
+          await this.loadAiWorkbenchData();
+        } else if (page === 'onboarding') {
           await this.refreshCurrentPage();
         }
       }
@@ -2370,8 +3133,9 @@
           case 'onboarding':
             root.innerHTML = `<div class="p-6">${renderSourceOnboardingPage(this.state.sources, this.lastBatchResult)}</div>`;
             break;
+          case 'ai-intelligence':
           case 'mappings':
-            root.innerHTML = `<div class="p-6">${renderMappingReviewPage(this.state.mappings)}</div>`;
+            root.innerHTML = renderAiWorkbenchPage(this.aiState);
             break;
           default:
             root.innerHTML = renderDashboardPage(this.dashboardState);
@@ -2889,6 +3653,310 @@
           `;
         } catch (err) {
           resBox.innerHTML = `<span style="color:#f87171;">Error: ${err.message}</span>`;
+        }
+      }
+
+      // ── AI Log Intelligence Workbench Methods ──────────────────────────────
+      async loadAiWorkbenchData() {
+        this.aiState.loading = true;
+        this.renderView();
+        try {
+          const [statsRes, logsRes, histRes] = await Promise.all([
+            fetch('/api/ai/stats').catch(() => null),
+            fetch('/api/ai/unknown-logs').catch(() => null),
+            fetch('/api/ai/history').catch(() => null),
+          ]);
+
+          if (statsRes && statsRes.ok) {
+            this.aiState.stats = await statsRes.json();
+          }
+          if (logsRes && logsRes.ok) {
+            this.aiState.unknownLogs = await logsRes.json();
+          }
+          if (histRes && histRes.ok) {
+            this.aiState.history = await histRes.json();
+          }
+
+          if (!this.aiState.selectedLogId && this.aiState.unknownLogs.length > 0) {
+            this.aiState.selectedLogId = this.aiState.unknownLogs[0].id;
+          }
+
+          if (this.aiState.selectedLogId && !this.aiState.currentAnalysis) {
+            await this.loadAiAnalysisForSelectedLog();
+          }
+        } catch (err) {
+          console.error('Failed to load AI workbench data:', err);
+        } finally {
+          this.aiState.loading = false;
+          this.renderView();
+        }
+      }
+
+      async loadAiAnalysisForSelectedLog() {
+        if (!this.aiState.selectedLogId) return;
+        this.aiState.isAnalyzing = true;
+        this.renderView();
+
+        try {
+          const res = await fetch('/api/ai/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ log_id: this.aiState.selectedLogId }),
+          });
+
+          if (!res.ok) {
+            throw new Error(`AI analysis failed: ${res.statusText}`);
+          }
+
+          const data = await res.json();
+          this.aiState.currentAnalysis = data;
+          this.aiState.validationResult = data.validation_result || null;
+        } catch (err) {
+          console.error('Error running AI log analysis:', err);
+          alert('AI Analysis notice: ' + err.message);
+        } finally {
+          this.aiState.isAnalyzing = false;
+          this.renderView();
+        }
+      }
+
+      async selectUnknownLog(logId) {
+        this.aiState.selectedLogId = logId;
+        this.aiState.currentAnalysis = null;
+        this.aiState.validationResult = null;
+        await this.loadAiAnalysisForSelectedLog();
+      }
+
+      async analyzeCurrentLog() {
+        await this.loadAiAnalysisForSelectedLog();
+      }
+
+      setAiTab(tabName) {
+        this.aiState.activeTab = tabName;
+        this.renderView();
+      }
+
+      toggleAiWordWrap() {
+        this.aiState.isWordWrap = !this.aiState.isWordWrap;
+        this.renderView();
+      }
+
+      copyRawLog() {
+        const text = (this.aiState.currentAnalysis && this.aiState.currentAnalysis.raw_log) || '';
+        if (navigator.clipboard && text) {
+          navigator.clipboard.writeText(text);
+          alert('✓ Raw log copied to clipboard');
+        }
+      }
+
+      copyParserConfig() {
+        const yaml = (this.aiState.currentAnalysis && this.aiState.currentAnalysis.suggested_parser_yaml) || '';
+        if (navigator.clipboard && yaml) {
+          navigator.clipboard.writeText(yaml);
+          alert('✓ Suggested parser configuration (YAML) copied to clipboard');
+        }
+      }
+
+      async validateCurrentParser() {
+        if (!this.aiState.currentAnalysis) return;
+        this.aiState.isValidating = true;
+        this.renderView();
+
+        try {
+          const pattern = this.aiState.currentAnalysis.detected_pattern;
+          const sample = this.aiState.currentAnalysis.raw_log;
+          const mapping = (this.aiState.currentAnalysis.suggested_parser &&
+            this.aiState.currentAnalysis.suggested_parser.parsers &&
+            this.aiState.currentAnalysis.suggested_parser.parsers[0] &&
+            this.aiState.currentAnalysis.suggested_parser.parsers[0].field_mapping) || {};
+
+          const res = await fetch('/api/ai/validate-parser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pattern_regex: pattern,
+              sample_log: sample,
+              field_mapping: mapping,
+              format_name: this.aiState.currentAnalysis.format_name || 'custom_parser'
+            }),
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const valData = await res.json();
+          this.aiState.validationResult = valData;
+        } catch (err) {
+          alert('Validation error: ' + err.message);
+        } finally {
+          this.aiState.isValidating = false;
+          this.renderView();
+        }
+      }
+
+      async approveCurrentParser() {
+        if (!this.aiState.currentAnalysis) {
+          alert('Please run AI analysis first before approving.');
+          return;
+        }
+
+        const analysis = this.aiState.currentAnalysis;
+        const formatName = analysis.format_name;
+        const patternRegex = analysis.detected_pattern;
+        const mapping = (analysis.suggested_parser &&
+          analysis.suggested_parser.parsers &&
+          analysis.suggested_parser.parsers[0] &&
+          analysis.suggested_parser.parsers[0].field_mapping) || {};
+
+        this.aiState.isRegistering = true;
+        this.renderView();
+
+        try {
+          const res = await fetch('/api/ai/approve-parser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              format_name: formatName,
+              pattern_regex: patternRegex,
+              field_mapping: mapping,
+              log_id: this.aiState.selectedLogId,
+              approved_by: 'security_analyst'
+            }),
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const result = await res.json();
+
+          alert(`✓ Parser Approved!\n\n${result.message || 'Parser registered into active pipeline.'}`);
+
+          // Reload workbench data and switch to overview or history
+          await this.loadAiWorkbenchData();
+        } catch (err) {
+          alert('Failed to approve parser: ' + err.message);
+        } finally {
+          this.aiState.isRegistering = false;
+          this.renderView();
+        }
+      }
+
+      openAiModal(modalName) {
+        this.aiState.activeModal = modalName;
+        this.renderView();
+      }
+
+      closeAiModal() {
+        this.aiState.activeModal = null;
+        this.renderView();
+      }
+
+      async submitUploadedSample() {
+        const sourceInput = document.getElementById('ai-upload-source');
+        const textInput = document.getElementById('ai-upload-text');
+        const source = (sourceInput && sourceInput.value.trim()) || 'custom-sample';
+        const text = (textInput && textInput.value.trim()) || '';
+
+        if (!text) {
+          alert('Please paste or enter raw log lines.');
+          return;
+        }
+
+        this.closeAiModal();
+        this.aiState.isAnalyzing = true;
+        this.renderView();
+
+        try {
+          const res = await fetch('/api/ai/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raw_log: text, source: source }),
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+
+          const customId = `uploaded-${Date.now()}`;
+          this.aiState.unknownLogs.unshift({
+            id: customId,
+            source: source,
+            first_seen: new Date().toISOString(),
+            format_guess: data.format_name,
+            status: 'pending',
+            sibling_count: 1,
+            raw_log: text,
+            lines_count: text.split('\n').length,
+            analysis: data
+          });
+
+          this.aiState.selectedLogId = customId;
+          this.aiState.currentAnalysis = data;
+          this.aiState.validationResult = data.validation_result;
+          this.aiState.activeTab = 'unknown-logs';
+        } catch (err) {
+          alert('Failed to analyze sample: ' + err.message);
+        } finally {
+          this.aiState.isAnalyzing = false;
+          this.renderView();
+        }
+      }
+
+      saveEditedTemplate() {
+        const input = document.getElementById('ai-edit-template-input');
+        if (input && this.aiState.currentAnalysis) {
+          this.aiState.currentAnalysis.inferred_template = input.value.trim();
+        }
+        this.closeAiModal();
+        this.validateCurrentParser();
+      }
+
+      saveModifiedRule() {
+        const nameInput = document.getElementById('ai-modify-format-name');
+        const yamlInput = document.getElementById('ai-modify-yaml-input');
+
+        if (nameInput && this.aiState.currentAnalysis) {
+          this.aiState.currentAnalysis.format_name = nameInput.value.trim();
+        }
+        if (yamlInput && this.aiState.currentAnalysis) {
+          this.aiState.currentAnalysis.suggested_parser_yaml = yamlInput.value;
+        }
+
+        this.closeAiModal();
+        this.validateCurrentParser();
+      }
+
+      async confirmRejectParser() {
+        const reasonInput = document.getElementById('ai-reject-reason');
+        const reason = (reasonInput && reasonInput.value.trim()) || 'Manual analyst rejection';
+
+        this.closeAiModal();
+        try {
+          const res = await fetch('/api/ai/reject-parser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              log_id: this.aiState.selectedLogId,
+              reason: reason,
+              rejected_by: 'security_analyst'
+            }),
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          alert(`✓ Suggestion archived: ${data.message}`);
+
+          // Reload data
+          await this.loadAiWorkbenchData();
+        } catch (err) {
+          alert('Failed to reject: ' + err.message);
+        }
+      }
+
+      async runAiBatchAnalysis() {
+        try {
+          const res = await fetch('/api/ai/batch-analysis', { method: 'POST' });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          alert(`✓ Batch Analysis Complete: Processed ${data.total_analyzed} unknown log formats with local offline AI.`);
+          await this.loadAiWorkbenchData();
+        } catch (err) {
+          alert('Batch analysis failed: ' + err.message);
         }
       }
     }

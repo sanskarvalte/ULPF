@@ -23,6 +23,20 @@ _KV_RE = re.compile(
 )
 
 
+_OCSF_FLAT_ALIASES = {
+    "src_endpoint.ip": "src_ip",
+    "dst_endpoint.ip": "dst_ip",
+    "src_endpoint.port": "src_port",
+    "dst_endpoint.port": "dst_port",
+    "user.name": "user",
+    "device.hostname": "src_hostname",
+    "time": "timestamp",
+    "activity_name": "activity_name",
+    "disposition": "status",
+    "status_code": "status_code",
+}
+
+
 class DynamicPatternParser(BaseParser):
     """Dynamically compiled parser for human-approved custom formats."""
 
@@ -62,7 +76,8 @@ class DynamicPatternParser(BaseParser):
                     if val is None:
                         continue
                     clean_val = val.strip("\"' ")
-                    ocsf_field = self.field_mapping.get(group_name) or COMMON_FIELD_MAP.get(group_name.lower())
+                    raw_ocsf = self.field_mapping.get(group_name) or COMMON_FIELD_MAP.get(group_name.lower())
+                    ocsf_field = _OCSF_FLAT_ALIASES.get(raw_ocsf, raw_ocsf)
                     if ocsf_field and ocsf_field != "unmapped":
                         mapped[ocsf_field] = clean_val
                     else:

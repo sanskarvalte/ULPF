@@ -36,6 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.ai_workbench import router as ai_workbench_router
 from app.api.analytics import router as analytics_router
 from app.api.blockchain import router as blockchain_router
 from app.api.dashboard import router as dashboard_router
@@ -96,6 +97,8 @@ app.include_router(mappings_router)
 app.include_router(events_router)
 app.include_router(analytics_router)
 app.include_router(evaluation_router)
+app.include_router(ai_workbench_router)
+app.include_router(ai_workbench_router, prefix="/api")
 
 # Locate frontend directory
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"

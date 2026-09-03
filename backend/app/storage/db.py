@@ -168,4 +168,27 @@ def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duc
     );
     """)
 
+    # 7. AI Log Intelligence History & Review Audit
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS ai_history (
+        history_id VARCHAR PRIMARY KEY,
+        log_id VARCHAR,
+        raw_log_sample TEXT,
+        format_name VARCHAR,
+        confidence DOUBLE,
+        action VARCHAR,
+        reviewer VARCHAR,
+        reason TEXT,
+        parser_config TEXT,
+        created_at TIMESTAMP NOT NULL
+    );
+    """)
+
+    try:
+        conn.execute("ALTER TABLE pending_reviews ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR;")
+        conn.execute("ALTER TABLE pending_reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;")
+        conn.execute("ALTER TABLE pending_reviews ADD COLUMN IF NOT EXISTS log_id VARCHAR;")
+    except Exception:
+        pass
+
     return conn
