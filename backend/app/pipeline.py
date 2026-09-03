@@ -29,6 +29,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+logger = logging.getLogger("ulpf.pipeline")
+
 import duckdb
 from app.ai.ollama_detector import process_unmatched_log_with_ai
 from app.blockchain.ledger import append_event_blocks_batch

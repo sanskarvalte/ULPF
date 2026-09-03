@@ -1,7 +1,7 @@
 """
 Format Matcher & Signature Registry (Node 3).
-Executes cheap, deterministic signature checks (regex/prefix) against a runtime-mutable registry.
-Zero LLM calls are ever made in this module.
+Executes cheap, deterministic signature checks against a runtime-mutable registry.
+Zero LLM calls are ever made in this module. Optimized for offline header sniffing and fast detection.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ MatcherFn = Callable[[str], bool]
 # ── Built-in Signature Matchers ─────────────────────────────────────────
 
 def _looks_like_android(s: str) -> bool:
-    first_line = s.strip().splitlines()[0] if s.strip() else ""
+    first_line = s.splitlines()[0].strip() if s else ""
     return bool(re.match(r"^\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+\d+\s+\d+\s+[VDIWEF]\s+[^:]+:", first_line))
 
 
@@ -89,7 +89,7 @@ def _looks_like_syslog(s: str) -> bool:
 
 
 def _looks_like_csv(s: str) -> bool:
-    lines = s.strip().splitlines()
+    lines = [l for l in s.splitlines() if l.strip()][:10]
     if len(lines) < 2:
         return False
     header_commas = lines[0].count(",")
@@ -100,7 +100,8 @@ def _looks_like_csv(s: str) -> bool:
         if abs(line.count(",") - header_commas) > 1:
             return False
     try:
-        reader = csv.DictReader(io.StringIO(s))
+        sample_txt = "\n".join(lines)
+        reader = csv.DictReader(io.StringIO(sample_txt))
         fields = reader.fieldnames
         if fields and len(fields) >= 3:
             return True
@@ -110,13 +111,13 @@ def _looks_like_csv(s: str) -> bool:
 
 
 def _looks_like_json(s: str) -> bool:
-    stripped = s.strip()
-    if stripped.startswith("{") or stripped.startswith("["):
+    sample = s[:65536].strip()
+    if sample.startswith("{") or sample.startswith("["):
         try:
-            parsed = json.loads(stripped)
+            parsed = json.loads(s if len(s) < 100000 else sample)
             return isinstance(parsed, (dict, list))
         except (json.JSONDecodeError, ValueError):
-            first_line = stripped.splitlines()[0].strip()
+            first_line = sample.splitlines()[0].strip()
             if first_line.startswith("{") and first_line.endswith("}"):
                 try:
                     parsed = json.loads(first_line)
@@ -127,13 +128,13 @@ def _looks_like_json(s: str) -> bool:
 
 
 def _looks_like_xml(s: str) -> bool:
-    stripped = s.strip()
-    if stripped.startswith("<?xml") or (
-        stripped.startswith("<") and not stripped[1:2].isdigit() and not _looks_like_syslog_priority(stripped)
+    sample = s[:65536].strip()
+    if sample.startswith("<?xml") or (
+        sample.startswith("<") and not sample[1:2].isdigit() and not _looks_like_syslog_priority(sample)
     ):
         try:
             import xml.etree.ElementTree as ET
-            cleaned_check = re.sub(r"<!DOCTYPE[^>]*>", "", stripped)
+            cleaned_check = re.sub(r"<!DOCTYPE[^>]*>", "", sample)
             ET.fromstring(cleaned_check)
             return True
         except Exception:

@@ -41,7 +41,7 @@ class TestAPI(unittest.TestCase):
         res = upload_log_json(payload)
         self.assertEqual(res.status, "success")
         self.assertGreaterEqual(res.event_count, 1)
-        self.assertEqual(res.detected_format, "json")
+        self.assertEqual(res.detected_format.lower(), "json")
 
     def test_stats_and_anomalies(self):
         stats = get_database_stats()

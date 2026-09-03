@@ -77,7 +77,25 @@ source .venv/bin/activate
 # pip install --no-index --find-links=offline_packages -r requirements.txt
 ```
 
-### 2. Launch Web UI & REST API Server
+### 2. Ingest Logs via CLI
+```bash
+# Ingest single file or directory using the ulpf CLI:
+ulpf process sample.log
+ulpf process datasets/sample/install.log
+ulpf process datasets/loghub/Mac_2k.log
+
+# View database statistics:
+ulpf stats
+
+# List recent normalized events:
+ulpf list
+
+# Export normalized logs to ZSTD Parquet or JSON:
+ulpf export exports/normalized_events.parquet
+ulpf export exports/normalized_events.json
+```
+
+### 3. Launch Web UI & REST API Server
 ```bash
 PYTHONPATH=backend uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 ```
