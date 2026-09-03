@@ -1,0 +1,7 @@
+<134>Aug 26 12:33:07 fw-edge-01 iptables[4821]: action=drop src=203.0.113.99 dst=10.0.1.5 sport=44312 dport=22 user=root category=network_activity severity=critical status=failure
+Aug 25 00:30:03 Sanskars-MacBook-Air newsyslog[5617]: logfile turned over
+2026-08-26 12:00:00 [ERROR] Firewall drop packet from 10.0.0.99
+2025-05-20 05:20:59-07 localhost Installer Progress[53]: Progress UI App Starting
+2025-05-20 05:21:00-07 MacBook-Air loginwindow[93]: authorizeWithEmptyAuthorizationForRights: Requesting provided rights: 32
+CEF:0|Security|ThreatDetector|1.0|100|Malicious Traffic Detected|9|src=192.168.1.50 dst=10.0.0.1 msg=Suspicious outbound connection
+{"timestamp": "2026-08-26T12:00:00Z", "level": "INFO", "message": "User session established", "user": "alice", "src_ip": "192.168.1.100"}

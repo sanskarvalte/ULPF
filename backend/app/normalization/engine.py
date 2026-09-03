@@ -1,6 +1,7 @@
 """
 Normalization and enrichment engine.
 Applies category, class, activity, severity, and status inference rules.
+Optimized for in-place mutation without Pydantic serialization round-trips.
 """
 
 from __future__ import annotations
@@ -88,38 +89,102 @@ def enrich_classification(mapped: Dict[str, Any]) -> None:
 
 
 def normalize_event(event: UnifiedEvent) -> UnifiedEvent:
-    """Post-parse normalization & heuristic enrichment on UnifiedEvent."""
-    d = event.model_dump()
-    enrich_classification(d)
+    """Post-parse normalization & heuristic enrichment on UnifiedEvent directly in-place."""
+    proc = event.product
+    if proc:
+        tax = resolve_process_taxonomy(proc)
+        if tax:
+            if not event.vendor and tax.get("vendor"):
+                event.vendor = tax["vendor"]
+            if not event.category_name and tax.get("category_name"):
+                event.category_name = tax["category_name"]
+            if not event.category_uid and tax.get("category_uid"):
+                event.category_uid = tax["category_uid"]
+            if not event.class_name and tax.get("class_name"):
+                event.class_name = tax["class_name"]
+            if not event.class_uid and tax.get("class_uid"):
+                event.class_uid = tax["class_uid"]
+            if not event.activity_name and tax.get("activity_name"):
+                event.activity_name = tax["activity_name"]
+            if not event.activity_id and tax.get("activity_id"):
+                event.activity_id = tax["activity_id"]
+
+    # Category
+    cat = event.category_name
+    if cat:
+        key = cat.strip().lower().replace(" ", "_").replace("&", "and")
+        if key in CATEGORY_MAP:
+            event.category_name = CATEGORY_MAP[key][0]
+            if not event.category_uid:
+                event.category_uid = CATEGORY_MAP[key][1]
+
+    # Class
+    if cat and not event.class_name:
+        key = cat.strip().lower().replace(" ", "_").replace("&", "and")
+        if key in CLASS_MAP:
+            event.class_name, event.class_uid = CLASS_MAP[key]
+    elif event.class_name and not event.class_uid:
+        key = event.class_name.strip().lower().replace(" ", "_").replace("&", "and")
+        if key in CLASS_MAP:
+            event.class_name, event.class_uid = CLASS_MAP[key]
+
+    # Activity
+    act = event.activity_name
+    if act and not event.activity_id:
+        key = act.strip().lower()
+        if key in ACTIVITY_MAP:
+            event.activity_name, event.activity_id = ACTIVITY_MAP[key]
+
+    # Type composite
+    if event.class_name and event.activity_name and not event.type_name:
+        event.type_name = f"{event.class_name}: {event.activity_name}"
+    if event.class_uid is not None and event.activity_id is not None and event.type_uid is None:
+        event.type_uid = event.class_uid * 100 + event.activity_id
+
+    # Severity
+    sev = event.severity
+    if sev:
+        sev_key = str(sev).strip().lower()
+        if sev_key in SEVERITY_NAME_MAP:
+            event.severity, event.severity_id = SEVERITY_NAME_MAP[sev_key]
+        elif event.severity_id is None:
+            event.severity_id = SEVERITY_ID_MAP.get(sev_key, 0)
+
+    # Status
+    st = event.status
+    if st and event.status_id is None:
+        event.status_id = STATUS_ID_MAP.get(st.strip().lower(), 0)
 
     # Heuristic vendor/product inference if missing
     raw_lower = event.raw_event.lower()
-    if not d.get("vendor"):
+    if not event.vendor:
         if "cisco" in raw_lower:
-            d["vendor"] = "Cisco"
+            event.vendor = "Cisco"
         elif "fortinet" in raw_lower or "fortigate" in raw_lower:
-            d["vendor"] = "Fortinet"
+            event.vendor = "Fortinet"
         elif "palo alto" in raw_lower or "pan-os" in raw_lower:
-            d["vendor"] = "Palo Alto Networks"
+            event.vendor = "Palo Alto Networks"
         elif "microsoft" in raw_lower or "windows" in raw_lower or "eventid" in raw_lower:
-            d["vendor"] = "Microsoft"
-            d.setdefault("product", "Windows")
+            event.vendor = "Microsoft"
+            if not event.product:
+                event.product = "Windows"
         elif "sshd" in raw_lower or "sudo" in raw_lower or "systemd" in raw_lower:
-            d["vendor"] = "Linux"
-            d.setdefault("product", "Syslog")
+            event.vendor = "Linux"
+            if not event.product:
+                event.product = "Syslog"
         elif "zeek" in raw_lower or "bro" in raw_lower:
-            d["vendor"] = "Zeek"
+            event.vendor = "Zeek"
 
     # Severity heuristic fallback (ONLY if severity is not already set)
-    if not d.get("severity") or d.get("severity") in ("Unknown", "unknown"):
+    if not event.severity or event.severity in ("Unknown", "unknown"):
         if any(w in raw_lower for w in ("error", "fail", "failed", "denied", "block", "refuse", "critical", "fatal", "attack")):
-            d["severity"] = "High"
-            d["severity_id"] = 4
+            event.severity = "High"
+            event.severity_id = 4
         elif any(w in raw_lower for w in ("warn", "warning", "suspicious", "timeout")):
-            d["severity"] = "Medium"
-            d["severity_id"] = 3
+            event.severity = "Medium"
+            event.severity_id = 3
         else:
-            d["severity"] = "Informational"
-            d["severity_id"] = 1
+            event.severity = "Informational"
+            event.severity_id = 1
 
-    return UnifiedEvent(**d)
+    return event

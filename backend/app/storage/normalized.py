@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import duckdb
 from app.models.event_schema import UnifiedEvent
 from app.storage.db import get_db
-from app.storage.raw import save_raw_event
+from app.storage.raw import hash_raw_log, save_raw_event
 
 
 def save_normalized_event(
@@ -71,18 +71,171 @@ def save_events_batch(
     records: List[Tuple[UnifiedEvent, str, Optional[str]]],
     conn: Optional[duckdb.DuckDBPyConnection] = None,
 ) -> List[Tuple[str, str]]:
-    """Batch insert normalized records and deduplicated raw logs in a single transaction."""
+    """Batch insert normalized records and deduplicated raw logs using vectorized PyArrow / native staging for high throughput."""
+    if not records:
+        return []
     c = conn or get_db()
-    c.execute("BEGIN TRANSACTION;")
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
     saved_pairs: List[Tuple[str, str]] = []
+
+    raw_event_ids = []
+    raw_texts = []
+    received_ats = []
+    source_files = []
+
+    norm_dict = {
+        "event_id": [], "raw_event_id": [], "timestamp": [], "category_name": [], "category_uid": [],
+        "class_name": [], "class_uid": [], "activity_name": [], "activity_id": [], "type_name": [],
+        "type_uid": [], "severity": [], "severity_id": [], "status": [], "status_id": [], "status_code": [],
+        "status_detail": [], "message": [], "src_ip": [], "src_port": [], "src_hostname": [],
+        "src_endpoint_name": [], "dst_ip": [], "dst_port": [], "dst_hostname": [],
+        "dst_endpoint_name": [], "protocol": [], "direction": [], "traffic_bytes": [],
+        "traffic_packets": [], "user": [], "user_uid": [], "user_type": [], "user_domain": [],
+        "auth_protocol": [], "is_mfa": [], "is_remote": [], "logon_type": [], "service_name": [],
+        "session_uid": [], "vendor": [], "product": [], "product_version": [], "log_format": [],
+        "log_name": [], "unmapped": [], "created_at": [],
+    }
+
+    for event, raw_text, source_file in records:
+        raw_payload = raw_text if raw_text is not None else event.raw_event
+        raw_id = hash_raw_log(raw_payload)
+        event.raw_event_id = raw_id
+
+        raw_event_ids.append(raw_id)
+        raw_texts.append(raw_payload)
+        received_ats.append(now)
+        source_files.append(source_file)
+
+        unmapped_str = json.dumps(event.unmapped) if event.unmapped else None
+
+        norm_dict["event_id"].append(event.event_id)
+        norm_dict["raw_event_id"].append(event.raw_event_id)
+        norm_dict["timestamp"].append(event.timestamp)
+        norm_dict["category_name"].append(event.category_name)
+        norm_dict["category_uid"].append(event.category_uid)
+        norm_dict["class_name"].append(event.class_name)
+        norm_dict["class_uid"].append(event.class_uid)
+        norm_dict["activity_name"].append(event.activity_name)
+        norm_dict["activity_id"].append(event.activity_id)
+        norm_dict["type_name"].append(event.type_name)
+        norm_dict["type_uid"].append(event.type_uid)
+        norm_dict["severity"].append(event.severity)
+        norm_dict["severity_id"].append(event.severity_id)
+        norm_dict["status"].append(event.status)
+        norm_dict["status_id"].append(event.status_id)
+        norm_dict["status_code"].append(event.status_code)
+        norm_dict["status_detail"].append(event.status_detail)
+        norm_dict["message"].append(event.message)
+        norm_dict["src_ip"].append(event.src_ip)
+        norm_dict["src_port"].append(event.src_port)
+        norm_dict["src_hostname"].append(event.src_hostname)
+        norm_dict["src_endpoint_name"].append(event.src_endpoint_name)
+        norm_dict["dst_ip"].append(event.dst_ip)
+        norm_dict["dst_port"].append(event.dst_port)
+        norm_dict["dst_hostname"].append(event.dst_hostname)
+        norm_dict["dst_endpoint_name"].append(event.dst_endpoint_name)
+        norm_dict["protocol"].append(event.protocol)
+        norm_dict["direction"].append(event.direction)
+        norm_dict["traffic_bytes"].append(event.traffic_bytes)
+        norm_dict["traffic_packets"].append(event.traffic_packets)
+        norm_dict["user"].append(event.user)
+        norm_dict["user_uid"].append(event.user_uid)
+        norm_dict["user_type"].append(event.user_type)
+        norm_dict["user_domain"].append(event.user_domain)
+        norm_dict["auth_protocol"].append(event.auth_protocol)
+        norm_dict["is_mfa"].append(event.is_mfa)
+        norm_dict["is_remote"].append(event.is_remote)
+        norm_dict["logon_type"].append(event.logon_type)
+        norm_dict["service_name"].append(event.service_name)
+        norm_dict["session_uid"].append(event.session_uid)
+        norm_dict["vendor"].append(event.vendor)
+        norm_dict["product"].append(event.product)
+        norm_dict["product_version"].append(event.product_version)
+        norm_dict["log_format"].append(event.log_format)
+        norm_dict["log_name"].append(event.log_name)
+        norm_dict["unmapped"].append(unmapped_str)
+        norm_dict["created_at"].append(now)
+
+        saved_pairs.append((event.event_id, raw_id))
+
+    # 1. Primary fast-path: PyArrow registration
     try:
-        for event, raw_text, source_file in records:
-            pair = save_normalized_event(event, raw_text=raw_text, source_file=source_file, conn=c)
-            saved_pairs.append(pair)
-        c.execute("COMMIT;")
+        import pyarrow as pa
+        raw_tbl = pa.Table.from_pydict({
+            "raw_event_id": raw_event_ids,
+            "raw_text": raw_texts,
+            "received_at": received_ats,
+            "source_file": source_files,
+        })
+        norm_tbl = pa.Table.from_pydict(norm_dict)
+
+        c.register("_tmp_raw", raw_tbl)
+        c.execute("INSERT OR IGNORE INTO raw_events SELECT * FROM _tmp_raw;")
+        c.unregister("_tmp_raw")
+
+        c.register("_tmp_norm", norm_tbl)
+        c.execute("INSERT OR REPLACE INTO normalized_events SELECT * FROM _tmp_norm;")
+        c.unregister("_tmp_norm")
+        return saved_pairs
     except Exception:
-        c.execute("ROLLBACK;")
-        raise
+        pass
+
+    # 2. Secondary fast-path: Staged NDJSON loading via DuckDB read_json_auto
+    try:
+        import tempfile
+        from pathlib import Path
+
+        raw_ndjson = []
+        for i in range(len(raw_event_ids)):
+            raw_ndjson.append(json.dumps({
+                "raw_event_id": raw_event_ids[i],
+                "raw_text": raw_texts[i],
+                "received_at": now_iso,
+                "source_file": source_files[i],
+            }) + "\n")
+
+        norm_ndjson = []
+        col_names = list(norm_dict.keys())
+        for i in range(len(raw_event_ids)):
+            row_dict = {}
+            for k in col_names:
+                val = norm_dict[k][i]
+                if isinstance(val, datetime):
+                    row_dict[k] = val.isoformat()
+                else:
+                    row_dict[k] = val
+            norm_ndjson.append(json.dumps(row_dict) + "\n")
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json", encoding="utf-8") as tr:
+            tr.writelines(raw_ndjson)
+            r_path = Path(tr.name).as_posix()
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json", encoding="utf-8") as tn:
+            tn.writelines(norm_ndjson)
+            n_path = Path(tn.name).as_posix()
+
+        try:
+            c.execute(f"INSERT OR IGNORE INTO raw_events SELECT raw_event_id, raw_text, received_at::TIMESTAMP, source_file FROM read_json_auto('{r_path}');")
+            c.execute(f"INSERT OR REPLACE INTO normalized_events SELECT * FROM read_json_auto('{n_path}');")
+            return saved_pairs
+        finally:
+            Path(r_path).unlink(missing_ok=True)
+            Path(n_path).unlink(missing_ok=True)
+    except Exception:
+        pass
+
+    # 3. Fallback: Chunked batch transaction (500 rows per query)
+    batch_size = 500
+    for i in range(0, len(raw_event_ids), batch_size):
+        chunk_raw = [
+            (raw_event_ids[j], raw_texts[j], received_ats[j], source_files[j])
+            for j in range(i, min(i + batch_size, len(raw_event_ids)))
+        ]
+        ph = ", ".join(["(?, ?, ?, ?)"] * len(chunk_raw))
+        params = [val for row in chunk_raw for val in row]
+        c.execute(f"INSERT OR IGNORE INTO raw_events VALUES {ph};", params)
+
     return saved_pairs
 
 

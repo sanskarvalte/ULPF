@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from sklearn.ensemble import IsolationForest
 from app.storage.db import get_db
 
 
@@ -88,15 +87,24 @@ def detect_anomalies(db_path: Optional[str | Path] = None) -> Dict[str, Any]:
     X = np.array(feature_matrix, dtype=float)
 
     if len(windows) >= 3:
-        contamination = min(0.25, max(0.05, 1.0 / len(windows)))
-        clf = IsolationForest(
-            n_estimators=100,
-            contamination=contamination,
-            random_state=42,
-        )
-        clf.fit(X)
-        raw_scores = -clf.decision_function(X)
-        preds = clf.predict(X)
+        try:
+            from sklearn.ensemble import IsolationForest
+            contamination = min(0.25, max(0.05, 1.0 / len(windows)))
+            clf = IsolationForest(
+                n_estimators=100,
+                contamination=contamination,
+                random_state=42,
+            )
+            clf.fit(X)
+            raw_scores = -clf.decision_function(X)
+            preds = clf.predict(X)
+        except Exception:
+            # Fallback: statistical z-score on total_cnt and high_cnt
+            means = np.mean(X, axis=0)
+            stds = np.std(X, axis=0) + 1e-6
+            z_scores = np.max(np.abs((X - means) / stds), axis=1)
+            raw_scores = z_scores
+            preds = np.where(z_scores > 2.0, -1, 1)
 
         s_min, s_max = float(np.min(raw_scores)), float(np.max(raw_scores))
         if s_max > s_min:

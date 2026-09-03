@@ -52,14 +52,20 @@ source .venv/bin/activate
 
 ### 2. Ingest Logs via CLI
 ```bash
-# Ingest single file or directory:
-PYTHONPATH=backend python backend/app/main.py datasets/sample/
+# Ingest single file or directory using the ulpf CLI:
+ulpf process sample.log
+ulpf process datasets/sample/install.log
+ulpf process datasets/loghub/Mac_2k.log
 
 # View database statistics:
-PYTHONPATH=backend python backend/app/main.py --stats
+ulpf stats
 
-# Export normalized logs to ZSTD Parquet:
-PYTHONPATH=backend python backend/app/main.py --export-parquet exports/normalized_events.parquet
+# List recent normalized events:
+ulpf list
+
+# Export normalized logs to ZSTD Parquet or JSON:
+ulpf export exports/normalized_events.parquet
+ulpf export exports/normalized_events.json
 ```
 
 ### 3. Launch Web UI & REST API Server
