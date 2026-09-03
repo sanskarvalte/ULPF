@@ -53,3 +53,59 @@ class BlockchainOverview(BaseModel):
     last_block_hash: str
     last_updated: Optional[str] = None
     recent_blocks: List[BlockchainBlock] = []
+
+
+class BatchBlock(BaseModel):
+    """
+    Tamper-evident batch block anchoring a processed set of security events.
+    Contains cryptographic Merkle root of constituent event hashes, batch hash, and previous link.
+    """
+    block_index: int = Field(..., description="Monotonically increasing sequence index.")
+    batch_id: str = Field(..., description="Unique batch identifier (e.g. SYNC_BATCH_X992A).")
+    timestamp: str = Field(..., description="UTC ISO 8601 timestamp.")
+    event_count: int = Field(..., description="Number of events anchored in this batch.")
+    merkle_root: str = Field(..., description="SHA-256 Merkle root of all event hashes in the batch.")
+    batch_hash: str = Field(..., description="Local stored hash representing the batch content.")
+    previous_hash: str = Field(..., description="Hash of the preceding batch block in the chain.")
+    anchor_hash: str = Field(..., description="Cryptographic sealed anchor hash of this block.")
+    status: str = Field(default="VERIFIED", description="VERIFIED, FAILED, or PENDING.")
+    verification_reason: Optional[str] = Field(None, description="Detailed verification status or failure reason.")
+    verified_at: Optional[str] = None
+    sample_event_ids: List[str] = Field(default_factory=list, description="Sample event IDs in this batch.")
+
+
+class BatchSummary(BaseModel):
+    """Integrity metrics summary for the top dashboard cards."""
+    total_anchored: int = Field(..., description="Total batch blocks anchored in the ledger.")
+    verified: int = Field(..., description="Count of successfully verified blocks.")
+    failed: int = Field(..., description="Count of failed/hash-mismatched blocks.")
+    pending: int = Field(..., description="Count of pending/unconfirmed blocks.")
+    chain_status: str = Field(default="VALID", description="Overall chain state: VALID or CORRUPTED.")
+    last_block_index: int = 0
+    last_block_hash: str = ""
+    last_updated: Optional[str] = None
+
+
+class MerkleRootResponse(BaseModel):
+    """Detailed Merkle root response for the raw inspector."""
+    block_index: int
+    batch_id: str
+    merkle_root: str
+    total_leaves: int
+    tree_depth: int
+    leaf_hashes_sample: List[str] = []
+    tree_structure: Optional[Dict[str, Any]] = None
+
+
+class BatchVerificationResult(BaseModel):
+    """Result of recalculating and verifying a batch block."""
+    block_index: int
+    batch_id: str
+    status: str  # VERIFIED, FAILED, PENDING
+    is_valid: bool
+    local_stored_hash: str
+    ledger_anchor_hash: str
+    merkle_root: str
+    previous_hash_valid: bool
+    message: str
+

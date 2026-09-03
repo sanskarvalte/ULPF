@@ -25,6 +25,7 @@ Flow:
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -33,7 +34,7 @@ logger = logging.getLogger("ulpf.pipeline")
 
 import duckdb
 from app.ai.ollama_detector import process_unmatched_log_with_ai
-from app.blockchain.ledger import append_event_blocks_batch
+from app.blockchain.ledger import append_batch_block, append_event_blocks_batch
 from app.ingestion.collector import CollectedRawChunk, LogCollector
 from app.ingestion.detector import match_format
 from app.models.event_schema import UnifiedEvent
@@ -159,6 +160,13 @@ class PipelineEngine:
                     ]
                     if event_records:
                         append_event_blocks_batch(event_records, action="LOG_STORED", conn=c)
+                        batch_hashes = [r[1] for r in event_records]
+                        batch_sample_ids = [r[0] for r in event_records[:10]]
+                        batch_tag = f"SYNC_BATCH_INGEST_{datetime.now(timezone.utc).strftime('%y%m%d_%H%M%S')}"
+                        try:
+                            append_batch_block(batch_tag, batch_hashes, sample_event_ids=batch_sample_ids, conn=c)
+                        except Exception as be:
+                            logger.error(f"Batch anchor error: {be}")
                 except Exception as e:
                     logger.error(f"Normalized storage & blockchain batch error: {e}")
 

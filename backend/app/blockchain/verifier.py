@@ -8,14 +8,17 @@ from __future__ import annotations
 import hashlib
 from typing import Optional
 
+from datetime import datetime, timezone
 import duckdb
 from app.blockchain.blockchain import (
     GENESIS_HASH,
+    calculate_batch_block_hash,
     calculate_block_hash,
+    compute_merkle_root,
     get_genesis_block,
 )
-from app.blockchain.ledger import append_block, get_blocks_for_event, init_blockchain
-from app.blockchain.models import ChainVerificationResult, EventIntegrityResult
+from app.blockchain.ledger import append_block, get_batch_block, get_blocks_for_event, init_blockchain
+from app.blockchain.models import BatchVerificationResult, ChainVerificationResult, EventIntegrityResult
 from app.storage.db import get_db
 from app.storage.raw import hash_raw_log
 
@@ -260,3 +263,94 @@ def verify_chain(conn: Optional[duckdb.DuckDBPyConnection] = None) -> ChainVerif
         reason=None,
         message=f"Blockchain integrity verified successfully ({verified_count}/{len(rows)} blocks cryptographically validated).",
     )
+
+
+def verify_batch_block(
+    block_id_or_index: str,
+    conn: Optional[duckdb.DuckDBPyConnection] = None,
+) -> BatchVerificationResult:
+    """
+    Recalculates cryptographic hashes, Merkle root, and previous_hash linkage for a batch block.
+    1. Loads batch record from blockchain_batch_ledger.
+    2. Recalculates expected anchor hash.
+    3. Verifies linkage to preceding block.
+    4. Compares local stored batch_hash against ledger anchor_hash.
+    5. Updates block verification state in DuckDB.
+    """
+    c = conn or get_db()
+    init_blockchain(c)
+    block = get_batch_block(block_id_or_index, conn=c)
+    if not block:
+        return BatchVerificationResult(
+            block_index=-1,
+            batch_id=str(block_id_or_index),
+            status="FAILED",
+            is_valid=False,
+            local_stored_hash="0" * 64,
+            ledger_anchor_hash="0" * 64,
+            merkle_root="0" * 64,
+            previous_hash_valid=False,
+            message=f"Batch block '{block_id_or_index}' not found in blockchain ledger.",
+        )
+
+    # 1. Check previous_hash link
+    prev_valid = True
+    if block.block_index > 0:
+        prev_row = c.execute("""
+            SELECT anchor_hash FROM blockchain_batch_ledger WHERE block_index = ?
+        """, [block.block_index - 1]).fetchone()
+        if not prev_row or str(prev_row[0]) != block.previous_hash:
+            prev_valid = False
+
+    # 2. Recalculate anchor hash
+    recalculated_anchor = calculate_batch_block_hash(
+        block_index=block.block_index,
+        timestamp=block.timestamp,
+        batch_id=block.batch_id,
+        event_count=block.event_count,
+        merkle_root=block.merkle_root,
+        previous_hash=block.previous_hash,
+    )
+
+    # 3. Compare hashes
+    if block.status == "PENDING" and block.batch_id.startswith("PENDING"):
+        status = "PENDING"
+        is_valid = True
+        msg = "AWAITING CONFIRMATION: Batch queued in pipeline; awaiting final ledger anchor sealing."
+    elif block.batch_hash != block.anchor_hash:
+        status = "FAILED"
+        is_valid = False
+        msg = "HASH MISMATCH: Local stored hash does not match immutable ledger anchor hash."
+    elif block.anchor_hash != recalculated_anchor:
+        status = "FAILED"
+        is_valid = False
+        msg = "CORRUPT BLOCK: Stored anchor hash does not match recalculated payload hash."
+    elif not prev_valid:
+        status = "FAILED"
+        is_valid = False
+        msg = f"CHAIN BROKEN: Previous hash link is invalid or mismatched at block #{block.block_index}."
+    else:
+        status = "VERIFIED"
+        is_valid = True
+        msg = "BLOCK VERIFIED: Cryptographic hashes match and chain of custody is intact."
+
+    # Update status in ledger
+    now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    c.execute("""
+        UPDATE blockchain_batch_ledger
+        SET status = ?, verification_reason = ?, verified_at = ?
+        WHERE block_index = ?
+    """, [status, msg, now_ts if is_valid else None, block.block_index])
+
+    return BatchVerificationResult(
+        block_index=block.block_index,
+        batch_id=block.batch_id,
+        status=status,
+        is_valid=is_valid,
+        local_stored_hash=block.batch_hash,
+        ledger_anchor_hash=block.anchor_hash,
+        merkle_root=block.merkle_root,
+        previous_hash_valid=prev_valid,
+        message=msg,
+    )
+

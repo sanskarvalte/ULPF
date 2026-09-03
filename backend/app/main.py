@@ -95,6 +95,7 @@ app.include_router(sources_router)
 app.include_router(sources_router, prefix="/api")
 app.include_router(mappings_router)
 app.include_router(events_router)
+app.include_router(events_router, prefix="/api")
 app.include_router(analytics_router)
 app.include_router(evaluation_router)
 app.include_router(ai_workbench_router)
@@ -112,6 +113,20 @@ if FRONTEND_DIR.exists():
     @app.get("/dashboard", include_in_schema=False)
     def serve_frontend():
         return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+    @app.get("/tailwind.js", include_in_schema=False)
+    def serve_tailwind():
+        tw = FRONTEND_DIR / "tailwind.js"
+        if tw.exists():
+            return FileResponse(str(tw), media_type="application/javascript")
+        return RedirectResponse(url="/static/tailwind.js")
+
+    @app.get("/material-symbols.woff2", include_in_schema=False)
+    def serve_font():
+        font_p = FRONTEND_DIR / "material-symbols.woff2"
+        if font_p.exists():
+            return FileResponse(str(font_p), media_type="font/woff2")
+        return RedirectResponse(url="/static/material-symbols.woff2")
 else:
     @app.get("/", include_in_schema=False)
     def root():
@@ -213,8 +228,25 @@ def main():
     parser.add_argument("--export-parquet", metavar="OUT_FILE", help="Export normalized events to Parquet")
     parser.add_argument("--export-json", metavar="OUT_FILE", help="Export normalized events to JSON file")
     parser.add_argument("--export-csv", metavar="OUT_FILE", help="Export normalized events to CSV file")
+    parser.add_argument("--port", "-p", type=int, default=8000, help="Port to run local server on (default: 8000)")
+    parser.add_argument("--host", "-H", default="127.0.0.1", help="Host interface to bind (default: 127.0.0.1)")
 
     args = parser.parse_args()
+
+    # Serve command or port flag without sub-command
+    if args.command_or_path in ("serve", "server", "run", "start") or (len(sys.argv) > 1 and sys.argv[1] in ("--port", "-p")):
+        import uvicorn
+        from app.storage.normalized import get_total_events_count
+        total_ev = get_total_events_count()
+        print("=" * 65)
+        print("  🛡️  ULPF — Universal Log Pre-processing Framework")
+        print("  🔒 Running 100% LOCALLY on port without online dependencies")
+        print(f"  📊 Local DuckDB Database: {total_ev:,} events loaded")
+        print(f"  🌐 URL: http://{args.host}:{args.port}")
+        print(f"  📋 Log Explorer: http://{args.host}:{args.port}/#explorer")
+        print("=" * 65)
+        uvicorn.run("app.main:app", host=args.host, port=args.port, reload=False)
+        return
 
     if args.evaluate_accuracy:
         results = evaluate_ground_truth()
