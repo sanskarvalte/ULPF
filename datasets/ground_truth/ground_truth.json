@@ -1,0 +1,230 @@
+[
+  {
+    "id": "syslog_rfc3164_sshd",
+    "raw": "Jan 04 15:16:01 combo sshd[24047]: authentication failure; rhost=218.188.2.4 user=root",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-01-04T15:16:01",
+      "vendor": "Linux",
+      "product": "sshd",
+      "category_name": "Identity & Access Management",
+      "activity_name": "Logon",
+      "src_ip": "218.188.2.4",
+      "dst_ip": null,
+      "src_port": null,
+      "dst_port": null,
+      "user": "root",
+      "severity": "High",
+      "status": "Failure"
+    }
+  },
+  {
+    "id": "syslog_rfc3164_sudo",
+    "raw": "Jul  1 09:00:00 server sudo[1234]:   alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/bin/ls",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-07-01T09:00:00",
+      "vendor": "Linux",
+      "product": "sudo",
+      "category_name": "Identity & Access Management",
+      "activity_name": "Elevate",
+      "src_ip": null,
+      "dst_ip": null,
+      "src_port": null,
+      "dst_port": null,
+      "user": "alice",
+      "severity": "Informational",
+      "status": null
+    }
+  },
+  {
+    "id": "syslog_rfc5424_structured",
+    "raw": "<165>1 2026-08-26T12:00:00.000Z myhost.example.com firewalld 1234 ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\"] Connection dropped from 192.168.1.50 port 54321",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-08-26T12:00:00",
+      "vendor": "Linux",
+      "product": "firewalld",
+      "category_name": "System Activity",
+      "activity_name": "Log",
+      "src_ip": "192.168.1.50",
+      "dst_ip": null,
+      "src_port": 54321,
+      "dst_port": null,
+      "user": null,
+      "severity": "Informational",
+      "status": null
+    }
+  },
+  {
+    "id": "json_security_finding",
+    "raw": "{\"timestamp\": \"2026-08-26T12:00:00Z\", \"src_ip\": \"192.168.1.10\", \"dst_ip\": \"10.0.0.1\", \"src_port\": 44321, \"dst_port\": 443, \"user\": \"admin\", \"severity\": \"high\", \"status\": \"failure\", \"action\": \"login\", \"message\": \"Failed admin login attempt\"}",
+    "expected": {
+      "log_format": "json",
+      "timestamp": "2026-08-26T12:00:00",
+      "vendor": null,
+      "product": null,
+      "category_name": "Identity & Access Management",
+      "activity_name": "Logon",
+      "src_ip": "192.168.1.10",
+      "dst_ip": "10.0.0.1",
+      "src_port": 44321,
+      "dst_port": 443,
+      "user": "admin",
+      "severity": "High",
+      "status": "Failure"
+    }
+  },
+  {
+    "id": "json_web_access",
+    "raw": "{\"time\": \"2026-08-27T08:30:00Z\", \"client_ip\": \"203.0.113.195\", \"server_ip\": \"198.51.100.1\", \"sport\": 52100, \"dport\": 80, \"method\": \"GET\", \"status\": \"success\", \"user\": \"john.doe\", \"message\": \"HTTP request processed\"}",
+    "expected": {
+      "log_format": "json",
+      "timestamp": "2026-08-27T08:30:00",
+      "vendor": null,
+      "product": null,
+      "category_name": "Network Activity",
+      "activity_name": "GET",
+      "src_ip": "203.0.113.195",
+      "dst_ip": "198.51.100.1",
+      "src_port": 52100,
+      "dst_port": 80,
+      "user": "john.doe",
+      "severity": null,
+      "status": "Success"
+    }
+  },
+  {
+    "id": "cef_checkpoint_firewall",
+    "raw": "CEF:0|CheckPoint|Firewall|R80.10|1|Drop|7|src=192.168.1.50 dst=10.0.0.5 spt=54321 dpt=443 proto=tcp suser=alice act=Drop msg=Blocked outbound",
+    "expected": {
+      "log_format": "cef",
+      "timestamp": null,
+      "vendor": "CheckPoint",
+      "product": "Firewall",
+      "category_name": "Network Activity",
+      "activity_name": "Drop",
+      "src_ip": "192.168.1.50",
+      "dst_ip": "10.0.0.5",
+      "src_port": 54321,
+      "dst_port": 443,
+      "user": "alice",
+      "severity": "High",
+      "status": "Failure"
+    }
+  },
+  {
+    "id": "leef_qradar_auth",
+    "raw": "LEEF:1.0|IBM|QRadar|7.3.1|LoginFailed|src=172.16.0.4\tdst=172.16.0.1\tsrcPort=49152\tdstPort=22\tusrName=john.doe\tproto=TCP\tsev=4\tstatus=failure\tmsg=SSH authentication failed",
+    "expected": {
+      "log_format": "leef",
+      "timestamp": null,
+      "vendor": "IBM",
+      "product": "QRadar",
+      "category_name": "Identity & Access Management",
+      "activity_name": "Logon",
+      "src_ip": "172.16.0.4",
+      "dst_ip": "172.16.0.1",
+      "src_port": 49152,
+      "dst_port": 22,
+      "user": "john.doe",
+      "severity": "High",
+      "status": "Failure"
+    }
+  },
+  {
+    "id": "cisco_asa_deny",
+    "raw": "Jul  1 09:05:00 firewall %ASA-4-106023: Deny tcp src outside:192.168.1.50/54321 dst inside:10.0.0.5/443 by access-group \"outside_in\" [0x0, 0x0]",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-07-01T09:05:00",
+      "vendor": "Cisco",
+      "product": "ASA",
+      "category_name": "Network Activity",
+      "activity_name": "Deny",
+      "src_ip": "192.168.1.50",
+      "dst_ip": "10.0.0.5",
+      "src_port": 54321,
+      "dst_port": 443,
+      "user": null,
+      "severity": "Medium",
+      "status": "Failure"
+    }
+  },
+  {
+    "id": "fortinet_fortios_traffic",
+    "raw": "date=2026-08-26 time=12:00:00 devname=\"FGT60D\" type=traffic subtype=forward srcip=192.168.1.25 dstip=10.0.0.10 srcport=51234 dstport=80 proto=6 action=\"accept\" status=\"success\" level=\"notice\" user=\"bob\" msg=\"Traffic accepted\"",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-08-26T12:00:00",
+      "vendor": "Fortinet",
+      "product": "FortiOS",
+      "category_name": "Network Activity",
+      "activity_name": "Accept",
+      "src_ip": "192.168.1.25",
+      "dst_ip": "10.0.0.10",
+      "src_port": 51234,
+      "dst_port": 80,
+      "user": "bob",
+      "severity": "Informational",
+      "status": "Success"
+    }
+  },
+  {
+    "id": "pfsense_filterlog_pass",
+    "raw": "Jul  1 09:10:00 gw filterlog: 4,,,1000000103,em0,match,pass,in,4,0x0,,64,0,0,DF,6,tcp,60,192.168.1.100,10.0.0.1,54321,443,0,S,12345678,,65535,,",
+    "expected": {
+      "log_format": "syslog",
+      "timestamp": "2026-07-01T09:10:00",
+      "vendor": "pfSense",
+      "product": "Filterlog",
+      "category_name": "Network Activity",
+      "activity_name": "Pass",
+      "src_ip": "192.168.1.100",
+      "dst_ip": "10.0.0.1",
+      "src_port": 54321,
+      "dst_port": 443,
+      "user": null,
+      "severity": null,
+      "status": "Success"
+    }
+  },
+  {
+    "id": "android_logcat",
+    "raw": "08-26 12:00:00.123  1000  1050 I ActivityManager: Displayed com.example.app/.MainActivity: +450ms",
+    "expected": {
+      "log_format": "android",
+      "timestamp": "2026-08-26T12:00:00",
+      "vendor": "Google",
+      "product": "Android",
+      "category_name": "System Activity",
+      "activity_name": "Activity Launch",
+      "src_ip": null,
+      "dst_ip": null,
+      "src_port": null,
+      "dst_port": null,
+      "user": null,
+      "severity": "Informational",
+      "status": null
+    }
+  },
+  {
+    "id": "xml_sysmon_event",
+    "raw": "<Event><System><Provider Name=\"Microsoft-Windows-Sysmon\"/><EventID>3</EventID><TimeCreated SystemTime=\"2026-08-26T12:00:00.000000Z\"/><Level>4</Level></System><EventData><Data Name=\"User\">CORP\\alice</Data><Data Name=\"SourceIp\">192.168.1.10</Data><Data Name=\"SourcePort\">50123</Data><Data Name=\"DestinationIp\">10.0.0.1</Data><Data Name=\"DestinationPort\">443</Data><Data Name=\"Protocol\">tcp</Data></EventData></Event>",
+    "expected": {
+      "log_format": "xml",
+      "timestamp": "2026-08-26T12:00:00",
+      "vendor": "Microsoft",
+      "product": "Sysmon",
+      "category_name": "Network Activity",
+      "activity_name": "Connect",
+      "src_ip": "192.168.1.10",
+      "dst_ip": "10.0.0.1",
+      "src_port": 50123,
+      "dst_port": 443,
+      "user": "CORP\\alice",
+      "severity": "Informational",
+      "status": null
+    }
+  }
+]

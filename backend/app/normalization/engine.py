@@ -1,10 +1,12 @@
 """
-Normalization and enrichment engine.
+Normalization and enrichment engine (Node 8).
 Applies category, class, activity, severity, and status inference rules.
+Enforces strict losslessness substring guard against parser bugs & LLM hallucinations.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict
 
 from app.models.event_schema import UnifiedEvent
@@ -17,6 +19,67 @@ from app.normalization.taxonomy import (
     STATUS_ID_MAP,
     resolve_process_taxonomy,
 )
+
+from app.validation.validator import (
+    get_severity_keyword_floor,
+    validate_ip,
+    validate_port,
+    validate_severity,
+    validate_status,
+    validate_timestamp,
+)
+
+logger = logging.getLogger("ulpf.normalizer")
+
+# Fields subject to strict raw_event substring verification
+_GUARDED_SUBSTRING_FIELDS = (
+    "src_ip",
+    "dst_ip",
+    "user",
+    "src_hostname",
+    "dst_hostname",
+    "src_endpoint_name",
+    "dst_endpoint_name",
+    "user_domain",
+    "user_uid",
+    "session_uid",
+)
+
+
+def _apply_losslessness_guard(d: Dict[str, Any], raw_event: str) -> None:
+    """
+    Losslessness Guard (Node 8 requirement):
+    Verify that every non-null extracted literal field value is an exact substring of the record's raw_event.
+    If a parser or LLM hallucinates a field value not present in the raw event, it is nulled out,
+    logged with a warning, and tracked in unmapped['traceability_warnings'].
+    """
+    if not raw_event:
+        return
+
+    unmapped = d.get("unmapped") or {}
+    if not isinstance(unmapped, dict):
+        unmapped = {}
+
+    warnings = list(unmapped.get("traceability_warnings") or [])
+
+    for field in _GUARDED_SUBSTRING_FIELDS:
+        val = d.get(field)
+        if val is not None and isinstance(val, str) and val.strip():
+            # Check if literal field value exists in raw_event
+            if val not in raw_event:
+                logger.warning(
+                    f"Losslessness guard rejected field '{field}'='{val}': value not found in raw_event."
+                )
+                warnings.append({
+                    "field": field,
+                    "rejected_value": val,
+                    "reason": "Value is not a substring of raw_event",
+                })
+                d[field] = None
+
+    if warnings:
+        unmapped["traceability_warnings"] = warnings
+        d["unmapped"] = unmapped
 
 
 def enrich_classification(mapped: Dict[str, Any]) -> None:
@@ -72,54 +135,68 @@ def enrich_classification(mapped: Dict[str, Any]) -> None:
     if mapped.get("class_uid") is not None and mapped.get("activity_id") is not None:
         mapped.setdefault("type_uid", mapped["class_uid"] * 100 + mapped["activity_id"])
 
-    # Severity
-    sev = mapped.get("severity")
-    if sev:
-        sev_key = str(sev).strip().lower()
-        if sev_key in SEVERITY_NAME_MAP:
-            mapped["severity"], mapped["severity_id"] = SEVERITY_NAME_MAP[sev_key]
-        elif "severity_id" not in mapped:
-            mapped["severity_id"] = SEVERITY_ID_MAP.get(sev_key, 0)
+    # Severity canonical validation
+    sev_name, sev_id = validate_severity(mapped.get("severity"), mapped.get("severity_id"))
+    if sev_name is not None:
+        mapped["severity"] = sev_name
+        mapped["severity_id"] = sev_id
+    elif "severity_id" in mapped and mapped["severity_id"] is None:
+        mapped.pop("severity_id")
 
-    # Status
-    st = mapped.get("status")
-    if st and "status_id" not in mapped:
-        mapped["status_id"] = STATUS_ID_MAP.get(st.strip().lower(), 0)
+    # Status canonical validation
+    st_name, st_id = validate_status(mapped.get("status"), mapped.get("status_id"))
+    if st_name is not None:
+        mapped["status"] = st_name
+        mapped["status_id"] = st_id
+    elif "status_id" in mapped and mapped["status_id"] is None:
+        mapped.pop("status_id")
 
 
 def normalize_event(event: UnifiedEvent) -> UnifiedEvent:
-    """Post-parse normalization & heuristic enrichment on UnifiedEvent."""
+    """
+    Single convergence point for BOTH branches (rule-based parser AND human-approved/Ollama).
+    Post-parse normalization, validation, enrichment, and losslessness guard.
+    """
     d = event.model_dump()
+    raw_event = event.raw_event or ""
+
+    # 1. Validate Network Attributes (IPs & Ports)
+    d["src_ip"] = validate_ip(d.get("src_ip"))
+    d["dst_ip"] = validate_ip(d.get("dst_ip"))
+    d["src_port"] = validate_port(d.get("src_port"))
+    d["dst_port"] = validate_port(d.get("dst_port"))
+
+    # 2. Validate Temporal Attributes
+    if d.get("timestamp"):
+        d["timestamp"] = validate_timestamp(d["timestamp"])
+
+    # 3. Apply Losslessness Substring Guard
+    _apply_losslessness_guard(d, raw_event)
+
+    # 4. Enrich standard classifications and OCSF UIDs
     enrich_classification(d)
 
-    # Heuristic vendor/product inference if missing
-    raw_lower = event.raw_event.lower()
-    if not d.get("vendor"):
-        if "cisco" in raw_lower:
-            d["vendor"] = "Cisco"
-        elif "fortinet" in raw_lower or "fortigate" in raw_lower:
-            d["vendor"] = "Fortinet"
-        elif "palo alto" in raw_lower or "pan-os" in raw_lower:
-            d["vendor"] = "Palo Alto Networks"
-        elif "microsoft" in raw_lower or "windows" in raw_lower or "eventid" in raw_lower:
-            d["vendor"] = "Microsoft"
-            d.setdefault("product", "Windows")
-        elif "sshd" in raw_lower or "sudo" in raw_lower or "systemd" in raw_lower:
-            d["vendor"] = "Linux"
-            d.setdefault("product", "Syslog")
-        elif "zeek" in raw_lower or "bro" in raw_lower:
-            d["vendor"] = "Zeek"
+    # 4b. Enforce Deterministic Severity Keyword Floor
+    # Explicit raw keywords (FATAL, ERROR, WARN, FAIL) are never downgraded below their floor,
+    # unless an explicit structured field (e.g. "sev": "info") specifically designated it
+    kw_sev_name, kw_sev_id = get_severity_keyword_floor(raw_event)
+    if kw_sev_id is not None:
+        curr_sev_id = d.get("severity_id")
+        has_explicit_structured_info = (
+            ('"sev": "info"' in raw_event or '"sev":"info"' in raw_event or '"level": "info"' in raw_event or '"level":"info"' in raw_event or '"sev": "trace"' in raw_event or '"sev":"trace"' in raw_event)
+            or ('sev=info' in raw_event.lower() or 'level=info' in raw_event.lower())
+        )
+        is_authoritative_source = (
+            d.get("vendor") == "Cisco"
+            or has_explicit_structured_info
+        )
+        if (curr_sev_id is None or curr_sev_id == 0 or curr_sev_id < kw_sev_id) and not is_authoritative_source:
+            d["severity"] = kw_sev_name
+            d["severity_id"] = kw_sev_id
 
-    # Severity heuristic fallback (ONLY if severity is not already set)
-    if not d.get("severity") or d.get("severity") in ("Unknown", "unknown"):
-        if any(w in raw_lower for w in ("error", "fail", "failed", "denied", "block", "refuse", "critical", "fatal", "attack")):
-            d["severity"] = "High"
-            d["severity_id"] = 4
-        elif any(w in raw_lower for w in ("warn", "warning", "suspicious", "timeout")):
-            d["severity"] = "Medium"
-            d["severity_id"] = 3
-        else:
-            d["severity"] = "Informational"
-            d["severity_id"] = 1
+    # 5. Clean up any empty string fields to None
+    for k in ("src_hostname", "dst_hostname", "src_endpoint_name", "dst_endpoint_name", "user", "vendor", "product", "service_name"):
+        if d.get(k) is not None and isinstance(d[k], str) and not d[k].strip():
+            d[k] = None
 
     return UnifiedEvent(**d)

@@ -1,0 +1,31 @@
+# Self-declared vendor/product banner patterns (extensible YAML configuration)
+banners:
+  - name: "VirtualBox"
+    pattern: "(?:VirtualBox\\s+(?:VM|Base)?|Oracle\\s+VM\\s+VirtualBox)\\s*(?:v(?:ersion)?)?\\s*([0-9]+\\.[0-9]+\\.[0-9]+(?:[a-zA-Z0-9_.-]+)?)"
+    vendor: "Oracle"
+    product: "VirtualBox"
+    version_group: 1
+
+  - name: "Apache HTTP Server"
+    pattern: "Apache/([0-9]+\\.[0-9]+\\.[0-9]+)"
+    vendor: "Apache"
+    product: "HTTP Server"
+    version_group: 1
+
+  - name: "Nginx Server"
+    pattern: "nginx/([0-9]+\\.[0-9]+\\.[0-9]+)"
+    vendor: "Nginx"
+    product: "Nginx"
+    version_group: 1
+
+  - name: "OpenSSH"
+    pattern: "OpenSSH_([0-9]+\\.[0-9]+[a-zA-Z0-9_.-]*)"
+    vendor: "OpenBSD"
+    product: "OpenSSH"
+    version_group: 1
+
+  - name: "Generic Product Version"
+    pattern: "([a-zA-Z0-9_-]+)\\s+(?:Server|Daemon|Application|Base)?\\s*v([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+    vendor: null
+    product_group: 1
+    version_group: 2

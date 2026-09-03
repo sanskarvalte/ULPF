@@ -1,0 +1,16 @@
+# pfSense Filterlog Mapping to OCSF
+vendor: "pfSense"
+product: "Filterlog"
+format: "syslog"
+match_pattern: "filterlog(?:\\[\\d+\\])?:\\s*"
+field_mapping:
+  action: "activity_name"
+  protocol: "protocol"
+  src_ip: "src_ip"
+  src_port: "src_port"
+  dst_ip: "dst_ip"
+  dst_port: "dst_port"
+  interface: "src_endpoint_name"
+  reason: "status_detail"
+category: "Network Activity"
+class: "Network Activity"

@@ -416,11 +416,11 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(ev_err.severity, "High")
         self.assertEqual(ev_err.severity_id, 4)
 
-        # 5. fatal -> High (4)
+        # 5. fatal -> Fatal (6)
         raw_fatal = '{"ts":"2023-05-15T12:00:04.000Z","sev":"fatal","k":"unhandled-exception-shutdown","v":{"reason":"OOM"}}'
         ev_fatal = normalize_event(parse_json_log(raw_fatal))
-        self.assertEqual(ev_fatal.severity, "High")
-        self.assertEqual(ev_fatal.severity_id, 4)
+        self.assertEqual(ev_fatal.severity, "Fatal")
+        self.assertEqual(ev_fatal.severity_id, 6)
 
         # 6. Check unmapped fields and timestamp parsing
         self.assertEqual(ev_info.unmapped.get("k"), "error-handler-initialized")
@@ -428,7 +428,15 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(ev_info.vendor, "Tableau")
         self.assertEqual(ev_info.product, "Hyper")
 
+    def test_ollama_parser_offline_fallback(self):
+        from app.parsers.ollama_parser import parse_with_ollama
+        raw = "2026-08-31 22:45:00 [CUSTOM_APP] user=john_doe action=checkout status=success"
+        ev = parse_with_ollama(raw)
+        self.assertIsNotNone(ev)
+        self.assertEqual(ev.raw_event, raw)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

@@ -1,0 +1,16 @@
+# Cisco ASA Firewall Log Mapping to OCSF
+vendor: "Cisco"
+product: "ASA"
+format: "syslog"
+match_pattern: "%ASA-(?:session-)?\\d-\\d{6}"
+field_mapping:
+  action: "activity_name"
+  protocol: "protocol"
+  src_ip: "src_ip"
+  src_port: "src_port"
+  dst_ip: "dst_ip"
+  dst_port: "dst_port"
+  user: "user"
+  message: "message"
+category: "Network Activity"
+class: "Network Activity"

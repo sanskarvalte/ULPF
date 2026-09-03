@@ -26,6 +26,7 @@ class TestAPI(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.pop("ULPF_DB_PATH", None)
         cls.temp_dir.cleanup()
 
     def test_health_check(self):

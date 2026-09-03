@@ -174,25 +174,42 @@ def _extract_single_record(elem: ET.Element) -> UnifiedEvent:
         if child is elem:
             continue
         tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
-        if len(child) == 0 and child.text and child.text.strip():
-            tag_values.setdefault(tag.strip(), []).append(child.text.strip())
+        c_text = (child.text or "").strip()
+
+        # Handle Sysmon/Windows <Data Name="Key">Value</Data>
+        if tag.lower() == "data" and "Name" in child.attrib:
+            data_key = child.attrib["Name"].strip()
+            if c_text:
+                tag_values.setdefault(data_key, []).append(c_text)
+
+        if len(child) == 0 and c_text:
+            tag_values.setdefault(tag.strip(), []).append(c_text)
 
         for attr_name, attr_val in child.attrib.items():
             if attr_val and attr_val.strip():
                 tag_values.setdefault(attr_name.strip(), []).append(attr_val.strip())
+                # Handle Provider Name=... or TimeCreated SystemTime=...
+                if attr_name.lower() in ("systemtime", "timecreated"):
+                    tag_values.setdefault("SystemTime", []).append(attr_val.strip())
 
     mapped: Dict[str, Any] = {}
     unmapped: Dict[str, Any] = {}
 
     # 2. Timestamp extraction (<date> or <millis> or standard timestamp fields)
     dt: Optional[datetime] = None
-    date_val = tag_values.get("date", [None])[0] or tag_values.get("Timestamp", [None])[0] or tag_values.get("timestamp", [None])[0] or tag_values.get("EventTime", [None])[0] or tag_values.get("TimeCreated", [None])[0]
+    date_val = (
+        tag_values.get("date", [None])[0]
+        or tag_values.get("SystemTime", [None])[0]
+        or tag_values.get("Timestamp", [None])[0]
+        or tag_values.get("timestamp", [None])[0]
+        or tag_values.get("EventTime", [None])[0]
+        or tag_values.get("TimeCreated", [None])[0]
+    )
     millis_val = tag_values.get("millis", [None])[0]
 
     if date_val:
         # ISO 8601 parsing
         try:
-            # Handle YYYY-MM-DDTHH:MM:SS or with millis/offsets
             d_clean = date_val.replace("Z", "+00:00")
             dt = datetime.fromisoformat(d_clean)
             if dt.tzinfo is None:
@@ -212,12 +229,20 @@ def _extract_single_record(elem: ET.Element) -> UnifiedEvent:
     # 3. Severity extraction (<level> or <severity>)
     level_val = tag_values.get("level", [None])[0] or tag_values.get("Level", [None])[0] or tag_values.get("severity", [None])[0] or tag_values.get("Severity", [None])[0]
     if level_val:
-        sev_tuple = _JAVA_LEVEL_SEVERITY_MAP.get(level_val.upper())
-        if sev_tuple:
+        if level_val.isdigit():
+            # Windows EventLog Level mapping: 1=Critical, 2=Error(High), 3=Warning(Med), 4=Info, 5=Verbose
+            w_lvl = int(level_val)
+            w_map = {1: ("Critical", 5), 2: ("High", 4), 3: ("Medium", 3), 4: ("Informational", 1), 5: ("Informational", 1)}
+            sev_tuple = w_map.get(w_lvl, ("Informational", 1))
             mapped["severity"] = sev_tuple[0]
             mapped["severity_id"] = sev_tuple[1]
         else:
-            mapped["severity"] = level_val.capitalize()
+            sev_tuple = _JAVA_LEVEL_SEVERITY_MAP.get(level_val.upper())
+            if sev_tuple:
+                mapped["severity"] = sev_tuple[0]
+                mapped["severity_id"] = sev_tuple[1]
+            else:
+                mapped["severity"] = level_val.capitalize()
 
     # 4. Message extraction
     msg_val = tag_values.get("message", [None])[0] or tag_values.get("Message", [None])[0] or tag_values.get("msg", [None])[0]
@@ -230,40 +255,58 @@ def _extract_single_record(elem: ET.Element) -> UnifiedEvent:
     source_val = tag_values.get("source", [None])[0] or tag_values.get("Source", [None])[0] or tag_values.get("host", [None])[0]
     explicit_vendor = tag_values.get("vendor", [None])[0] or tag_values.get("Vendor", [None])[0]
     explicit_product = tag_values.get("product", [None])[0] or tag_values.get("Product", [None])[0]
+    names_list = tag_values.get("Name", [])
 
-    vendor, product = _resolve_vendor_product(logger_val, catalog_val, source_val, explicit_vendor, explicit_product)
-    if vendor:
-        mapped["vendor"] = vendor
-    if product:
-        mapped["product"] = product
+    if any("Sysmon" in n for n in names_list):
+        mapped["vendor"] = "Microsoft"
+        mapped["product"] = "Sysmon"
+    else:
+        vendor, product = _resolve_vendor_product(logger_val, catalog_val, source_val, explicit_vendor, explicit_product)
+        if vendor:
+            mapped["vendor"] = vendor
+        if product:
+            mapped["product"] = product
 
     lower_tag_map: Dict[str, Any] = {k.lower(): v[0] if len(v) == 1 else v for k, v in tag_values.items()}
 
     # 6. Service / Subsystem name
     svc_val = logger_val or lower_tag_map.get("service_name") or lower_tag_map.get("service") or source_val
-    if svc_val:
+    if svc_val and "service_name" not in mapped:
         mapped["service_name"] = svc_val
 
-    # 7. Taxonomy resolution from <key> or <Category>/<Action>
-    key_val = lower_tag_map.get("key") or lower_tag_map.get("action")
-    tax = _resolve_taxonomy_from_key(key_val)
-    if tax:
-        mapped["category_name"] = tax["category_name"]
-        mapped["category_uid"] = tax["category_uid"]
-        mapped["class_name"] = tax["class_name"]
-        mapped["class_uid"] = tax["class_uid"]
-        mapped["activity_name"] = tax["activity_name"]
-        mapped["activity_id"] = tax["activity_id"]
-        mapped["type_name"] = f"{tax['class_name']}: {tax['activity_name']}"
-        mapped["type_uid"] = tax["class_uid"] * 100 + tax["activity_id"]
+    # 7. Taxonomy resolution from <key> or <Category>/<Action> or <EventID>
+    event_id = lower_tag_map.get("eventid")
+    if event_id == "3" or (mapped.get("product") == "Sysmon" and event_id == "3"):
+        mapped["category_name"] = "Network Activity"
+        mapped["class_name"] = "Network Activity"
+        mapped["activity_name"] = "Connect"
+    elif event_id == "1":
+        mapped["category_name"] = "System Activity"
+        mapped["class_name"] = "Process Activity"
+        mapped["activity_name"] = "Launch"
+    elif event_id == "4624":
+        mapped["category_name"] = "Identity & Access Management"
+        mapped["class_name"] = "Authentication"
+        mapped["activity_name"] = "Logon"
     else:
-        # Fallback to Category / Action if explicitly provided
-        cat_val = lower_tag_map.get("category")
-        act_val = lower_tag_map.get("action")
-        if cat_val:
-            mapped["category_name"] = cat_val
-        if act_val:
-            mapped["activity_name"] = act_val
+        key_val = lower_tag_map.get("key") or lower_tag_map.get("action")
+        tax = _resolve_taxonomy_from_key(key_val)
+        if tax:
+            mapped["category_name"] = tax["category_name"]
+            mapped["category_uid"] = tax["category_uid"]
+            mapped["class_name"] = tax["class_name"]
+            mapped["class_uid"] = tax["class_uid"]
+            mapped["activity_name"] = tax["activity_name"]
+            mapped["activity_id"] = tax["activity_id"]
+            mapped["type_name"] = f"{tax['class_name']}: {tax['activity_name']}"
+            mapped["type_uid"] = tax["class_uid"] * 100 + tax["activity_id"]
+        else:
+            cat_val = lower_tag_map.get("category")
+            act_val = lower_tag_map.get("action")
+            if cat_val:
+                mapped["category_name"] = cat_val
+            if act_val:
+                mapped["activity_name"] = act_val
 
     # 8. User Identity extraction
     user_val = (
@@ -283,17 +326,31 @@ def _extract_single_record(elem: ET.Element) -> UnifiedEvent:
     # 9. Network / Host / Session fields
     src_ip = (
         lower_tag_map.get("source_ip")
+        or lower_tag_map.get("sourceip")
         or lower_tag_map.get("src_ip")
         or lower_tag_map.get("ipaddress")
         or lower_tag_map.get("client_ip")
+        or lower_tag_map.get("src")
     )
     dst_ip = (
         lower_tag_map.get("destination_ip")
+        or lower_tag_map.get("destinationip")
         or lower_tag_map.get("dst_ip")
         or lower_tag_map.get("server_ip")
+        or lower_tag_map.get("dst")
     )
-    src_port = lower_tag_map.get("source_port") or lower_tag_map.get("src_port")
-    dst_port = lower_tag_map.get("destination_port") or lower_tag_map.get("dst_port")
+    src_port = (
+        lower_tag_map.get("source_port")
+        or lower_tag_map.get("sourceport")
+        or lower_tag_map.get("src_port")
+        or lower_tag_map.get("sport")
+    )
+    dst_port = (
+        lower_tag_map.get("destination_port")
+        or lower_tag_map.get("destinationport")
+        or lower_tag_map.get("dst_port")
+        or lower_tag_map.get("dport")
+    )
     src_host = lower_tag_map.get("host") or lower_tag_map.get("hostname") or lower_tag_map.get("src_hostname")
     sess_uid = lower_tag_map.get("requestid") or lower_tag_map.get("session_id") or lower_tag_map.get("session_uid")
 

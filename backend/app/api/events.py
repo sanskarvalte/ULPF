@@ -29,6 +29,7 @@ def list_events(
     direction: str = Query("desc", description="Sort direction: asc or desc."),
     format: Optional[str] = Query(None, description="Filter by log format (syslog, android, json, etc.)."),
     search: Optional[str] = Query(None, description="Text search filter."),
+    source: Optional[str] = Query(None, description="Filter by source file / stream identifier."),
 ) -> Dict[str, Any]:
     events = get_all_events(
         limit=limit,
@@ -37,8 +38,9 @@ def list_events(
         direction=direction,
         format_filter=format,
         search=search,
+        source_filter=source,
     )
-    total = get_total_events_count(format_filter=format, search=search)
+    total = get_total_events_count(format_filter=format, search=search, source_filter=source)
     return {
         "count": len(events),
         "total": total,

@@ -1,5 +1,6 @@
 """
 CSV log parser for ULPF.
+Supports header-based columnar security log parsing and 1:1 event mapping.
 """
 
 from __future__ import annotations
@@ -23,35 +24,50 @@ _FIELD_MAP: Dict[str, str] = {**COMMON_FIELD_MAP}
 
 def _row_to_event(row: Dict[str, str], raw: str) -> UnifiedEvent:
     mapped: Dict[str, Any] = {}
+    unmapped: Dict[str, Any] = {}
 
     for col_name, value in row.items():
         if col_name is None:
             continue
-        unified_key = _FIELD_MAP.get(col_name.strip().lower())
-        if unified_key is None:
-            continue
-        if unified_key in mapped:
+        c_clean = col_name.strip()
+        unified_key = _FIELD_MAP.get(c_clean.lower())
+
+        value_str = value.strip() if isinstance(value, str) else str(value) if value is not None else ""
+        if not value_str or value_str.lower() in ("null", "none", "-", ""):
             continue
 
-        value = value.strip() if isinstance(value, str) else value
-        if not value:
+        if unified_key is None:
+            unmapped[c_clean] = value_str
+            continue
+        if unified_key in mapped and mapped[unified_key] is not None:
+            unmapped[c_clean] = value_str
             continue
 
         if unified_key == "timestamp":
-            value = parse_timestamp(value)
+            parsed_ts = parse_timestamp(value_str)
+            if parsed_ts:
+                mapped[unified_key] = parsed_ts
+            else:
+                unmapped[c_clean] = value_str
         elif unified_key == "severity_id":
-            value = coerce_int(value)
-            if value is None:
-                continue
+            iv = coerce_int(value_str)
+            if iv is not None:
+                mapped[unified_key] = iv
+            else:
+                unmapped[c_clean] = value_str
         elif unified_key in ("src_port", "dst_port", "traffic_bytes", "traffic_packets"):
-            value = coerce_int(value)
-            if value is None:
-                continue
+            iv = coerce_int(value_str)
+            if iv is not None:
+                mapped[unified_key] = iv
+            else:
+                unmapped[c_clean] = value_str
         elif unified_key in ("is_mfa", "is_remote"):
-            value = coerce_bool(value)
+            mapped[unified_key] = coerce_bool(value_str)
+        else:
+            mapped[unified_key] = value_str
 
-        if value is not None:
-            mapped[unified_key] = value
+    if unmapped:
+        mapped["unmapped"] = unmapped
 
     enrich_classification(mapped)
     mapped["log_format"] = "csv"
@@ -71,7 +87,7 @@ class CsvParser(BaseParser):
 
 
 def parse_csv_log(raw: str) -> UnifiedEvent:
-    reader = csv.DictReader(io.StringIO(raw))
+    reader = csv.DictReader(io.StringIO(raw), escapechar="\\")
     rows = list(reader)
     if not rows:
         raise ValueError("CSV contains a header but no data rows")
@@ -79,8 +95,13 @@ def parse_csv_log(raw: str) -> UnifiedEvent:
 
 
 def parse_csv_log_all(raw: str) -> List[UnifiedEvent]:
-    reader = csv.DictReader(io.StringIO(raw))
+    reader = csv.DictReader(io.StringIO(raw), escapechar="\\")
     rows = list(reader)
     if not rows:
         raise ValueError("CSV contains a header but no data rows")
-    return [_row_to_event(row, raw) for row in rows]
+    
+    events = []
+    for row in rows:
+        row_raw = ",".join([str(v) for v in row.values() if v is not None]) or raw
+        events.append(_row_to_event(row, row_raw))
+    return events

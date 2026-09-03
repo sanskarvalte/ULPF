@@ -89,6 +89,7 @@ def save_events_batch(
 def get_total_events_count(
     format_filter: Optional[str] = None,
     search: Optional[str] = None,
+    source_filter: Optional[str] = None,
     conn: Optional[duckdb.DuckDBPyConnection] = None,
 ) -> int:
     """Get total count of normalized events matching optional filters."""
@@ -100,12 +101,28 @@ def get_total_events_count(
         where_clauses.append("LOWER(log_format) = ?")
         params.append(format_filter.lower())
 
+    if source_filter and source_filter.strip():
+        where_clauses.append("raw_event_id IN (SELECT raw_event_id FROM raw_events WHERE LOWER(source_file) = ?)")
+        params.append(source_filter.strip().lower())
+
     if search and search.strip():
         term = f"%{search.strip().lower()}%"
         where_clauses.append(
-            "(LOWER(message) LIKE ? OR LOWER(category_name) LIKE ? OR LOWER(vendor) LIKE ? OR LOWER(product) LIKE ? OR LOWER(user) LIKE ? OR LOWER(src_ip) LIKE ?)"
+            "("
+            "LOWER(event_id) LIKE ? OR "
+            "LOWER(message) LIKE ? OR "
+            "LOWER(category_name) LIKE ? OR "
+            "LOWER(vendor) LIKE ? OR "
+            "LOWER(product) LIKE ? OR "
+            "LOWER(user) LIKE ? OR "
+            "LOWER(src_ip) LIKE ? OR "
+            "LOWER(dst_ip) LIKE ? OR "
+            "LOWER(src_hostname) LIKE ? OR "
+            "LOWER(dst_hostname) LIKE ? OR "
+            "LOWER(raw_event_id) LIKE ?"
+            ")"
         )
-        params.extend([term, term, term, term, term, term])
+        params.extend([term] * 11)
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
     query = f"SELECT count(*) FROM normalized_events {where_sql};"
@@ -120,6 +137,7 @@ def get_all_events(
     direction: str = "desc",
     format_filter: Optional[str] = None,
     search: Optional[str] = None,
+    source_filter: Optional[str] = None,
     conn: Optional[duckdb.DuckDBPyConnection] = None,
 ) -> List[Dict[str, Any]]:
     """Query normalized events sorted by newest ingest first by default."""
@@ -144,12 +162,28 @@ def get_all_events(
         where_clauses.append("LOWER(log_format) = ?")
         params.append(format_filter.lower())
 
+    if source_filter and source_filter.strip():
+        where_clauses.append("raw_event_id IN (SELECT raw_event_id FROM raw_events WHERE LOWER(source_file) = ?)")
+        params.append(source_filter.strip().lower())
+
     if search and search.strip():
         term = f"%{search.strip().lower()}%"
         where_clauses.append(
-            "(LOWER(message) LIKE ? OR LOWER(category_name) LIKE ? OR LOWER(vendor) LIKE ? OR LOWER(product) LIKE ? OR LOWER(user) LIKE ? OR LOWER(src_ip) LIKE ?)"
+            "("
+            "LOWER(event_id) LIKE ? OR "
+            "LOWER(message) LIKE ? OR "
+            "LOWER(category_name) LIKE ? OR "
+            "LOWER(vendor) LIKE ? OR "
+            "LOWER(product) LIKE ? OR "
+            "LOWER(user) LIKE ? OR "
+            "LOWER(src_ip) LIKE ? OR "
+            "LOWER(dst_ip) LIKE ? OR "
+            "LOWER(src_hostname) LIKE ? OR "
+            "LOWER(dst_hostname) LIKE ? OR "
+            "LOWER(raw_event_id) LIKE ?"
+            ")"
         )
-        params.extend([term, term, term, term, term, term])
+        params.extend([term] * 11)
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 

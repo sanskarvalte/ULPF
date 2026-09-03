@@ -13,6 +13,7 @@ from app.parsers.csv_parser import CsvParser
 from app.parsers.generic_parser import GenericParser
 from app.parsers.json_parser import JsonParser
 from app.parsers.leef_parser import LeefParser
+from app.parsers.ollama_parser import OllamaParser
 from app.parsers.syslog_parser import SyslogParser
 from app.parsers.xml_parser import XmlParser
 
@@ -28,6 +29,7 @@ class ParserRegistry:
             "leef": LeefParser(),
             "csv": CsvParser(),
             "xml": XmlParser(),
+            "ollama": OllamaParser(),
             "generic": GenericParser(),
         }
 

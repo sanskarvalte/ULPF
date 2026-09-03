@@ -4,80 +4,144 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ULPF — Universal Log Pre-processing Framework</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+
+  <!-- Tailwind CSS Engine & Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#10131a",
+            "surface-dim": "#10131a",
+            "surface-bright": "#363940",
+            "surface-container-lowest": "#0b0e14",
+            "surface-container-low": "#191c22",
+            "surface-container": "#1d2026",
+            "surface-container-high": "#272a31",
+            "surface-container-highest": "#32353c",
+            "on-surface": "#e1e2eb",
+            "on-surface-variant": "#bec7d4",
+            "outline": "#88919d",
+            "outline-variant": "#3f4852",
+            "primary": "#98cbff",
+            "on-primary": "#003354",
+            "primary-container": "#00a3ff",
+            "on-primary-container": "#00375a",
+            "secondary": "#c3c6d1",
+            "secondary-container": "#454952",
+            "on-secondary-container": "#b5b8c3",
+            "tertiary": "#ffb77d",
+            "tertiary-container": "#eb8104",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "background": "#10131a",
+            "on-background": "#e1e2eb",
+          },
+          fontFamily: {
+            "headline-md": ["Hanken Grotesk", "sans-serif"],
+            "label-caps": ["Hanken Grotesk", "sans-serif"],
+            "title-sm": ["Hanken Grotesk", "sans-serif"],
+            "display-lg": ["Hanken Grotesk", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "body-md": ["Hanken Grotesk", "sans-serif"],
+            "code-xs": ["JetBrains Mono", "monospace"],
+          },
+          fontSize: {
+            "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+            "label-caps": ["11px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "700" }],
+            "title-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "display-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "code-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "code-xs": ["11px", { lineHeight: "16px", fontWeight: "500" }],
+          },
+          spacing: {
+            "unit": "4px",
+            "gutter": "16px",
+            "stack-sm": "8px",
+            "stack-md": "16px",
+            "stack-lg": "32px",
+            "container-padding": "24px",
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "9999px",
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Complete Air-Gapped / Offline Fallback CSS Styles -->
   <style>
     :root {
-      --bg: #0b1120;
-      --card-bg: #1e293b;
-      --card-border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
+      --bg: #10131a;
+      --card-bg: #1d2026;
+      --card-border: #3f4852;
+      --text: #e1e2eb;
+      --text-muted: #bec7d4;
+      --accent: #98cbff;
       --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --warning: #ffb77d;
+      --danger: #ffb4ab;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background-color: #10131a;
+      color: #e1e2eb;
+      font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       line-height: 1.5;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
     }
-    .container { max-width: 1400px; margin: 0 auto; }
-    
-    header.topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--card-border);
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .brand h1 { font-size: 22px; font-weight: 700; margin: 2px 0; }
-    .subtitle { font-size: 12px; color: var(--text-muted); }
-    .badge-offline {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--success);
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    
-    .main-nav {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .nav-tab {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 7px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .nav-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-    .nav-tab.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
 
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0e14; }
+    ::-webkit-scrollbar-thumb { background: #32353c; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #454952; }
+
+    /* Offline Utility Fallbacks */
+    .bg-background { background-color: #10131a; }
+    .bg-surface-container-lowest { background-color: #0b0e14; }
+    .bg-surface-container-low { background-color: #191c22; }
+    .bg-surface-container { background-color: #1d2026; }
+    .bg-surface-container-high { background-color: #272a31; }
+    .bg-surface-container-highest { background-color: #32353c; }
+    .bg-primary { background-color: #98cbff; }
+    .bg-secondary-container { background-color: #454952; }
+    .text-primary { color: #98cbff; }
+    .text-on-primary { color: #003354; }
+    .text-on-surface { color: #e1e2eb; }
+    .text-on-surface-variant { color: #bec7d4; }
+    .text-outline { color: #88919d; }
+    .text-tertiary { color: #ffb77d; }
+    .text-error { color: #ffb4ab; }
+    .border-outline-variant { border-color: #3f4852; }
+    .border-error-container { border-color: #93000a; }
+    .border-primary { border-color: #98cbff; }
+    .font-code-sm { font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    .font-code-xs { font-family: "JetBrains Mono", monospace; font-size: 11px; }
+    .font-label-caps { font-family: "Hanken Grotesk", sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .font-title-sm { font-family: "Hanken Grotesk", sans-serif; font-size: 18px; font-weight: 600; }
+    .font-display-lg { font-family: "Hanken Grotesk", sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+
+    /* Buttons & Secondary Pages Utilities */
     button, .btn {
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1px solid var(--card-border);
+      background: #1d2026;
+      color: #e1e2eb;
+      border: 1px solid #3f4852;
       padding: 8px 14px;
-      border-radius: 6px;
+      border-radius: 4px;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
@@ -85,158 +149,219 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
-    button:hover, .btn:hover { background: #283548; border-color: var(--accent); }
-    .btn-primary { background: #0284c7; border-color: #0284c7; color: #fff; }
-    .btn-primary:hover { background: #0369a1; }
-    .btn-success { background: #059669; border-color: #059669; color: #fff; }
-    .btn-success:hover { background: #047857; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-    .metric-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 16px;
-    }
-    .metric-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
-    .metric-value { font-size: 26px; font-weight: 700; color: var(--accent); margin: 4px 0 2px; }
-    .metric-sub { font-size: 11px; color: var(--text-muted); }
+    button:hover, .btn:hover { background: #272a31; border-color: #98cbff; }
+    .btn-primary { background: #00629d; border-color: #00629d; color: #fff; }
+    .btn-primary:hover { background: #004a77; }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
 
     .panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background: #1d2026;
+      border: 1px solid #3f4852;
       border-radius: 8px;
-      padding: 16px;
+      padding: 20px;
       margin-bottom: 20px;
     }
     .panel-title {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: #e1e2eb;
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    .stat-row { margin-bottom: 10px; }
-    .stat-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
-    .stat-count { color: var(--text-muted); }
-    .progress-bar-bg { background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; border-radius: 3px; }
-
-    .anomaly-card {
-      background: rgba(239, 68, 68, 0.08);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-left: 4px solid var(--danger);
-      padding: 12px 14px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .anomaly-card.clean {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-left: 4px solid var(--success);
-    }
-    .anomaly-window { font-family: monospace; font-weight: 700; font-size: 13px; color: #fca5a5; }
-    .anomaly-card.clean .anomaly-window { color: #86efac; }
-    .anomaly-score-badge {
-      background: rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      padding: 3px 8px;
+    .badge-offline {
+      background: rgba(255, 183, 125, 0.15);
+      color: #ffb77d;
+      padding: 4px 10px;
       border-radius: 999px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
+      border: 1px solid rgba(255, 183, 125, 0.3);
     }
 
     .table-container { overflow-x: auto; margin-top: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
     th {
-      background: rgba(0,0,0,0.25);
-      color: var(--text-muted);
+      background: #0b0e14;
+      color: #bec7d4;
       font-weight: 600;
       padding: 8px 10px;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid #3f4852;
       font-size: 11px;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-    td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    tr:hover td { background: rgba(255,255,255,0.02); }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(63, 72, 82, 0.4); }
+    tr:hover td { background: rgba(39, 42, 49, 0.5); }
 
-    .sev-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-    .sev-critical { background: rgba(220, 38, 38, 0.2); color: #f87171; }
-    .sev-high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-    .sev-medium { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
-    .sev-low { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
-    .sev-unknown, .sev-informational { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; }
-    .fmt-pill { font-family: monospace; font-size: 11px; background: rgba(255, 255, 255, 0.08); padding: 2px 5px; border-radius: 3px; color: #38bdf8; }
+    .sev-badge { display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .sev-critical { background: rgba(147, 0, 10, 0.25); color: #ffb4ab; border: 1px solid #93000a; }
+    .sev-high { background: rgba(147, 0, 10, 0.15); color: #ffb4ab; border: 1px solid #93000a; }
+    .sev-medium { background: rgba(235, 129, 4, 0.15); color: #ffb77d; border: 1px solid rgba(235, 129, 4, 0.3); }
+    .sev-low { background: rgba(152, 203, 255, 0.15); color: #98cbff; border: 1px solid rgba(152, 203, 255, 0.3); }
+    .sev-unknown, .sev-informational { background: rgba(63, 72, 82, 0.3); color: #bec7d4; border: 1px solid #3f4852; }
+    .fmt-pill { font-family: "JetBrains Mono", monospace; font-size: 11px; background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 2px; color: #98cbff; }
 
     .search-input {
       width: 100%;
       padding: 8px 12px;
-      background: #0f172a;
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      color: #fff;
+      background: #0b0e14;
+      border: 1px solid #3f4852;
+      border-radius: 4px;
+      color: #e1e2eb;
       font-size: 13px;
       margin-bottom: 10px;
     }
-    .search-input:focus { outline: none; border-color: var(--accent); }
-    textarea { width: 100%; height: 140px; background: #0f172a; border: 1px solid var(--card-border); border-radius: 4px; color: var(--text); padding: 10px; font-family: monospace; font-size: 12px; margin-bottom: 10px; resize: vertical; }
-    .upload-status { margin-top: 8px; font-size: 12px; padding: 10px 14px; border-radius: 6px; display: none; }
-    .upload-status.success { display: block; background: rgba(16,185,129,0.15); color: #86efac; border: 1px solid rgba(16,185,129,0.3); }
-    .upload-status.error { display: block; background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
-    .upload-status.loading { display: block; background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.3); }
+    .search-input:focus { outline: none; border-color: #98cbff; }
+    textarea { width: 100%; height: 140px; background: #0b0e14; border: 1px solid #3f4852; border-radius: 4px; color: #e1e2eb; padding: 10px; font-family: monospace; font-size: 12px; margin-bottom: 10px; resize: vertical; }
+    .upload-status { margin-top: 8px; font-size: 12px; padding: 10px 14px; border-radius: 4px; display: none; }
+    .upload-status.success { display: block; background: rgba(16, 185, 129, 0.15); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .upload-status.error { display: block; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .upload-status.loading { display: block; background: rgba(152, 203, 255, 0.15); color: #98cbff; border: 1px solid rgba(152, 203, 255, 0.3); }
 
-    pre { background: #0f172a; border: 1px solid var(--card-border); padding: 10px; border-radius: 6px; color: #38bdf8; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    pre { background: #0b0e14; border: 1px solid #3f4852; padding: 12px; border-radius: 4px; color: #98cbff; font-family: "JetBrains Mono", monospace; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    
+    /* Investigation Modal */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
     .modal.active { display: flex; }
-    .modal-content { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; max-width: 850px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; }
+    .modal-content { background: #1d2026; border: 1px solid #3f4852; border-radius: 8px; max-width: 900px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+
+    /* Pulse animation */
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div id="nav-container"></div>
-    <main id="app-root">
-      <div style="padding: 40px; text-align: center; color: var(--accent);">Initializing ULPF Dashboard...</div>
-    </main>
-  </div>
+<body class="bg-background font-body-md text-body-md text-on-surface">
+  <div id="nav-container"></div>
+  <main id="app-root" class="relative pl-64 pt-14 min-h-screen bg-background">
+    <div style="padding: 40px; text-align: center; color: var(--accent);">Initializing ULPF SOC Dashboard...</div>
+  </main>
   <div id="modal-container"></div>
 
   <script>
-    function renderNavbar(activePage = 'converter') {
+    function renderNavbar(activePage = 'dashboard') {
       return `
-        <header class="topbar">
-          <div class="brand">
-            <div class="eyebrow">National Technical Research Organisation (NTRO) • ULPF</div>
-            <h1>Universal Log Pre-processing Framework</h1>
-            <p class="subtitle">Lossless Normalization • OCSF Taxonomy • Isolation Forest ML • DuckDB Storage</p>
+        <!-- LEFT SIDEBAR (STITCH DESIGN) -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-outline-variant z-50 flex flex-col">
+          <div class="p-gutter mb-stack-md flex flex-col gap-1">
+            <div class="font-headline-md text-headline-md text-primary tracking-tighter flex items-center gap-2">
+              <span>ULPF</span>
+            </div>
+            <div class="font-label-caps text-label-caps text-on-surface-variant opacity-60">LOG PRE-PROCESSING</div>
           </div>
-          <div class="header-actions">
-            <span class="badge-offline">● 100% Offline Air-Gapped</span>
-            <button class="btn btn-primary" onclick="app.refreshCurrentPage()">🔄 Refresh</button>
+          <nav class="flex-1 overflow-y-auto px-stack-sm space-y-stack-md">
+            <!-- OVERVIEW -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">OVERVIEW</p>
+              <a href="javascript:void(0)" onclick="app.navigate('dashboard')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'dashboard' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">dashboard</span>Dashboard
+              </a>
+            </div>
+            <!-- OPERATIONS -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">OPERATIONS</p>
+              <a href="javascript:void(0)" onclick="app.navigate('ingestion')" data-path="log-ingestion" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'ingestion' || activePage === 'converter' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">input</span>Log Ingestion
+              </a>
+              <a href="javascript:void(0)" onclick="app.navigate('explorer')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'explorer' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">manage_search</span>Log Explorer
+              </a>
+              <a href="javascript:void(0)" onclick="app.navigate('sources')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'sources' || activePage === 'onboarding' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">hub</span>Sources
+              </a>
+            </div>
+            <!-- INTELLIGENCE -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">INTELLIGENCE</p>
+              <a href="javascript:void(0)" onclick="app.navigate('mappings')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'mappings' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">psychology</span>AI Intelligence
+              </a>
+            </div>
+            <!-- INTEGRITY -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">INTEGRITY</p>
+              <a href="javascript:void(0)" onclick="app.navigate('blockchain')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT ${activePage === 'blockchain' ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+                <span class="material-symbols-outlined mr-3 text-[18px]">account_balance_wallet</span>Blockchain
+              </a>
+            </div>
+            <!-- INVESTIGATION -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">INVESTIGATION</p>
+              <a href="javascript:void(0)" onclick="app.openInvestigation()" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high">
+                <span class="material-symbols-outlined mr-3 text-[18px]">policy</span>Investigation
+              </a>
+            </div>
+            <!-- ANALYTICS -->
+            <div class="space-y-unit">
+              <p class="px-stack-md font-label-caps text-label-caps text-outline mb-2">ANALYTICS</p>
+              <a href="javascript:void(0)" onclick="app.navigate('dashboard')" class="flex items-center px-stack-md py-2 transition-colors rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high">
+                <span class="material-symbols-outlined mr-3 text-[18px]">bar_chart</span>Analytics
+              </a>
+            </div>
+          </nav>
+          <!-- BOTTOM SYSTEM STATUS INDICATORS -->
+          <div class="mt-auto p-gutter border-t border-outline-variant bg-surface-container-low" id="sidebar-system-health">
+            <div class="flex flex-wrap gap-x-3 gap-y-1 font-code-xs text-code-xs">
+              <div class="flex items-center gap-1.5 text-tertiary" title="100% Offline Local Network">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>AIR-GAPPED
+              </div>
+              <div class="flex items-center gap-1.5 text-on-surface" id="health-api" title="REST API Online">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>API
+              </div>
+              <div class="flex items-center gap-1.5 text-on-surface" id="health-db" title="DuckDB Storage Online">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>DB
+              </div>
+              <div class="flex items-center gap-1.5 text-on-surface" id="health-ai" title="AI Anomaly Engine Online">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>AI
+              </div>
+              <div class="flex items-center gap-1.5 text-on-surface" id="health-bc" title="Blockchain Integrity Online">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>BC
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- TOP HEADER (STITCH DESIGN) -->
+        <header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-high/90 backdrop-blur-md border-b border-outline-variant z-40 flex items-center px-gutter justify-between">
+          <div class="flex items-center gap-stack-md">
+            <div class="flex items-center gap-2 font-code-sm text-code-sm text-on-surface-variant">
+              <span class="material-symbols-outlined text-[16px]">terminal</span>
+              <span>ROOT / SYSTEM / OPS</span>
+            </div>
+          </div>
+          <div class="flex-1 max-w-xl mx-gutter">
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span>
+              <input id="global-search-input" onkeydown="if(event.key==='Enter') app.onGlobalSearch(this.value)" class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT py-1.5 pl-10 pr-4 text-code-sm focus:outline-none focus:border-primary transition-all text-on-surface placeholder:text-outline" placeholder="Search Event ID, IP, hostname, hash..." type="text">
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="app.refreshCurrentPage()" class="flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded hover:bg-surface-container transition-colors text-code-xs text-on-surface-variant hover:text-on-surface" title="Refresh Dashboard Data">
+              <span class="material-symbols-outlined text-[14px]">refresh</span>
+              <span>REFRESH</span>
+            </button>
+            <a href="/export/parquet" download class="flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded hover:bg-surface-container transition-colors text-code-xs text-primary hover:border-primary" title="Download Normalized Parquet Export">
+              <span class="material-symbols-outlined text-[14px]">download</span>
+              <span>EXPORT</span>
+            </a>
+            <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest border border-outline-variant rounded-DEFAULT" id="system-status-badge">
+              <span class="text-[8px] text-tertiary">●</span>
+              <span class="font-label-caps text-label-caps text-on-surface">SYSTEM ONLINE</span>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-xs" title="SOC Analyst Account">
+              <span class="material-symbols-outlined text-[18px]">person</span>
+            </div>
           </div>
         </header>
-        <nav class="main-nav">
-          <button class="nav-tab ${activePage === 'converter' ? 'active' : ''}" onclick="app.navigate('converter')">📄 Convert Single File</button>
-          <button class="nav-tab ${activePage === 'dashboard' ? 'active' : ''}" onclick="app.navigate('dashboard')">📊 Analytics Dashboard</button>
-          <button class="nav-tab ${activePage === 'explorer' ? 'active' : ''}" onclick="app.navigate('explorer')">🔍 Log Explorer</button>
-          <button class="nav-tab ${activePage === 'onboarding' ? 'active' : ''}" onclick="app.navigate('onboarding')">⚡ Batch Onboarding</button>
-          <button class="nav-tab ${activePage === 'mappings' ? 'active' : ''}" onclick="app.navigate('mappings')">🗺️ Mapping Rules</button>
-          <div style="flex:1;"></div>
-          <a href="/docs" target="_blank" class="btn btn-sm">📖 OpenAPI Docs</a>
-        </nav>
       `;
     }
 
@@ -254,11 +379,443 @@
             <div class="grid-2" style="margin-top:14px;">
               <div>
                 <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">OCSF Normalized JSON</h4>
-                <pre id="modal-normalized-json" style="max-height:360px; overflow-y:auto;"></pre>
+                <pre id="modal-normalized-json" style="max-height:300px; overflow-y:auto;"></pre>
               </div>
               <div>
-                <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Untouched Raw Payload (SHA-256 Verified)</h4>
-                <pre id="modal-raw-text" style="max-height:360px; overflow-y:auto; color:#a5f3fc;"></pre>
+                <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Untouched Raw Payload</h4>
+                <pre id="modal-raw-text" style="max-height:300px; overflow-y:auto; color:#a5f3fc;"></pre>
+              </div>
+            </div>
+            <div id="modal-blockchain-proof" style="margin-top:14px; padding:12px; background:#0f172a; border:1px solid var(--card-border); border-radius:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:13px; color:#38bdf8;">⛓️ Cryptographic Blockchain Proof & Integrity</span>
+                  <span id="modal-integrity-badge" class="badge-offline" style="background:rgba(56,189,248,0.15); color:#7dd3fc; border-color:rgba(56,189,248,0.3);">⏳ Ready to Verify</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm btn-primary" onclick="app.verifyCurrentModalEventIntegrity()">🛡️ Verify Integrity</button>
+                  <button class="btn btn-sm" style="border-color:#ef4444; color:#f87171;" onclick="app.simulateCurrentModalEventTamper()" title="Simulate database modification to demonstrate tamper detection">⚠️ Simulate Tamper Demo</button>
+                  <button class="btn btn-sm" style="border-color:#10b981; color:#34d399;" onclick="app.restoreCurrentModalEvent()" title="Revert test tampering back to authentic evidence">↺ Restore Authentic</button>
+                </div>
+              </div>
+              <div id="modal-integrity-details" style="font-size:11px; font-family:monospace; color:var(--text-muted); line-height:1.6;">
+                Click 'Verify Integrity' to recalculate stored SHA-256 and validate against immutable blockchain proof.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderIngestionPage(state) {
+      const overview = (state && state.overview) || { total_ingested: 0, total_ingested_str: '0 Events', active_jobs: 0 };
+      const jobs = (state && state.jobs) || [];
+      const selectedJobId = (state && state.selectedJobId) || (jobs[0] ? jobs[0].job_id : null);
+      const selectedJob = jobs.find(j => j.job_id === selectedJobId) || jobs[0] || null;
+      const isUploading = state && state.isUploading;
+      const isPaused = state && state.isPaused;
+
+      // Selected job lifecycle stages
+      const lifecycle = (selectedJob && selectedJob.lifecycle) || {
+        received: { name: 'Received', status: 'PENDING', pct: 0, label: 'Pending' },
+        detected: { name: 'Detected', status: 'PENDING', pct: 0, label: 'Pending' },
+        parsed: { name: 'Parsed', status: 'PENDING', pct: 0, label: 'Pending' },
+        normalized: { name: 'Normalized', status: 'PENDING', pct: 0, label: 'Pending' },
+        validated: { name: 'Validated', status: 'PENDING', pct: 0, label: 'Pending' },
+        stored: { name: 'Stored', status: 'PENDING', pct: 0, label: 'Pending' },
+      };
+
+      function getStepConfig(step, defaultIcon) {
+        const s = step || { status: 'PENDING', label: 'Pending', pct: 0 };
+        const st = s.status ? s.status.toUpperCase() : 'PENDING';
+        let bgClass = 'bg-surface-variant text-on-surface-variant opacity-60';
+        let borderClass = 'border border-outline-variant';
+        let icon = defaultIcon;
+
+        if (st === 'COMPLETED') {
+          bgClass = 'bg-primary text-on-primary shadow-[0_0_12px_rgba(164,204,255,0.4)]';
+          borderClass = 'border border-primary';
+        } else if (st === 'ACTIVE') {
+          bgClass = 'bg-primary-container text-on-primary-container animate-pulse shadow-[0_0_12px_rgba(0,102,204,0.5)]';
+          borderClass = 'border-2 border-primary';
+        } else if (st === 'FAILED') {
+          bgClass = 'bg-error-container text-on-error-container';
+          borderClass = 'border border-error';
+          icon = 'error';
+        }
+
+        return {
+          bgClass,
+          borderClass,
+          icon,
+          label: s.label || (st === 'COMPLETED' ? '100%' : 'Pending'),
+        };
+      }
+
+      const step1 = getStepConfig(lifecycle.received, 'download');
+      const step2 = getStepConfig(lifecycle.detected, 'search');
+      const step3 = getStepConfig(lifecycle.parsed, 'code_blocks');
+      const step4 = getStepConfig(lifecycle.normalized, 'transform');
+      const step5 = getStepConfig(lifecycle.validated, 'fact_check');
+      const step6 = getStepConfig(lifecycle.stored, 'save');
+
+      // Selected job logs
+      const logs = (selectedJob && selectedJob.logs) || [];
+
+      return `
+        <div class="space-y-stack-xl max-w-7xl mx-auto pb-12">
+          <!-- Page Header -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant pb-stack-lg">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-label-caps font-label-caps uppercase tracking-wider text-primary font-semibold">Workspace Ingestion Console</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-code-xs font-code-xs bg-secondary-container text-on-secondary-container font-medium">8-Node Engine</span>
+              </div>
+              <h1 class="text-headline-lg font-headline-lg text-on-surface font-extrabold tracking-tight">Log Ingestion Console</h1>
+              <p class="text-body-md font-body-md text-on-surface-variant max-w-2xl mt-1">
+                Securely import and process log files into the ULPF environment. The system automatically detects formats, extracts fields, and normalizes data for downstream intelligence analysis.
+              </p>
+            </div>
+            <!-- Dynamic Metrics -->
+            <div class="flex items-center gap-6 bg-surface-container-low px-stack-lg py-stack-md rounded-lg border border-outline-variant shadow-sm">
+              <div>
+                <div class="text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant text-[11px] font-semibold">Total Ingested (24h)</div>
+                <div class="text-headline-md font-headline-md font-bold text-primary tracking-tight" id="ingest-stat-total">
+                  ${overview.total_ingested_str || '0 Events'}
+                </div>
+              </div>
+              <div class="h-10 w-px bg-outline-variant"></div>
+              <div>
+                <div class="text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant text-[11px] font-semibold">Active Jobs</div>
+                <div class="text-headline-md font-headline-md font-bold text-on-surface flex items-center gap-2 tracking-tight" id="ingest-stat-active">
+                  ${overview.active_jobs || 0}
+                  ${overview.active_jobs > 0 ? '<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-lg items-start">
+            <!-- Left Column: Workspace, Lifecycle, Jobs Table -->
+            <div class="lg:col-span-8 space-y-stack-lg">
+              <!-- Ingestion Workspace Section -->
+              <section class="bg-surface-container-low rounded-lg p-stack-lg border border-outline-variant shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between mb-stack-md">
+                  <h2 class="text-title-md font-title-md text-on-surface font-semibold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">cloud_upload</span>
+                    Ingestion Workspace
+                  </h2>
+                  <span class="text-label-caps font-label-caps uppercase tracking-wider text-outline text-code-xs">Air-Gapped Local Parser</span>
+                </div>
+
+                <!-- Drag-and-Drop Target -->
+                <div 
+                  id="drop-zone"
+                  class="border-2 border-dashed ${isUploading ? 'border-primary bg-primary-container/10' : 'border-outline-variant hover:border-primary/60 hover:bg-surface-container-highest'} rounded-lg p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer relative group"
+                  onclick="document.getElementById('ingest-file-picker').click()"
+                  ondragover="app.handleDragOver(event)"
+                  ondragleave="app.handleDragLeave(event)"
+                  ondrop="app.handleDrop(event)"
+                >
+                  <input 
+                    type="file" 
+                    id="ingest-file-picker" 
+                    multiple 
+                    accept=".log,.txt,.json,.xml,.csv,.gz,.gzip,.cef,.leef" 
+                    class="hidden" 
+                    onchange="app.handleFileInputChange(event)"
+                  />
+
+                  ${isUploading ? `
+                    <div class="py-4 flex flex-col items-center">
+                      <div class="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-3"></div>
+                      <p class="text-body-md font-semibold text-primary">Processing log payload through 8-Node pipeline...</p>
+                      <p class="text-code-xs text-on-surface-variant mt-1">Collecting chunks • Detecting format • OCSF Normalizing • DuckDB & Blockchain</p>
+                    </div>
+                  ` : `
+                    <div class="w-16 h-16 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-stack-md group-hover:scale-110 transition-transform shadow-md">
+                      <span class="material-symbols-outlined text-[32px]">upload_file</span>
+                    </div>
+                    <p class="text-body-lg font-body-lg text-on-surface font-semibold mb-1">
+                      Drag and drop log files here
+                    </p>
+                    <p class="text-body-sm font-body-sm text-on-surface-variant mb-stack-md">
+                      or <span class="text-primary underline font-medium hover:text-primary-container">click to browse</span> from your local filesystem
+                    </p>
+
+                    <!-- Supported Badges -->
+                    <div class="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-outline-variant/60 w-full max-w-xl">
+                      <span class="text-label-caps font-label-caps uppercase text-outline text-[11px] mr-1">Supported:</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">SYSLOG</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">JSON</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">XML</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">CSV</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">CEF</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">WELF</span>
+                      <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-code-xs font-mono">GZIP</span>
+                    </div>
+                  `}
+                </div>
+              </section>
+
+              <!-- Processing Lifecycle Status Section -->
+              <section class="bg-surface-container-low rounded-lg p-stack-lg border border-outline-variant shadow-sm relative">
+                <div class="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 class="text-title-md font-title-md text-on-surface font-semibold flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-[20px]">account_tree</span>
+                      Processing Lifecycle Status
+                    </h2>
+                    <p class="text-body-sm text-on-surface-variant mt-0.5">
+                      Current job: <strong class="text-on-surface font-mono">${selectedJob ? selectedJob.file_name : 'No active file selected'}</strong>
+                      ${selectedJob ? `<span class="ml-2 text-outline">(${selectedJob.job_id} • ${selectedJob.file_size_str})</span>` : ''}
+                    </p>
+                  </div>
+                  ${selectedJob ? `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-code-xs font-mono font-semibold uppercase ${
+                      selectedJob.status === 'COMPLETED' ? 'bg-secondary-container text-on-secondary-container' :
+                      selectedJob.status === 'AI_ROUTED' ? 'bg-tertiary-container/30 text-tertiary border border-tertiary/40' :
+                      selectedJob.status === 'FAILED' ? 'bg-error-container text-on-error-container' :
+                      'bg-primary/20 text-primary border border-primary/30 animate-pulse'
+                    }">
+                      <span class="w-1.5 h-1.5 rounded-full ${
+                        selectedJob.status === 'COMPLETED' ? 'bg-on-secondary-container' :
+                        selectedJob.status === 'AI_ROUTED' ? 'bg-tertiary' :
+                        selectedJob.status === 'FAILED' ? 'bg-error' :
+                        'bg-primary'
+                      }"></span>
+                      ${selectedJob.status}
+                    </span>
+                  ` : ''}
+                </div>
+
+                <!-- 6-Stage Progress Track -->
+                <div class="relative py-2">
+                  <!-- Background Track Line -->
+                  <div class="hidden sm:block absolute top-7 left-8 right-8 h-1 bg-surface-container-highest -translate-y-1/2 z-0"></div>
+
+                  <!-- Stages Grid -->
+                  <div class="grid grid-cols-2 sm:grid-cols-6 gap-4 relative z-10">
+                    <!-- Stage 1: Received -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step1.bgClass} ${step1.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step1.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Received</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step1.label}">${step1.label}</span>
+                    </div>
+
+                    <!-- Stage 2: Detected -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step2.bgClass} ${step2.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step2.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Detected</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step2.label}">${step2.label}</span>
+                    </div>
+
+                    <!-- Stage 3: Parsed -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step3.bgClass} ${step3.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step3.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Parsed</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step3.label}">${step3.label}</span>
+                    </div>
+
+                    <!-- Stage 4: Normalized -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step4.bgClass} ${step4.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step4.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Normalized</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step4.label}">${step4.label}</span>
+                    </div>
+
+                    <!-- Stage 5: Validated -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step5.bgClass} ${step5.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step5.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Validated</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step5.label}">${step5.label}</span>
+                    </div>
+
+                    <!-- Stage 6: Stored -->
+                    <div class="flex flex-col items-center text-center">
+                      <div class="w-12 h-12 rounded-full ${step6.bgClass} ${step6.borderClass} flex items-center justify-center mb-2 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">${step6.icon}</span>
+                      </div>
+                      <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Stored</span>
+                      <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step6.label}">${step6.label}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Active & Recent Jobs Section -->
+              <section class="bg-surface-container-low rounded-lg p-stack-lg border border-outline-variant shadow-sm">
+                <div class="flex items-center justify-between mb-stack-md">
+                  <h2 class="text-title-md font-title-md text-on-surface font-semibold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">list_alt</span>
+                    Active & Recent Jobs
+                  </h2>
+                  <button 
+                    onclick="app.navigate('explorer')" 
+                    class="text-primary hover:text-primary-container transition-colors flex items-center gap-1 font-label-caps text-label-caps uppercase tracking-wider font-semibold cursor-pointer text-[12px]"
+                  >
+                    VIEW ALL <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </button>
+                </div>
+
+                <!-- Table Container -->
+                <div class="overflow-x-auto rounded border border-outline-variant/60">
+                  <table class="w-full text-left border-collapse text-body-sm">
+                    <thead>
+                      <tr class="bg-surface-container-high border-b border-outline-variant text-on-surface-variant font-label-caps text-label-caps uppercase text-[11px]">
+                        <th class="py-2.5 px-4 font-semibold">Source</th>
+                        <th class="py-2.5 px-4 font-semibold">File</th>
+                        <th class="py-2.5 px-4 font-semibold">Format</th>
+                        <th class="py-2.5 px-4 font-semibold text-right">Events</th>
+                        <th class="py-2.5 px-4 font-semibold text-center">Status</th>
+                        <th class="py-2.5 px-4 font-semibold text-right">Time</th>
+                        <th class="py-2.5 px-4 font-semibold text-right">Errors</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/40 font-code-xs">
+                      ${jobs.length === 0 ? `
+                        <tr>
+                          <td colspan="7" class="py-8 text-center text-on-surface-variant opacity-70">
+                            No recent ingestion jobs found. Drop a log file above to start ingesting.
+                          </td>
+                        </tr>
+                      ` : jobs.map(j => {
+                        const isSelected = selectedJob && selectedJob.job_id === j.job_id;
+                        return `
+                          <tr 
+                            onclick="app.selectJob('${j.job_id}')"
+                            class="transition-colors cursor-pointer ${
+                              isSelected 
+                                ? 'bg-primary/10 border-l-4 border-l-primary font-medium' 
+                                : 'hover:bg-surface-container-highest/60 border-l-4 border-l-transparent'
+                            }"
+                          >
+                            <td class="py-3 px-4 text-on-surface font-semibold">${escapeHtml(j.source)}</td>
+                            <td class="py-3 px-4 text-on-surface-variant truncate max-w-[160px]" title="${escapeHtml(j.file_name)}">${escapeHtml(j.file_name)}</td>
+                            <td class="py-3 px-4">
+                              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface text-[11px] font-mono">${escapeHtml(j.format)}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right text-on-surface font-mono">${Number(j.event_count).toLocaleString()}</td>
+                            <td class="py-3 px-4 text-center">
+                              ${
+                                j.status === 'COMPLETED' ? `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[11px] font-semibold uppercase">
+                                    <span class="material-symbols-outlined text-[12px]">check</span> COMPLETED
+                                  </span>
+                                ` : j.status === 'AI_ROUTED' ? `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary text-[11px] font-semibold uppercase border border-tertiary/40">
+                                    <span class="material-symbols-outlined text-[12px]">psychology</span> AI ROUTED
+                                  </span>
+                                ` : j.status === 'FAILED' ? `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[11px] font-semibold uppercase border border-outline-variant">
+                                    <span class="material-symbols-outlined text-[12px]">error</span> FAILED
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[11px] font-semibold uppercase">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> ${escapeHtml(j.status)}
+                                  </span>
+                                `
+                              }
+                            </td>
+                            <td class="py-3 px-4 text-right text-on-surface-variant font-mono">${escapeHtml(j.elapsed_time_str || '--')}</td>
+                            <td class="py-3 px-4 text-right ${j.error_count > 0 ? 'text-error font-bold' : 'text-outline'} font-mono">${j.error_count}</td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <!-- Right Column: Live Processing Feed Panel -->
+            <div class="lg:col-span-4 sticky top-6">
+              <div class="bg-surface-container-low rounded-lg border border-outline-variant shadow-sm flex flex-col h-[740px] overflow-hidden">
+                <!-- Feed Header -->
+                <div class="p-stack-md border-b border-outline-variant flex items-center justify-between bg-surface-container-high">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full ${isPaused ? 'bg-outline' : 'bg-tertiary animate-pulse shadow-[0_0_8px_rgba(255,183,125,0.8)]'}"></span>
+                    <span class="text-title-sm font-title-sm text-on-surface font-semibold">Live Processing Feed</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button 
+                      onclick="app.toggleFeedPause()" 
+                      title="${isPaused ? 'Resume auto-scroll' : 'Pause feed'}"
+                      class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[18px]">${isPaused ? 'play_arrow' : 'pause'}</span>
+                    </button>
+                    <button 
+                      onclick="app.clearFeed()" 
+                      title="Clear log feed"
+                      class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[18px]">clear_all</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Feed Output Window -->
+                <div id="live-log-feed" class="flex-1 p-4 overflow-y-auto font-mono text-[12px] space-y-2 bg-[#0d131a] text-on-surface border-inset">
+                  ${logs.length === 0 ? `
+                    <div class="text-on-surface-variant opacity-60 flex items-center gap-2 py-4">
+                      <span class="w-1.5 h-3.5 bg-primary animate-pulse inline-block"></span>
+                      <span>Awaiting next event...</span>
+                    </div>
+                  ` : logs.map(l => {
+                    const sev = l.severity || 'INFO';
+                    let badgeClass = 'text-primary font-semibold';
+                    let rowClass = '';
+
+                    if (sev === 'WARN') {
+                      badgeClass = 'text-tertiary font-semibold';
+                      rowClass = 'border-l-2 border-tertiary/60 pl-2 bg-tertiary/5 py-0.5';
+                    } else if (sev === 'FAIL') {
+                      badgeClass = 'text-error font-bold';
+                      rowClass = 'border-l-2 border-error pl-2 bg-error-container/20 py-0.5 text-on-surface';
+                    } else if (sev === 'SUCCESS') {
+                      badgeClass = 'text-[#4ade80] font-bold';
+                      rowClass = 'border-l-2 border-[#4ade80]/60 pl-2 bg-[#4ade80]/5 py-0.5';
+                    }
+
+                    return `
+                      <div class="leading-relaxed break-all ${rowClass}">
+                        <span class="text-outline text-[11px] mr-1">[${escapeHtml(l.timestamp)}]</span>
+                        <span class="${badgeClass} mr-1.5">[${escapeHtml(sev)}]</span>
+                        <span>${escapeHtml(l.message)}</span>
+                      </div>
+                    `;
+                  }).join('')}
+
+                  ${!isPaused ? `
+                    <div class="text-on-surface-variant opacity-50 flex items-center gap-2 pt-2 text-[11px]">
+                      <span class="w-1.5 h-3 bg-primary animate-pulse inline-block"></span>
+                      <span>Monitoring engine stream...</span>
+                    </div>
+                  ` : `
+                    <div class="text-tertiary/80 text-[11px] pt-2 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">pause_circle</span>
+                      <span>Feed paused</span>
+                    </div>
+                  `}
+                </div>
+
+                <!-- Feed Footer / Metadata -->
+                <div class="p-2.5 px-4 bg-surface-container-high border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant font-mono">
+                  <span>Job: <strong class="text-on-surface">${selectedJob ? selectedJob.job_id : 'IDLE'}</strong></span>
+                  <span>${logs.length} events logged</span>
+                </div>
               </div>
             </div>
           </div>
@@ -267,144 +824,340 @@
     }
 
     function renderConverterPage() {
-      return `
-        <div class="panel" style="border-color: var(--accent);">
-          <div class="panel-title">
-            <span>📄 Single File Log to JSON Normalizer</span>
-            <span class="fmt-pill">100% Isolated Output (Only Your File)</span>
-          </div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
-            Paste any XML, JSON, Syslog, CEF, LEEF, or CSV snippet, OR choose 1 file. The system will convert <strong>only your input</strong> and provide a direct JSON file download with zero database contamination.
-          </p>
-
-          <div class="grid-2">
-            <div>
-              <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; text-transform:uppercase;">1. Input: Paste Raw Log or Choose File</h4>
-              <textarea id="converter-text-input" placeholder='Paste your XML, Syslog, CEF, or JSON log code here...'></textarea>
-              <div style="margin-bottom:12px;">
-                <input type="file" id="converter-file-input" style="font-size:12px; color:var(--text-muted);">
-              </div>
-              <button id="converter-btn" class="btn btn-primary" style="font-size:14px; padding:10px 18px;" onclick="app.handleSingleFileConvert()">
-                ⚡ Convert & Download JSON
-              </button>
-              <div id="converter-status" class="upload-status"></div>
-            </div>
-
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <h4 style="font-size:12px; color:var(--success); text-transform:uppercase;">2. Normalized Output (Your File Only)</h4>
-                <button id="copy-json-btn" class="btn btn-sm" style="display:none;" onclick="app.copyConverterJSON()">📋 Copy JSON</button>
-              </div>
-              <pre id="converter-preview" style="height:210px; overflow-y:auto; color:#4ade80;">// Your normalized JSON output will appear here...</pre>
-            </div>
-          </div>
-        </div>
-      `;
+      return renderIngestionPage(window.app ? window.app.ingestionState : null);
     }
 
-    function renderMetricCards(stats = {}, anomalyData = {}) {
-      const totalNorm = (stats.total_normalized_events || 0).toLocaleString();
-      const totalRaw = (stats.total_raw_events || 0).toLocaleString();
-      const anomalies = anomalyData.anomalies_detected || 0;
-      return `
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-title">Normalized Events</div>
-            <div class="metric-value">${totalNorm}</div>
-            <div class="metric-sub">Standardized OCSF schema</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Lossless Raw Events</div>
-            <div class="metric-value">${totalRaw}</div>
-            <div class="metric-sub">SHA-256 deduplicated store</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">ML Anomaly Windows</div>
-            <div class="metric-value" style="color: ${anomalies > 0 ? 'var(--danger)' : 'var(--success)'};">${anomalies}</div>
-            <div class="metric-sub">Isolation Forest detections</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Storage Backend</div>
-            <div class="metric-value" style="font-size: 20px; color: var(--text);">DuckDB (Local)</div>
-            <div class="metric-sub">In-process SQL & Parquet engine</div>
-          </div>
-        </div>
-      `;
+    function formatKpiNumber(num) {
+      if (num === null || num === undefined) return '0';
+      const n = Number(num);
+      if (isNaN(n)) return '0';
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+      return n.toLocaleString();
     }
 
-    function renderDashboardPage(stats = {}, anomalyData = {}, recentEvents = []) {
-      const metricsHtml = renderMetricCards(stats, anomalyData);
+    function renderDashboardPage(dashboardState = {}) {
+      const summary = dashboardState.summary || {};
+      const volume = dashboardState.volume || { buckets: [], max_eps: 0 };
+      const sources = dashboardState.sources || { distribution: [], total_events: 0 };
+      const recentEvents = dashboardState.recentEvents || [];
+      const loading = dashboardState.loading || false;
+      const error = dashboardState.error || null;
 
-      const catRows = (stats.by_category || []).map(c => {
-        const pct = stats.total_normalized_events > 0 ? ((c.count / stats.total_normalized_events) * 100).toFixed(1) : 0;
+      // Loading skeleton if no data has arrived yet
+      if (loading && !summary.events_processed) {
         return `
-          <div class="stat-row">
-            <div class="stat-header">
-              <span>${c.category}</span>
-              <span class="stat-count">${c.count.toLocaleString()} (${pct}%)</span>
+          <div class="flex flex-col w-full p-gutter space-y-stack-md">
+            <div class="grid grid-cols-6 gap-gutter">
+              ${[1,2,3,4,5,6].map(() => `
+                <div class="col-span-1 bg-surface-container p-4 rounded-xl border border-outline-variant h-24 animate-pulse flex flex-col justify-between">
+                  <div class="h-3 w-20 bg-surface-container-highest rounded"></div>
+                  <div class="h-8 w-14 bg-surface-container-highest rounded"></div>
+                </div>
+              `).join('')}
             </div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%; background:#38bdf8;"></div></div>
+            <div class="bg-surface-container p-6 rounded-xl border border-outline-variant h-32 animate-pulse"></div>
+            <div class="grid grid-cols-2 gap-gutter">
+              <div class="bg-surface-container p-6 rounded-xl border border-outline-variant h-64 animate-pulse"></div>
+              <div class="bg-surface-container p-6 rounded-xl border border-outline-variant h-64 animate-pulse"></div>
+            </div>
+            <div class="bg-surface-container rounded-xl border border-outline-variant h-64 animate-pulse"></div>
           </div>
         `;
-      }).join('') || '<div style="color:var(--text-muted); font-size:13px;">No events ingested yet.</div>';
+      }
 
-      const sevColors = { critical:'#dc2626', high:'#ef4444', medium:'#f59e0b', low:'#3b82f6', informational:'#64748b', unknown:'#475569' };
-      const sevRows = (stats.by_severity || []).map(s => {
-        const color = sevColors[(s.severity || 'unknown').toLowerCase()] || '#64748b';
-        const pct = stats.total_normalized_events > 0 ? ((s.count / stats.total_normalized_events) * 100).toFixed(1) : 0;
+      // Event Volume Bar Chart generation
+      const buckets = volume.buckets || [];
+      const maxCount = volume.max_hourly_count || 1;
+      const barsHtml = buckets.length > 0 ? buckets.map(b => {
+        const isPeak = b.count > 0 && b.count === maxCount;
+        const heightPct = maxCount > 0 ? Math.max(4, Math.round((b.count / maxCount) * 100)) : 4;
         return `
-          <div class="stat-row">
-            <div class="stat-header">
-              <span style="text-transform:capitalize;">${s.severity}</span>
-              <span class="stat-count">${s.count.toLocaleString()} (${pct}%)</span>
+          <div class="w-full ${isPeak ? 'bg-primary/40 hover:bg-primary/60' : 'bg-primary/20 hover:bg-primary/40'} transition-colors rounded-t-sm border-t border-primary relative group cursor-pointer" style="height: ${heightPct}%;">
+            ${isPeak ? '<div class="absolute -top-1 w-2 h-2 rounded-full bg-primary left-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(152,203,255,0.8)]"></div>' : ''}
+            <div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-code-xs font-code-xs text-on-surface z-20 whitespace-nowrap border border-outline-variant shadow-lg pointer-events-none">
+              ${b.label} — ${b.count.toLocaleString()}
             </div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%; background:${color};"></div></div>
           </div>
         `;
-      }).join('') || '<div style="color:var(--text-muted); font-size:13px;">No severity data.</div>';
-
-      const anomaliesHtml = (anomalyData.anomalies || []).map(a => `
-        <div class="anomaly-card">
-          <div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="anomaly-window">⏱ Window: ${a.time_window}</span>
-              <span class="sev-badge sev-high">${a.high_severity_events} ERRORS</span>
-            </div>
-            <div style="font-size:13px; color:var(--text); margin-top:4px;">${a.description}</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Volume: ${a.total_events} events • Source: ${a.vendors} (${a.categories})</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="anomaly-score-badge">Score: ${(a.anomaly_score * 100).toFixed(0)}%</div>
-          </div>
-        </div>
-      `).join('') || `
-        <div class="anomaly-card clean">
-          <div>
-            <div class="anomaly-window">✅ Statistical Baseline Normal</div>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">No abnormal spikes or intrusion patterns detected by Isolation Forest.</div>
-          </div>
-          <span class="badge-offline">Normal</span>
+      }).join('') : `
+        <div class="w-full h-full flex items-center justify-center text-on-surface-variant text-code-xs">
+          No events available in 24h window
         </div>
       `;
 
-      return `
-        ${metricsHtml}
-        <div class="panel" style="border-color: rgba(239, 68, 68, 0.4); margin-bottom: 24px;">
-          <div class="panel-title">
-            <span>🚨 AI/ML Anomaly Detection (Isolation Forest)</span>
-            <span style="font-size:12px; color:var(--text-muted);">${anomalyData.anomalies_detected || 0} flagged window(s) of ${anomalyData.total_windows_analyzed || 0} evaluated</span>
-          </div>
-          <div style="max-height: 280px; overflow-y: auto;">${anomaliesHtml}</div>
-        </div>
+      // Source Distribution Donut Chart calculation
+      const dist = sources.distribution || [];
+      const totalSrcEvents = sources.total_events || 0;
+      const C = 289.026; // 2 * pi * 46
 
-        <div class="grid-2">
-          <div class="panel">
-            <div class="panel-title"><span>Event Categories (DuckDB SQL)</span></div>
-            ${catRows}
+      let currentOffset = 0;
+      const svgCircles = dist.map(item => {
+        const strokeLen = (item.pct / 100.0) * C;
+        const dashArray = `${strokeLen.toFixed(1)} ${(C - strokeLen).toFixed(1)}`;
+        const rotation = (currentOffset / C) * 360;
+        currentOffset += strokeLen;
+        return `
+          <circle cx="50" cy="50" r="46" fill="none" stroke="${item.color}" stroke-width="8"
+            stroke-dasharray="${dashArray}" stroke-dashoffset="0"
+            transform="rotate(${rotation - 90} 50 50)" />
+        `;
+      }).join('');
+
+      const legendHtml = dist.length > 0 ? dist.map(item => `
+        <div class="flex items-center justify-between font-code-xs text-code-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full" style="background-color: ${item.color};"></div>
+            <span class="text-on-surface-variant">${item.source}</span>
           </div>
-          <div class="panel">
-            <div class="panel-title"><span>Severity Distribution</span></div>
-            ${sevRows}
+          <span class="text-on-surface font-medium">${item.pct}%</span>
+        </div>
+      `).join('') : `
+        <div class="text-on-surface-variant text-code-xs">No source data available</div>
+      `;
+
+      // Recent Security Events Table Rows
+      const eventRows = recentEvents.length > 0 ? recentEvents.map(e => {
+        let sevBadge = '';
+        const sevUpper = (e.severity || 'INFO').toUpperCase();
+        if (sevUpper === 'CRITICAL' || sevUpper === 'HIGH') {
+          sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-error-container/10 text-error font-label-caps text-label-caps border border-error-container">${sevUpper}</span>`;
+        } else if (sevUpper === 'MEDIUM' || sevUpper === 'WARN' || sevUpper === 'WARNING') {
+          sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-tertiary/10 text-tertiary font-label-caps text-label-caps border border-tertiary/20">MEDIUM</span>`;
+        } else if (sevUpper === 'LOW') {
+          sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-primary/10 text-primary font-label-caps text-label-caps border border-primary/20">LOW</span>`;
+        } else {
+          sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-outline-variant/30 text-on-surface-variant font-label-caps text-label-caps border border-outline-variant">INFO</span>`;
+        }
+
+        const anmIcon = e.is_anomaly
+          ? '<span class="material-symbols-outlined text-[16px] text-error" title="Anomaly Detected by Isolation Forest">warning</span>'
+          : '<span class="material-symbols-outlined text-[16px] text-outline-variant">remove</span>';
+
+        const intIcon = e.is_verified
+          ? '<span class="material-symbols-outlined text-[16px] text-primary" title="Cryptographically Verified in Blockchain Ledger">verified</span>'
+          : '<span class="material-symbols-outlined text-[16px] text-outline-variant animate-pulse" title="Integrity Check Pending">sync</span>';
+
+        const shortId = e.event_id.length > 12 ? e.event_id.slice(0, 10) + '...' : e.event_id;
+
+        return `
+          <tr class="border-b border-outline-variant/50 hover:bg-surface-container-high/40 transition-colors cursor-pointer" onclick="app.inspectEvent('${e.event_id}')" title="Click to inspect raw forensic payload & blockchain proof">
+            <td class="p-2 pl-4 text-on-surface-variant whitespace-nowrap text-code-xs">${e.time}</td>
+            <td class="p-2 font-code-xs text-code-xs text-primary font-medium hover:underline">${shortId}</td>
+            <td class="p-2 text-on-surface font-code-xs">${escapeHtml(e.source)}</td>
+            <td class="p-2 text-on-surface-variant text-code-xs">${escapeHtml(e.format)}</td>
+            <td class="p-2 text-on-surface text-code-xs">${escapeHtml(e.type)}</td>
+            <td class="p-2">${sevBadge}</td>
+            <td class="p-2 text-on-surface-variant text-code-xs">${escapeHtml(e.ocsf)}</td>
+            <td class="p-2 text-center">${anmIcon}</td>
+            <td class="p-2 pr-4 text-center">${intIcon}</td>
+          </tr>
+        `;
+      }).join('') : `
+        <tr>
+          <td colspan="9" class="p-8 text-center text-on-surface-variant font-code-sm">
+            No events available. Ingest logs via CLI or Log Ingestion to see live events.
+          </td>
+        </tr>
+      `;
+
+      return `
+        <div class="flex flex-col w-full p-gutter space-y-stack-md">
+          ${error ? `
+            <div class="p-3 rounded-lg bg-error-container/20 border border-error-container text-error text-code-sm flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">warning</span>
+                <span>Dashboard Data Warning: ${error}</span>
+              </div>
+              <button onclick="app.refreshCurrentPage()" class="btn btn-sm" style="border-color: #93000a; color: #ffb4ab;">Retry</button>
+            </div>
+          ` : ''}
+
+          <!-- 1. ROW OF 6 KPI METRIC CARDS (STITCH DESIGN) -->
+          <div class="grid grid-cols-6 gap-gutter">
+            <!-- 1. EVENTS PROCESSED -->
+            <div class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-outline-variant" title="Total processed raw events in store: ${summary.raw_events_count?.toLocaleString() || '0'}">
+              <span class="font-label-caps text-label-caps text-on-surface-variant">EVENTS PROCESSED</span>
+              <span class="font-display-lg text-display-lg text-primary tracking-tighter" id="kpi-events-processed">${formatKpiNumber(summary.events_processed)}</span>
+            </div>
+            <!-- 2. NORMALIZED -->
+            <div class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-outline-variant" title="Normalized: ${summary.normalized_count?.toLocaleString() || '0'}">
+              <span class="font-label-caps text-label-caps text-on-surface-variant">NORMALIZED</span>
+              <span class="font-display-lg text-display-lg text-on-surface tracking-tighter" id="kpi-normalized-pct">${summary.normalized_pct ?? 0}%</span>
+            </div>
+            <!-- 3. OCSF EVENTS -->
+            <div class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-outline-variant" title="Conforming OCSF Events (${summary.ocsf_pct ?? 0}%)">
+              <span class="font-label-caps text-label-caps text-on-surface-variant">OCSF EVENTS</span>
+              <span class="font-display-lg text-display-lg text-on-surface tracking-tighter" id="kpi-ocsf-events">${formatKpiNumber(summary.ocsf_events_count)}</span>
+            </div>
+            <!-- 4. UNKNOWN FORMATS -->
+            <div onclick="app.navigate('mappings')" class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-error-container bg-error-container/10 cursor-pointer hover:bg-error-container/20 transition-colors" title="Click to inspect unparsed format review queue">
+              <span class="font-label-caps text-label-caps text-error">UNKNOWN FORMATS</span>
+              <span class="font-display-lg text-display-lg text-error tracking-tighter" id="kpi-unknown-formats">${formatKpiNumber(summary.unknown_formats_count)}</span>
+            </div>
+            <!-- 5. ANOMALIES -->
+            <div class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-error-container bg-error-container/10" title="Isolation Forest Machine Learning detections">
+              <span class="font-label-caps text-label-caps text-error">ANOMALIES</span>
+              <span class="font-display-lg text-display-lg text-error tracking-tighter" id="kpi-anomalies">${formatKpiNumber(summary.anomalies_count)}</span>
+            </div>
+            <!-- 6. BLOCKCHAIN VERIFIED -->
+            <div class="col-span-1 bg-surface-container shadow-sm p-4 rounded-xl flex flex-col gap-2 border border-outline-variant" title="Immutable blockchain records verified">
+              <span class="font-label-caps text-label-caps text-on-surface-variant">BLOCKCHAIN VERIFIED</span>
+              <span class="font-display-lg text-display-lg text-primary tracking-tighter" id="kpi-blockchain-verified">${formatKpiNumber(summary.blockchain_verified_count)}</span>
+            </div>
+          </div>
+
+          <!-- 2. PROCESSING PIPELINE (STITCH DESIGN) -->
+          <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md">
+            <div class="flex items-center justify-between">
+              <span class="font-title-sm text-title-sm text-on-surface">PROCESSING PIPELINE</span>
+              <span class="font-label-caps text-label-caps text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/20 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>LIVE FLOW
+              </span>
+            </div>
+            <div class="w-full bg-surface-container-highest rounded-lg h-24 relative overflow-hidden flex items-center justify-between px-8 border border-outline-variant">
+              <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzI4MmMzNCIvPjwvc3ZnPg==')] opacity-50"></div>
+              <div class="flex items-center gap-2 relative z-10 w-full justify-between">
+                <!-- SRC: Sources -->
+                <div class="flex flex-col items-center gap-1" title="Sources: Multi-vendor log collectors">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">hub</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">SRC</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2 relative"><div class="absolute inset-0 bg-primary w-1/3 animate-[pulse_2s_ease-in-out_infinite]"></div></div>
+
+                <!-- ING: Ingestion -->
+                <div class="flex flex-col items-center gap-1" title="Ingestion: Stream & batch intake">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">input</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">ING</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- DET: Detection -->
+                <div class="flex flex-col items-center gap-1" title="Detection: Multi-format signature detector">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">radar</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">DET</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- PRS: Parsing -->
+                <div class="flex flex-col items-center gap-1" title="Parsing: Regex & rule-based parser engine">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">code</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">PRS</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- NRM: Normalization -->
+                <div class="flex flex-col items-center gap-1" title="Normalization: Lossless field extraction & taxonomy">
+                  <div class="w-8 h-8 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[16px]">transform</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-primary">NRM</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2 relative"><div class="absolute inset-0 bg-primary w-full animate-[pulse_1.5s_ease-in-out_infinite]"></div></div>
+
+                <!-- OCSF: OCSF Mapping -->
+                <div class="flex flex-col items-center gap-1" title="OCSF: Open Cybersecurity Schema Framework Taxonomy">
+                  <div class="w-8 h-8 rounded-full bg-primary border border-primary text-on-primary flex items-center justify-center font-label-caps text-label-caps font-bold">OCSF</div>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- VAL: Validation -->
+                <div class="flex flex-col items-center gap-1" title="Validation: Integrity & schema compliance">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">fact_check</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">VAL</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- STR: Storage -->
+                <div class="flex flex-col items-center gap-1" title="Storage: DuckDB columnar & Parquet SQL store">
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[16px]">database</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant">STR</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+
+                <!-- BC: Blockchain -->
+                <div class="flex flex-col items-center gap-1" title="Blockchain: Local tamper-evident ledger integrity">
+                  <div class="w-8 h-8 rounded-full bg-tertiary-container/20 border border-tertiary text-tertiary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[16px]">link</span>
+                  </div>
+                  <span class="font-code-xs text-code-xs text-tertiary">BC</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. ROW OF TWO CHARTS (EVENT VOLUME & SOURCE DISTRIBUTION) -->
+          <div class="grid grid-cols-2 gap-gutter">
+            <!-- Left: EVENT VOLUME (24H) -->
+            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64">
+              <div class="flex items-center justify-between">
+                <span class="font-title-sm text-title-sm text-on-surface">EVENT VOLUME (24H)</span>
+                <span class="font-code-xs text-code-xs text-on-surface-variant" id="vol-max-eps">MAX: ${volume.max_eps || 0} EPS</span>
+              </div>
+              <div class="flex-1 w-full bg-surface-container-lowest rounded border border-outline-variant flex items-end px-4 pt-6 pb-2 gap-1 relative overflow-hidden">
+                <div class="w-full flex items-end justify-between h-full gap-1">
+                  ${barsHtml}
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: SOURCE DISTRIBUTION -->
+            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64">
+              <span class="font-title-sm text-title-sm text-on-surface">SOURCE DISTRIBUTION</span>
+              <div class="flex-1 w-full bg-surface-container-lowest rounded border border-outline-variant flex items-center justify-center p-4">
+                <div class="flex w-full h-full gap-6 items-center">
+                  <div class="w-32 h-32 rounded-full border-[8px] border-surface-container-highest relative flex items-center justify-center flex-shrink-0">
+                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                      ${svgCircles}
+                    </svg>
+                    <span class="font-code-sm text-code-sm text-on-surface font-semibold">${formatKpiNumber(totalSrcEvents)}</span>
+                  </div>
+                  <div class="flex-1 flex flex-col gap-2 overflow-y-auto max-h-40 pr-2">
+                    ${legendHtml}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. RECENT SECURITY EVENTS TABLE (STITCH DESIGN) -->
+          <div class="bg-surface-container shadow-sm rounded-xl border border-outline-variant overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-high/50">
+              <span class="font-title-sm text-title-sm text-on-surface">RECENT SECURITY EVENTS</span>
+              <button onclick="app.navigate('explorer')" class="px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded font-label-caps text-label-caps text-on-surface hover:bg-surface-container transition-colors">VIEW ALL</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-surface-container-lowest border-b border-outline-variant font-label-caps text-label-caps text-on-surface-variant">
+                    <th class="p-2 pl-4 sticky top-0 bg-surface-container-lowest">TIME</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">EVENT ID</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">SOURCE</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">FORMAT</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">TYPE</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">SEVERITY</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest">OCSF</th>
+                    <th class="p-2 sticky top-0 bg-surface-container-lowest text-center">ANM</th>
+                    <th class="p-2 pr-4 sticky top-0 bg-surface-container-lowest text-center">INT</th>
+                  </tr>
+                </thead>
+                <tbody class="font-body-md text-body-md" id="recent-events-tbody">
+                  ${eventRows}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `;
@@ -632,6 +1385,411 @@
       `;
     }
 
+    function renderSourcesPage(sourcesState = {}) {
+      const overview = sourcesState.overview || {
+        active_streams: 0,
+        total_events_per_sec: 0,
+        total_events_per_sec_str: '0',
+        dropped_or_malformed: 0,
+        pipeline_sources: []
+      };
+      const allSources = sourcesState.sources || [];
+      const categoryCounts = sourcesState.categoryCounts || { ALL: allSources.length, WINDOWS: 0, LINUX: 0, FIREWALL: 0, ENDPOINT: 0 };
+      const activeCategory = sourcesState.activeCategory || 'ALL';
+      const isInspectorOpen = sourcesState.isInspectorOpen !== false;
+      const loading = sourcesState.loading || false;
+      const error = sourcesState.error || null;
+
+      // Filter sources based on active category
+      const filteredSources = (activeCategory && activeCategory !== 'ALL')
+        ? allSources.filter(s => (s.category || '').toUpperCase() === activeCategory)
+        : allSources;
+
+      // Determine selected source
+      let selectedSource = null;
+      if (sourcesState.selectedSourceId) {
+        selectedSource = allSources.find(s => s.source_id === sourcesState.selectedSourceId);
+      }
+      if (!selectedSource && filteredSources.length > 0) {
+        selectedSource = filteredSources[0];
+      }
+
+      // Skeleton loading state
+      if (loading && allSources.length === 0) {
+        return `
+          <div class="flex flex-col w-full h-full min-h-[calc(100vh-3.5rem)] p-container-padding space-y-stack-lg">
+            <div class="flex justify-between items-end">
+              <div class="space-y-2">
+                <div class="h-8 w-64 bg-surface-container rounded animate-pulse"></div>
+                <div class="h-4 w-96 bg-surface-container rounded animate-pulse"></div>
+              </div>
+              <div class="flex gap-4">
+                <div class="h-16 w-32 bg-surface-container rounded-lg animate-pulse"></div>
+                <div class="h-16 w-32 bg-surface-container rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+            <div class="h-48 bg-surface-container rounded-xl animate-pulse"></div>
+            <div class="h-64 bg-surface-container rounded-xl animate-pulse"></div>
+          </div>
+        `;
+      }
+
+      // Ingestion Pipeline top 3 source nodes
+      const pipelineNodes = overview.pipeline_sources && overview.pipeline_sources.length > 0
+        ? overview.pipeline_sources
+        : [
+            { source_id: "WIN_EVENTS", node_name: "WIN_EVENTS", type: "Windows Event Log", rate_label: "12K E/S", icon: "desktop_windows" },
+            { source_id: "LINUX_SYSLOG", node_name: "LINUX_SYSLOG", type: "Linux Syslog", rate_label: "8K E/S", icon: "terminal" },
+            { source_id: "FW_TRAFFIC", node_name: "FW_TRAFFIC", type: "Palo Alto / Cisco", rate_label: "22K E/S", icon: "security" },
+          ];
+
+      const pipelineNodesHtml = pipelineNodes.map(node => `
+        <div onclick="app.selectSource('${node.source_id}')" class="flex items-center gap-3 p-3 bg-surface-container-high rounded-md hover:bg-surface-container-highest transition-colors cursor-pointer border border-outline-variant group">
+          <span class="material-symbols-outlined text-on-surface text-[20px] group-hover:text-primary transition-colors">${node.icon || 'dns'}</span>
+          <span class="font-code-xs text-code-xs text-on-surface">${escapeHtml(node.node_name)}</span>
+          <span class="ml-auto font-label-caps text-label-caps text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">${escapeHtml(node.rate_label)}</span>
+        </div>
+      `).join('');
+
+      // Source Table Rows
+      const tableRowsHtml = filteredSources.length > 0 ? filteredSources.map(s => {
+        const isSelected = selectedSource && selectedSource.source_id === s.source_id;
+        
+        let statusBadge = '';
+        if (s.status === 'ONLINE') {
+          statusBadge = `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-caps text-label-caps border border-primary/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> ONLINE
+            </span>
+          `;
+        } else if (s.status === 'DEGRADED') {
+          statusBadge = `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-label-caps text-label-caps border border-tertiary/40">
+              <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> DEGRADED
+            </span>
+          `;
+        } else {
+          statusBadge = `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-caps text-label-caps border border-outline-variant">
+              <span class="w-1.5 h-1.5 rounded-full bg-outline"></span> OFFLINE
+            </span>
+          `;
+        }
+
+        const anomalyPill = (s.anomalies && s.anomalies > 0)
+          ? `<span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold text-code-xs border border-tertiary/50 ${s.anomalies > 10 ? 'animate-pulse' : ''}">${s.anomalies}</span>`
+          : `<span class="text-on-surface-variant opacity-50">${s.status === 'OFFLINE' ? '-' : '0'}</span>`;
+
+        let icon = 'dns';
+        if (s.category === 'FIREWALL') icon = 'security';
+        else if (s.category === 'WINDOWS') icon = 'desktop_windows';
+        else if (s.category === 'LINUX') icon = 'terminal';
+        else if ((s.source_id || '').toLowerCase().includes('android')) icon = 'smartphone';
+        else if ((s.source_id || '').toLowerCase().includes('mac')) icon = 'laptop_mac';
+        else if ((s.source_id || '').toLowerCase().includes('router') || (s.source_id || '').toLowerCase().includes('wifi')) icon = 'router';
+
+        return `
+          <tr onclick="app.selectSource('${s.source_id}')" class="${isSelected ? 'bg-primary/10 border-b border-primary/30 hover:bg-surface-container-high' : 'bg-surface-container-lowest border-b border-outline-variant hover:bg-surface-container-high'} cursor-pointer transition-colors group ${s.status === 'OFFLINE' ? 'opacity-60' : ''}">
+            <td class="p-3 text-center">
+              ${isSelected ? '<div class="w-2 h-2 rounded-full bg-primary mx-auto animate-pulse shadow-[0_0_8px_rgba(152,203,255,0.8)]"></div>' : ''}
+            </td>
+            <td class="p-3 text-on-surface font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors">${icon}</span>
+              <span class="${isSelected ? 'text-primary' : ''}">${escapeHtml(s.display_name || s.source_id)}</span>
+            </td>
+            <td class="p-3 text-on-surface-variant">${escapeHtml(s.type || 'Universal Log Source')}</td>
+            <td class="p-3">${statusBadge}</td>
+            <td class="p-3 text-on-surface-variant">${escapeHtml(s.format || 'Syslog')}</td>
+            <td class="p-3 text-right text-on-surface font-medium">${s.events_per_sec_str || '0'}</td>
+            <td class="p-3 text-right">${anomalyPill}</td>
+          </tr>
+        `;
+      }).join('') : `
+        <tr>
+          <td colspan="7" class="p-8 text-center text-on-surface-variant font-code-sm">
+            NO ACTIVE SOURCES — No telemetry sources found in the '${activeCategory}' category.
+          </td>
+        </tr>
+      `;
+
+      // Parsing health mini-chart for Selected Source Inspector
+      let inspectorHealthBarsHtml = '';
+      if (selectedSource && selectedSource.parsing_health) {
+        inspectorHealthBarsHtml = selectedSource.parsing_health.map(b => {
+          if (b.has_error) {
+            return `
+              <div class="w-full bg-tertiary-container hover:bg-tertiary-container/80 transition-colors rounded-t border-t-2 border-tertiary shadow-[0_0_8px_rgba(235,129,4,0.5)] relative group cursor-pointer" style="height: ${b.pct}%;">
+                <div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-code-xs px-2 py-1 rounded text-xs z-20 whitespace-nowrap font-bold text-tertiary border border-outline-variant">
+                  ${escapeHtml(b.label)}
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="w-full bg-primary/20 hover:bg-primary/40 transition-colors rounded-t border-t border-primary/50 relative group cursor-pointer" style="height: ${b.pct}%;">
+                <div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-code-xs px-2 py-1 rounded text-xs z-20 whitespace-nowrap border border-outline-variant">
+                  ${escapeHtml(b.label)}
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
+      }
+
+      // Inspector icon determination
+      let inspectorIcon = 'dns';
+      if (selectedSource) {
+        if (selectedSource.category === 'FIREWALL') inspectorIcon = 'security';
+        else if (selectedSource.category === 'WINDOWS') inspectorIcon = 'desktop_windows';
+        else if (selectedSource.category === 'LINUX') inspectorIcon = 'terminal';
+        else if ((selectedSource.source_id || '').toLowerCase().includes('android')) inspectorIcon = 'smartphone';
+        else if ((selectedSource.source_id || '').toLowerCase().includes('mac')) inspectorIcon = 'laptop_mac';
+        else if ((selectedSource.source_id || '').toLowerCase().includes('router') || (selectedSource.source_id || '').toLowerCase().includes('wifi')) inspectorIcon = 'router';
+      }
+
+      return `
+        <div class="flex flex-col w-full h-full min-h-[calc(100vh-3.5rem)] relative overflow-hidden">
+          <!-- Background Grid Canvas -->
+          <div class="absolute inset-0 pointer-events-none opacity-20">
+            <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern height="32" id="grid-pattern-sources" patternUnits="userSpaceOnUse" width="32">
+                  <circle class="fill-outline" cx="1" cy="1" r="1"></circle>
+                </pattern>
+              </defs>
+              <rect fill="url(#grid-pattern-sources)" height="100%" width="100%"></rect>
+            </svg>
+          </div>
+
+          <!-- Main Content Area -->
+          <div class="flex-1 flex flex-col xl:flex-row relative z-10 w-full h-full">
+            <!-- Left/Main Column: Overview, Topology & Source Table -->
+            <div class="flex-1 flex flex-col min-w-0 h-full p-container-padding space-y-stack-lg overflow-y-auto">
+              ${error ? `
+                <div class="p-3 rounded-lg bg-error-container/20 border border-error-container text-error text-code-sm flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">warning</span>
+                    <span>Telemetry Ingestion Warning: ${escapeHtml(error)}</span>
+                  </div>
+                  <button onclick="app.refreshCurrentPage()" class="btn btn-sm" style="border-color: #93000a; color: #ffb4ab;">Retry</button>
+                </div>
+              ` : ''}
+
+              <!-- 1. Page Header & Quick Statistics -->
+              <div class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+                <div>
+                  <h1 class="font-display-lg text-display-lg text-on-background tracking-tight mb-2">TELEMETRY<br>INGESTION</h1>
+                  <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                    Real-time monitoring of connected log sources. ULPF is currently normalizing and pre-processing events across <span class="text-primary font-bold">${overview.active_streams || 0} active streams</span>.
+                  </p>
+                </div>
+                <!-- Quick Stats -->
+                <div class="flex items-center gap-stack-md">
+                  <div class="flex flex-col p-4 bg-surface-container rounded-lg min-w-[140px] relative overflow-hidden border border-primary/20">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+                    <span class="font-label-caps text-label-caps text-outline mb-1">TOTAL EVENTS/SEC</span>
+                    <span class="font-code-sm text-code-sm text-primary text-xl font-bold">${overview.total_events_per_sec_str || '0'}</span>
+                  </div>
+                  <div class="flex flex-col p-4 bg-surface-container rounded-lg min-w-[140px] relative overflow-hidden border border-error/20">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-tertiary-container"></div>
+                    <span class="font-label-caps text-label-caps text-outline mb-1">DROPPED/MALFORMED</span>
+                    <span class="font-code-sm text-code-sm text-tertiary text-xl font-bold">${overview.dropped_or_malformed || '0'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Architecture Diagram / Ingestion Pipeline Panel -->
+              <div class="w-full bg-surface-container p-stack-md rounded-xl relative overflow-hidden group border border-outline-variant">
+                <div class="absolute top-0 right-0 p-4 opacity-50 font-code-xs text-code-xs text-on-surface-variant flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                  TOPOLOGY_MAP_LIVE
+                </div>
+                <h2 class="font-label-caps text-label-caps text-outline mb-stack-md">INGESTION PIPELINE</h2>
+                <div class="flex items-center justify-between py-stack-md px-stack-lg">
+                  <!-- Sources -->
+                  <div class="flex flex-col gap-unit min-w-[200px]">
+                    ${pipelineNodesHtml}
+                  </div>
+                  <!-- Flow Lines -->
+                  <div class="flex-1 px-8 relative h-32 flex items-center justify-center hidden md:flex">
+                    <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      <path class="text-outline-variant" d="M 0,20 C 50,20 50,50 100,50" fill="none" stroke="currentColor" stroke-dasharray="2,2" stroke-width="1"></path>
+                      <path class="text-outline-variant" d="M 0,50 L 100,50" fill="none" stroke="currentColor" stroke-dasharray="2,2" stroke-width="1"></path>
+                      <path class="text-outline-variant" d="M 0,80 C 50,80 50,50 100,50" fill="none" stroke="currentColor" stroke-dasharray="2,2" stroke-width="1"></path>
+                      <!-- Animated particles -->
+                      <circle class="fill-primary" cx="0" cy="20" r="1.5">
+                        <animateMotion dur="2s" path="M 0,20 C 50,20 50,50 100,50" repeatCount="indefinite"></animateMotion>
+                      </circle>
+                      <circle class="fill-primary" cx="0" cy="50" r="1.5">
+                        <animateMotion dur="1.5s" path="M 0,50 L 100,50" repeatCount="indefinite"></animateMotion>
+                      </circle>
+                      <circle class="fill-primary" cx="0" cy="80" r="1.5">
+                        <animateMotion dur="2.5s" path="M 0,80 C 50,80 50,50 100,50" repeatCount="indefinite"></animateMotion>
+                      </circle>
+                    </svg>
+                  </div>
+                  <!-- Central ULPF Engine -->
+                  <div class="relative group cursor-pointer" onclick="app.navigate('dashboard')" title="Click to view Central Processing Pipeline">
+                    <div class="absolute -inset-4 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-all duration-500"></div>
+                    <div class="relative w-32 h-32 bg-surface-container-lowest border border-primary/30 rounded-full flex flex-col items-center justify-center shadow-[0_0_15px_rgba(0,163,255,0.1)]">
+                      <div class="w-16 h-16 rounded-full border border-primary border-t-transparent animate-spin absolute"></div>
+                      <span class="font-headline-md text-headline-md text-primary">ULPF</span>
+                      <span class="font-label-caps text-label-caps text-on-surface-variant mt-1">ENGINE</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Categories / Filter Chips -->
+              <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <button onclick="app.filterSources('ALL')" class="px-4 py-1.5 ${activeCategory === 'ALL' ? 'bg-primary text-on-primary' : 'bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface'} font-label-caps text-label-caps rounded-full flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer">
+                  ALL SOURCES
+                  <span class="${activeCategory === 'ALL' ? 'bg-on-primary/20 text-on-primary' : 'bg-on-surface/10 text-on-surface'} px-1.5 py-0.5 rounded text-[9px]">${categoryCounts.ALL || allSources.length}</span>
+                </button>
+                <button onclick="app.filterSources('WINDOWS')" class="px-4 py-1.5 ${activeCategory === 'WINDOWS' ? 'bg-primary text-on-primary' : 'bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface'} font-label-caps text-label-caps rounded-full transition-colors whitespace-nowrap cursor-pointer">
+                  WINDOWS
+                  <span class="ml-1 text-[9px] opacity-70">(${categoryCounts.WINDOWS || 0})</span>
+                </button>
+                <button onclick="app.filterSources('LINUX')" class="px-4 py-1.5 ${activeCategory === 'LINUX' ? 'bg-primary text-on-primary' : 'bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface'} font-label-caps text-label-caps rounded-full transition-colors whitespace-nowrap cursor-pointer">
+                  LINUX
+                  <span class="ml-1 text-[9px] opacity-70">(${categoryCounts.LINUX || 0})</span>
+                </button>
+                <button onclick="app.filterSources('FIREWALL')" class="px-4 py-1.5 ${activeCategory === 'FIREWALL' ? 'bg-primary text-on-primary' : 'bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface'} font-label-caps text-label-caps rounded-full transition-colors whitespace-nowrap cursor-pointer">
+                  FIREWALL
+                  <span class="ml-1 text-[9px] opacity-70">(${categoryCounts.FIREWALL || 0})</span>
+                </button>
+                <button onclick="app.filterSources('ENDPOINT')" class="px-4 py-1.5 ${activeCategory === 'ENDPOINT' ? 'bg-primary text-on-primary' : 'bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface'} font-label-caps text-label-caps rounded-full transition-colors whitespace-nowrap cursor-pointer">
+                  ENDPOINT
+                  <span class="ml-1 text-[9px] opacity-70">(${categoryCounts.ENDPOINT || 0})</span>
+                </button>
+                ${!isInspectorOpen ? `
+                  <button onclick="app.openInspector()" class="ml-auto px-3 py-1 bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-primary font-label-caps text-label-caps rounded flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">view_sidebar</span>
+                    <span>SHOW INSPECTOR</span>
+                  </button>
+                ` : ''}
+              </div>
+
+              <!-- 4. Central Source Table -->
+              <div class="flex-1 bg-surface-container rounded-xl overflow-hidden border border-outline-variant flex flex-col">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead class="bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-20">
+                      <tr>
+                        <th class="p-3 font-label-caps text-label-caps text-outline w-10"></th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline">SOURCE ID</th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline">TYPE</th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline">STATUS</th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline">FORMAT</th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline text-right">EVENTS/S</th>
+                        <th class="p-3 font-label-caps text-label-caps text-outline text-right">ANOMALIES</th>
+                      </tr>
+                    </thead>
+                    <tbody class="font-code-sm text-code-sm">
+                      ${tableRowsHtml}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="p-3 bg-surface-container-lowest text-center border-t border-outline-variant">
+                  <button class="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors cursor-default">
+                    ALL ${filteredSources.length} SOURCES LOADED
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Detail Inspector Panel -->
+            ${isInspectorOpen && selectedSource ? `
+              <div class="w-full xl:w-[380px] h-full bg-surface-container border-l border-outline-variant flex flex-col flex-shrink-0 z-20 shadow-xl overflow-y-auto">
+                <!-- Inspector Header -->
+                <div class="p-stack-md border-b border-outline-variant bg-surface-container-lowest sticky top-0 z-10 flex justify-between items-start">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="material-symbols-outlined text-primary text-[20px]">${inspectorIcon}</span>
+                      <h3 class="font-title-sm text-title-sm text-on-surface font-code-sm">${escapeHtml(selectedSource.display_name)}</h3>
+                    </div>
+                    <span class="font-label-caps text-label-caps text-on-surface-variant">INSPECTOR / SOURCE DETAILS</span>
+                  </div>
+                  <button onclick="app.closeInspector()" class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-high transition-colors" title="Close Inspector">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                  </button>
+                </div>
+
+                <!-- Inspector Body -->
+                <div class="p-stack-md space-y-stack-md">
+                  <!-- Status Card -->
+                  <div class="p-4 bg-surface-container-high border border-outline-variant rounded-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-primary/10 blur-xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                    <div class="flex items-center justify-between mb-4">
+                      <span class="font-label-caps text-label-caps text-outline">CONNECTION</span>
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded ${selectedSource.status === 'ONLINE' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-tertiary-container/20 text-tertiary border border-tertiary/40'} font-label-caps text-label-caps">
+                        <span class="w-1.5 h-1.5 rounded-full ${selectedSource.status === 'ONLINE' ? 'bg-primary animate-pulse' : 'bg-tertiary'}"></span> ${selectedSource.connection}
+                      </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <span class="block font-label-caps text-label-caps text-outline mb-1">UPTIME</span>
+                        <span class="font-code-sm text-code-sm text-on-surface">${selectedSource.uptime || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span class="block font-label-caps text-label-caps text-outline mb-1">LAST EVENT</span>
+                        <span class="font-code-sm text-code-sm text-on-surface">${selectedSource.last_event || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Technical Details -->
+                  <div>
+                    <h4 class="font-label-caps text-label-caps text-outline mb-3 border-b border-outline-variant pb-2">TECHNICAL METADATA</h4>
+                    <dl class="space-y-3 font-code-sm text-code-sm">
+                      <div class="flex justify-between items-baseline border-b border-outline-variant/30 pb-2">
+                        <dt class="text-on-surface-variant">Vendor</dt>
+                        <dd class="text-on-surface text-right">${escapeHtml(selectedSource.metadata?.vendor || 'N/A')}</dd>
+                      </div>
+                      <div class="flex justify-between items-baseline border-b border-outline-variant/30 pb-2">
+                        <dt class="text-on-surface-variant">Model</dt>
+                        <dd class="text-on-surface text-right">${escapeHtml(selectedSource.metadata?.model || 'N/A')}</dd>
+                      </div>
+                      <div class="flex justify-between items-baseline border-b border-outline-variant/30 pb-2">
+                        <dt class="text-on-surface-variant">Ingest IP</dt>
+                        <dd class="text-primary text-right hover:underline cursor-pointer" onclick="app.onGlobalSearch('${selectedSource.metadata?.ingest_ip}')" title="Click to search events from this IP">${escapeHtml(selectedSource.metadata?.ingest_ip || 'N/A')}</dd>
+                      </div>
+                      <div class="flex justify-between items-baseline border-b border-outline-variant/30 pb-2">
+                        <dt class="text-on-surface-variant">Port</dt>
+                        <dd class="text-on-surface text-right">${escapeHtml(selectedSource.metadata?.port || 'N/A')}</dd>
+                      </div>
+                      <div class="flex justify-between items-baseline">
+                        <dt class="text-on-surface-variant">Parser</dt>
+                        <dd class="text-on-surface text-right bg-surface-container-highest px-2 rounded py-0.5 border border-outline-variant">${escapeHtml(selectedSource.metadata?.parser || 'generic_parser')}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <!-- Parsing Health Graph (1H) -->
+                  <div>
+                    <h4 class="font-label-caps text-label-caps text-outline mb-3 border-b border-outline-variant pb-2">PARSING HEALTH (1H)</h4>
+                    <div class="h-24 bg-surface-container-lowest rounded border border-outline-variant p-2 flex items-end gap-1 overflow-hidden relative">
+                      ${inspectorHealthBarsHtml}
+                      <!-- Baseline indicator line -->
+                      <div class="absolute left-0 right-0 bottom-[60%] border-t border-dashed border-outline/30 pointer-events-none"></div>
+                    </div>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="pt-4 mt-auto">
+                    <button onclick="app.viewSourceRawEvents('${selectedSource.source_id}')" class="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-headline-md text-body-md font-bold rounded transition-colors flex justify-center items-center gap-2 cursor-pointer" title="Open Log Explorer filtered to ${selectedSource.display_name}">
+                      <span class="material-symbols-outlined text-[18px]">manage_search</span>
+                      VIEW RAW EVENTS
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
     function renderMappingReviewPage(mappings = {}) {
       const mappingCards = Object.entries(mappings).map(([key, map]) => {
         const rows = Object.entries(map.field_mapping || {}).map(([src, dst]) => `
@@ -664,10 +1822,156 @@
       `;
     }
 
+    function renderBlockchainPage(overview = {}, blocks = [], auditResult = null) {
+      const total = overview.total_blocks || 0;
+      const status = overview.chain_status || 'VALID';
+      const lastIdx = overview.last_block_index || 0;
+      const lastHash = overview.last_block_hash || '—';
+      const lastUpdated = overview.last_updated ? overview.last_updated.replace('T', ' ').slice(0, 19) : '—';
+
+      let auditBanner = '';
+      if (auditResult) {
+        if (auditResult.valid) {
+          auditBanner = `
+            <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); padding:12px 16px; border-radius:8px; margin-bottom:16px; color:#34d399; font-size:13px;">
+              <strong>✅ Full Blockchain Audit PASSED:</strong> All ${auditResult.verified_blocks} of ${auditResult.total_blocks} blocks are cryptographically valid with unbroken previous_hash linkage.
+            </div>
+          `;
+        } else {
+          auditBanner = `
+            <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); padding:12px 16px; border-radius:8px; margin-bottom:16px; color:#f87171; font-size:13px;">
+              <strong>🚨 Blockchain Integrity Audit FAILED at Block #${auditResult.invalid_block}:</strong> ${auditResult.reason}
+            </div>
+          `;
+        }
+      }
+
+      const rows = (blocks || []).map(b => {
+        const isGenesis = b.block_index === 0;
+        const prevShort = b.previous_hash ? (b.previous_hash.slice(0, 10) + '...' + b.previous_hash.slice(-6)) : '—';
+        const blockShort = b.block_hash ? (b.block_hash.slice(0, 10) + '...' + b.block_hash.slice(-6)) : '—';
+        const evtShort = b.event_hash ? (b.event_hash.slice(0, 10) + '...' + b.event_hash.slice(-6)) : '—';
+        return `
+          <tr>
+            <td style="font-weight:700; color:#38bdf8;">#${b.block_index}</td>
+            <td style="font-family:monospace; font-size:11px;">${b.timestamp.replace('T', ' ').replace('Z', '')}</td>
+            <td style="font-family:monospace; font-size:12px;">${b.event_id}</td>
+            <td><span class="fmt-pill" style="background:${isGenesis ? '#0369a1' : 'rgba(56,189,248,0.15)'};">${b.action}</span></td>
+            <td style="font-family:monospace; font-size:11px; color:#a5f3fc;" title="${b.event_hash}">${evtShort}</td>
+            <td style="font-family:monospace; font-size:11px; color:#94a3b8;" title="${b.previous_hash}">${prevShort}</td>
+            <td style="font-family:monospace; font-size:11px; color:#4ade80;" title="${b.block_hash}">${blockShort}</td>
+            <td>
+              ${isGenesis ? '<span style="color:var(--text-muted); font-size:11px;">Anchor</span>' : `<button class="btn btn-sm" onclick="app.verifyBlockchainEvent('${b.event_id}')">🛡️ Verify</button>`}
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No blockchain blocks recorded yet.</td></tr>';
+
+      return `
+        <div class="panel" style="border-color:#38bdf8; margin-bottom:20px;">
+          <div class="panel-title">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span>⛓️ Local Blockchain Integrity & Chain-of-Custody</span>
+              <span class="badge-offline">● Immutable SHA-256 Ledger</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" onclick="app.auditBlockchain()">🔍 Audit Entire Blockchain</button>
+              <button class="btn" onclick="app.loadBlockchainData()">🔄 Refresh</button>
+            </div>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            ULPF maintains a local, append-only blockchain ledger in DuckDB that cryptographically links every stored log's SHA-256 hash. Any unauthorized modification to stored logs in DuckDB breaks the hash comparison, providing verifiable, tamper-evident proof for cybersecurity and forensic investigations.
+          </p>
+
+          ${auditBanner}
+
+          <div class="metrics-grid" style="margin-bottom:0;">
+            <div class="metric-card">
+              <div class="metric-title">Total Blocks</div>
+              <div class="metric-value" style="color:#38bdf8;">${total.toLocaleString()}</div>
+              <div class="metric-sub">Blocks in persistent ledger</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Chain Status</div>
+              <div class="metric-value" style="color:${status === 'VALID' ? 'var(--success)' : 'var(--danger)'};">
+                ${status === 'VALID' ? '🟢 VALID' : '🔴 CORRUPTED'}
+              </div>
+              <div class="metric-sub">Continuous cryptographic links</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Latest Block</div>
+              <div class="metric-value" style="font-size:18px; color:var(--text);">#${lastIdx}</div>
+              <div class="metric-sub">Tip timestamp: ${lastUpdated}</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Air-Gapped Node</div>
+              <div class="metric-value" style="font-size:16px; color:#4ade80;">100% Local DuckDB</div>
+              <div class="metric-sub">Zero external network dependency</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>📜 Immutable Blockchain Ledger Records</span>
+            <span style="font-size:12px; color:var(--text-muted);">Showing recent blocks (latest first)</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Block</th>
+                  <th>Timestamp (UTC)</th>
+                  <th>Event ID</th>
+                  <th>Action</th>
+                  <th>Event Hash (SHA-256)</th>
+                  <th>Previous Hash</th>
+                  <th>Block Hash</th>
+                  <th>Integrity</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     // ── Application State & Controller ─────────────────────────────────────
     class ULPFApp {
       constructor() {
-        this.currentPage = 'converter';
+        this.currentPage = 'dashboard';
+        this.dashboardState = {
+          summary: {
+            events_processed: 0,
+            raw_events_count: 0,
+            normalized_count: 0,
+            normalized_pct: 0,
+            ocsf_events_count: 0,
+            ocsf_pct: 0,
+            unknown_formats_count: 0,
+            anomalies_count: 0,
+            blockchain_verified_count: 0
+          },
+          volume: { buckets: [], max_eps: 0, max_hourly_count: 0 },
+          sources: { distribution: [], total_events: 0 },
+          recentEvents: [],
+          health: { status: 'online', api: 'online', database: 'online', ai: 'online', blockchain: 'online' },
+          loading: false,
+          error: null
+        };
         this.state = {
           stats: {},
           anomalies: {},
@@ -676,12 +1980,43 @@
           sources: [],
           mappings: {}
         };
+        this.blockchainState = {
+          overview: {},
+          blocks: [],
+          auditResult: null
+        };
         this.explorerState = {
           page: 1,
           pageSize: 100,
           formatFilter: 'all',
           sortOrder: 'created_at',
-          searchVal: ''
+          searchVal: '',
+          sourceFilter: null
+        };
+        this.sourcesState = {
+          overview: {
+            active_streams: 0,
+            total_events_per_sec: 0,
+            total_events_per_sec_str: '0',
+            dropped_or_malformed: 0,
+            pipeline_sources: []
+          },
+          sources: [],
+          categoryCounts: { ALL: 0, WINDOWS: 0, LINUX: 0, FIREWALL: 0, ENDPOINT: 0 },
+          activeCategory: 'ALL',
+          selectedSourceId: null,
+          isInspectorOpen: true,
+          loading: false,
+          error: null
+        };
+        this.ingestionState = {
+          overview: { total_ingested: 0, total_ingested_str: '0 Events', active_jobs: 0 },
+          jobs: [],
+          selectedJobId: null,
+          isPaused: false,
+          isUploading: false,
+          loading: false,
+          error: null
         };
         this.lastConvertedJSON = null;
         this.lastBatchResult = null;
@@ -692,6 +2027,7 @@
         document.getElementById('nav-container').innerHTML = renderNavbar(this.currentPage);
         document.getElementById('modal-container').innerHTML = renderTraceModal();
         this.renderView();
+        await this.loadDashboardData();
         await this.refreshCurrentPage();
       }
 
@@ -699,10 +2035,178 @@
         this.currentPage = page;
         document.getElementById('nav-container').innerHTML = renderNavbar(this.currentPage);
         this.renderView();
-        if (page === 'explorer') {
+        if (page === 'dashboard') {
+          await this.loadDashboardData();
+        } else if (page === 'ingestion' || page === 'converter') {
+          await this.loadIngestionData();
+        } else if (page === 'sources') {
+          await this.loadSourcesData();
+        } else if (page === 'explorer') {
           await this.loadExplorerEvents();
-        } else if (page === 'dashboard' || page === 'onboarding') {
+        } else if (page === 'blockchain') {
+          await this.loadBlockchainData();
+        } else if (page === 'onboarding' || page === 'mappings') {
           await this.refreshCurrentPage();
+        }
+      }
+
+      async loadDashboardData() {
+        this.dashboardState.loading = true;
+        if (this.currentPage === 'dashboard') {
+          this.renderView();
+        }
+        try {
+          const [sumRes, volRes, srcRes, recRes, hltRes] = await Promise.all([
+            fetch('/api/dashboard/summary'),
+            fetch('/api/dashboard/event-volume'),
+            fetch('/api/dashboard/source-distribution'),
+            fetch('/api/dashboard/recent-events?limit=10'),
+            fetch('/api/dashboard/system-health')
+          ]);
+
+          if (sumRes.ok) this.dashboardState.summary = await sumRes.json();
+          if (volRes.ok) this.dashboardState.volume = await volRes.json();
+          if (srcRes.ok) this.dashboardState.sources = await srcRes.json();
+          if (recRes.ok) this.dashboardState.recentEvents = await recRes.json();
+          if (hltRes.ok) {
+            this.dashboardState.health = await hltRes.json();
+            this.updateHealthIndicators(this.dashboardState.health);
+          }
+          this.dashboardState.loading = false;
+          this.dashboardState.error = null;
+        } catch (err) {
+          console.error('Error fetching dashboard data:', err);
+          this.dashboardState.loading = false;
+          this.dashboardState.error = err.message || 'Subsystem communication error';
+        }
+        if (this.currentPage === 'dashboard') {
+          this.renderView();
+        }
+      }
+
+      async loadSourcesData() {
+        this.sourcesState.loading = true;
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+        try {
+          const [ovRes, telRes] = await Promise.all([
+            fetch('/api/sources/overview'),
+            fetch('/api/sources/telemetry')
+          ]);
+
+          if (ovRes.ok) this.sourcesState.overview = await ovRes.json();
+          if (telRes.ok) {
+            const data = await telRes.json();
+            this.sourcesState.sources = data.sources || [];
+            this.sourcesState.categoryCounts = data.category_counts || {
+              ALL: this.sourcesState.sources.length,
+              WINDOWS: 0, LINUX: 0, FIREWALL: 0, ENDPOINT: 0
+            };
+            if (!this.sourcesState.selectedSourceId && this.sourcesState.sources.length > 0) {
+              this.sourcesState.selectedSourceId = this.sourcesState.sources[0].source_id;
+            }
+          }
+          this.sourcesState.loading = false;
+          this.sourcesState.error = null;
+        } catch (err) {
+          console.error('Error fetching sources telemetry:', err);
+          this.sourcesState.loading = false;
+          this.sourcesState.error = err.message || 'Telemetry subsystem error';
+        }
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+      }
+
+      selectSource(sourceId) {
+        this.sourcesState.selectedSourceId = sourceId;
+        this.sourcesState.isInspectorOpen = true;
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+      }
+
+      closeInspector() {
+        this.sourcesState.isInspectorOpen = false;
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+      }
+
+      openInspector() {
+        this.sourcesState.isInspectorOpen = true;
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+      }
+
+      filterSources(category) {
+        this.sourcesState.activeCategory = category || 'ALL';
+        // Select first matching source if current selection is not in filtered category
+        if (category && category !== 'ALL') {
+          const matching = this.sourcesState.sources.filter(s => (s.category || '').toUpperCase() === category.toUpperCase());
+          if (matching.length > 0) {
+            this.sourcesState.selectedSourceId = matching[0].source_id;
+          }
+        }
+        if (this.currentPage === 'sources') {
+          this.renderView();
+        }
+      }
+
+      viewSourceRawEvents(sourceId) {
+        this.explorerState.sourceFilter = sourceId;
+        this.explorerState.searchVal = '';
+        this.explorerState.page = 1;
+        this.explorerState.formatFilter = 'all';
+        this.navigate('explorer');
+      }
+
+      loadMoreSources() {
+        // All active telemetry streams loaded from local database
+      }
+
+      updateHealthIndicators(h) {
+        const apiEl = document.getElementById('health-api');
+        const dbEl = document.getElementById('health-db');
+        const aiEl = document.getElementById('health-ai');
+        const bcEl = document.getElementById('health-bc');
+        const sysEl = document.getElementById('system-status-badge');
+
+        const greenDot = '<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>';
+        const redDot = '<span class="w-1.5 h-1.5 rounded-full bg-error"></span>';
+
+        if (apiEl) apiEl.innerHTML = (h.api === 'online' ? greenDot : redDot) + 'API';
+        if (dbEl) dbEl.innerHTML = (h.database === 'online' ? greenDot : redDot) + 'DB';
+        if (aiEl) aiEl.innerHTML = (h.ai === 'online' ? greenDot : redDot) + 'AI';
+        if (bcEl) bcEl.innerHTML = (h.blockchain === 'online' ? greenDot : redDot) + 'BC';
+
+        if (sysEl) {
+          if (h.status === 'online') {
+            sysEl.innerHTML = '<span class="text-[8px] text-tertiary">●</span><span class="font-label-caps text-label-caps text-on-surface">SYSTEM ONLINE</span>';
+          } else {
+            sysEl.innerHTML = '<span class="text-[8px] text-error">●</span><span class="font-label-caps text-label-caps text-error">SYSTEM DEGRADED</span>';
+          }
+        }
+      }
+
+      onGlobalSearch(query) {
+        const q = (query || '').trim();
+        if (!q) return;
+        this.explorerState.searchVal = q;
+        this.explorerState.sourceFilter = null;
+        this.explorerState.page = 1;
+        this.navigate('explorer');
+      }
+
+      openInvestigation() {
+        if (this.dashboardState.recentEvents && this.dashboardState.recentEvents.length > 0) {
+          this.inspectEvent(this.dashboardState.recentEvents[0].event_id);
+        } else if (this.state.events && this.state.events.length > 0) {
+          this.inspectEvent(this.state.events[0].event_id);
+        } else {
+          alert('No events available to investigate yet. Ingest logs first.');
         }
       }
 
@@ -710,11 +2214,19 @@
         this.explorerState.page = 1;
         this.explorerState.sortOrder = 'created_at';
         this.explorerState.searchVal = '';
+        this.explorerState.sourceFilter = null;
         this.explorerState.formatFilter = format || 'all';
         await this.navigate('explorer');
       }
 
       async refreshCurrentPage() {
+        if (this.currentPage === 'dashboard') {
+          await this.loadDashboardData();
+        } else if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+          await this.loadIngestionData();
+        } else if (this.currentPage === 'sources') {
+          await this.loadSourcesData();
+        }
         try {
           const [statsRes, anomalyRes, eventsRes, sourcesRes, mappingsRes] = await Promise.all([
             fetch('/stats'),
@@ -737,7 +2249,9 @@
           }
           if (mappingsRes.ok) this.state.mappings = await mappingsRes.json();
 
-          if (this.currentPage !== 'converter') {
+          if (this.currentPage === 'blockchain') {
+            await this.loadBlockchainData();
+          } else if (this.currentPage !== 'converter' && this.currentPage !== 'dashboard' && this.currentPage !== 'sources') {
             this.renderView();
           }
         } catch (err) {
@@ -756,6 +2270,9 @@
           });
           if (this.explorerState.formatFilter && this.explorerState.formatFilter !== 'all') {
             params.append('format', this.explorerState.formatFilter);
+          }
+          if (this.explorerState.sourceFilter) {
+            params.append('source', this.explorerState.sourceFilter);
           }
           if (this.explorerState.searchVal) {
             params.append('search', this.explorerState.searchVal);
@@ -804,6 +2321,7 @@
         this.explorerState.formatFilter = 'all';
         this.explorerState.sortOrder = 'created_at';
         this.explorerState.searchVal = '';
+        this.explorerState.sourceFilter = null;
         this.explorerState.page = 1;
         this.loadExplorerEvents();
       }
@@ -821,14 +2339,18 @@
       renderView() {
         const root = document.getElementById('app-root');
         switch (this.currentPage) {
+          case 'ingestion':
           case 'converter':
-            root.innerHTML = renderConverterPage();
+            root.innerHTML = `<div class="p-stack-lg">${renderIngestionPage(this.ingestionState)}</div>`;
             break;
           case 'dashboard':
-            root.innerHTML = renderDashboardPage(this.state.stats, this.state.anomalies, this.state.events);
+            root.innerHTML = renderDashboardPage(this.dashboardState);
+            break;
+          case 'sources':
+            root.innerHTML = renderSourcesPage(this.sourcesState);
             break;
           case 'explorer':
-            root.innerHTML = renderLogExplorerPage(
+            root.innerHTML = `<div class="p-6">${renderLogExplorerPage(
               this.state.events,
               this.state.totalEvents,
               this.explorerState.page,
@@ -836,16 +2358,152 @@
               this.explorerState.formatFilter,
               this.explorerState.sortOrder,
               this.explorerState.searchVal
-            );
+            )}</div>`;
+            break;
+          case 'blockchain':
+            root.innerHTML = `<div class="p-6">${renderBlockchainPage(
+              this.blockchainState.overview,
+              this.blockchainState.blocks,
+              this.blockchainState.auditResult
+            )}</div>`;
             break;
           case 'onboarding':
-            root.innerHTML = renderSourceOnboardingPage(this.state.sources, this.lastBatchResult);
+            root.innerHTML = `<div class="p-6">${renderSourceOnboardingPage(this.state.sources, this.lastBatchResult)}</div>`;
             break;
           case 'mappings':
-            root.innerHTML = renderMappingReviewPage(this.state.mappings);
+            root.innerHTML = `<div class="p-6">${renderMappingReviewPage(this.state.mappings)}</div>`;
             break;
           default:
-            root.innerHTML = renderConverterPage();
+            root.innerHTML = renderDashboardPage(this.dashboardState);
+        }
+      }
+
+      // ── Ingestion Console Methods ──────────────────────────────────────────
+      async loadIngestionData() {
+        this.ingestionState.loading = true;
+        try {
+          const [ovRes, jobsRes] = await Promise.all([
+            fetch('/api/ingest/overview'),
+            fetch('/api/ingest/jobs')
+          ]);
+          if (ovRes.ok) this.ingestionState.overview = await ovRes.json();
+          if (jobsRes.ok) {
+            const data = await jobsRes.json();
+            this.ingestionState.jobs = data.jobs || [];
+            if (!this.ingestionState.selectedJobId && this.ingestionState.jobs.length > 0) {
+              this.ingestionState.selectedJobId = this.ingestionState.jobs[0].job_id;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load ingestion data", e);
+          this.ingestionState.error = e.message;
+        } finally {
+          this.ingestionState.loading = false;
+          if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+            this.renderView();
+            this.scrollFeedToBottom();
+          }
+        }
+      }
+
+      selectJob(jobId) {
+        this.ingestionState.selectedJobId = jobId;
+        if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+          this.renderView();
+          this.scrollFeedToBottom();
+        }
+      }
+
+      toggleFeedPause() {
+        this.ingestionState.isPaused = !this.ingestionState.isPaused;
+        if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+          this.renderView();
+        }
+      }
+
+      clearFeed() {
+        const selectedJob = this.ingestionState.jobs.find(j => j.job_id === this.ingestionState.selectedJobId);
+        if (selectedJob) {
+          selectedJob.logs = [];
+        }
+        if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+          this.renderView();
+        }
+      }
+
+      scrollFeedToBottom() {
+        setTimeout(() => {
+          const feed = document.getElementById('live-log-feed');
+          if (feed && !this.ingestionState.isPaused) {
+            feed.scrollTop = feed.scrollHeight;
+          }
+        }, 50);
+      }
+
+      handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dz = document.getElementById('drop-zone');
+        if (dz) {
+          dz.classList.add('border-primary', 'bg-primary-container/20');
+        }
+      }
+
+      handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dz = document.getElementById('drop-zone');
+        if (dz) {
+          dz.classList.remove('border-primary', 'bg-primary-container/20');
+        }
+      }
+
+      handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleDragLeave(e);
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handleFilesUpload(e.dataTransfer.files);
+        }
+      }
+
+      handleFileInputChange(e) {
+        if (e.target && e.target.files && e.target.files.length > 0) {
+          this.handleFilesUpload(e.target.files);
+        }
+      }
+
+      async handleFilesUpload(fileList) {
+        if (!fileList || fileList.length === 0) return;
+        this.ingestionState.isUploading = true;
+        if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+          this.renderView();
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < fileList.length; i++) {
+          formData.append('files', fileList[i]);
+        }
+
+        try {
+          const res = await fetch('/api/ingest/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const result = await res.json();
+          await this.loadIngestionData();
+          if (result && result.job) {
+            this.ingestionState.selectedJobId = result.job.job_id;
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          alert("Ingestion error: " + err.message);
+        } finally {
+          this.ingestionState.isUploading = false;
+          if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+            this.renderView();
+            this.scrollFeedToBottom();
+          }
         }
       }
 
@@ -967,7 +2625,22 @@
 
           document.getElementById('modal-normalized-json').innerText = JSON.stringify(data, null, 2);
           document.getElementById('modal-raw-text').innerText = rawText;
+          
+          const badge = document.getElementById('modal-integrity-badge');
+          const details = document.getElementById('modal-integrity-details');
+          if (badge) {
+            badge.className = 'badge-offline';
+            badge.style.background = 'rgba(56,189,248,0.15)';
+            badge.style.color = '#7dd3fc';
+            badge.innerText = '⏳ Ready to Verify';
+          }
+          if (details) {
+            details.innerText = "Click 'Verify Integrity' to recalculate stored SHA-256 and validate against immutable blockchain proof.";
+          }
+
           document.getElementById('trace-modal').classList.add('active');
+          // Automatically run integrity verification
+          this.verifyCurrentModalEventIntegrity();
         } catch (err) {
           alert('Traceability error: ' + err.message);
         }
@@ -975,6 +2648,147 @@
 
       closeModal() {
         document.getElementById('trace-modal').classList.remove('active');
+      }
+
+      async loadBlockchainData() {
+        try {
+          const [ovRes, blkRes] = await Promise.all([
+            fetch('/api/blockchain'),
+            fetch('/api/blockchain/blocks?limit=100&offset=0')
+          ]);
+          if (ovRes.ok) this.blockchainState.overview = await ovRes.json();
+          if (blkRes.ok) this.blockchainState.blocks = await blkRes.json();
+          if (this.currentPage === 'blockchain') {
+            this.renderView();
+          }
+        } catch (err) {
+          console.error('Error loading blockchain ledger:', err);
+        }
+      }
+
+      async auditBlockchain() {
+        try {
+          const res = await fetch('/api/blockchain/verify');
+          if (res.ok) {
+            this.blockchainState.auditResult = await res.json();
+            await this.loadBlockchainData();
+          } else {
+            throw new Error(await res.text());
+          }
+        } catch (err) {
+          alert('Audit error: ' + err.message);
+        }
+      }
+
+      async verifyBlockchainEvent(eventId) {
+        try {
+          const res = await fetch(`/api/blockchain/integrity/${eventId}`);
+          const data = await res.json();
+          if (data.status === 'VERIFIED') {
+            alert(`🟢 EVENT CRYPTOGRAPHICALLY VERIFIED\n\nEvent ID: ${data.event_id}\nBlock Index: #${data.block_index}\nAction: ${data.action}\nTimestamp: ${data.timestamp}\n\nStored SHA-256:\n${data.stored_hash}\n\nBlockchain SHA-256 Proof:\n${data.blockchain_hash}\n\n${data.message}`);
+          } else {
+            alert(`🔴 TAMPER DETECTED!\n\nEvent ID: ${data.event_id}\nBlock Index: #${data.block_index || '—'}\n\nStored (Calculated) SHA-256:\n${data.stored_hash || 'MISSING'}\n\nExpected Blockchain SHA-256:\n${data.blockchain_hash || 'UNKNOWN'}\n\nWarning: ${data.message}`);
+          }
+        } catch (err) {
+          alert('Integrity check error: ' + err.message);
+        }
+      }
+
+      async verifyCurrentModalEventIntegrity() {
+        if (!this.currentModalEvent || !this.currentModalEvent.event_id) {
+          return;
+        }
+        const eventId = this.currentModalEvent.event_id;
+        const badge = document.getElementById('modal-integrity-badge');
+        const details = document.getElementById('modal-integrity-details');
+        if (badge) {
+          badge.className = 'badge-offline';
+          badge.style.background = 'rgba(56,189,248,0.15)';
+          badge.style.color = '#7dd3fc';
+          badge.innerText = '⏳ Verifying...';
+        }
+
+        try {
+          const res = await fetch(`/api/blockchain/integrity/${eventId}`);
+          const data = await res.json();
+          if (data.status === 'VERIFIED') {
+            if (badge) {
+              badge.className = 'badge-offline';
+              badge.style.background = 'rgba(16,185,129,0.15)';
+              badge.style.color = '#34d399';
+              badge.style.borderColor = 'rgba(16,185,129,0.4)';
+              badge.innerText = '🟢 Cryptographically VERIFIED';
+            }
+            if (details) {
+              details.innerHTML = `
+                <div style="color:#34d399; font-weight:600; margin-bottom:4px;">✅ ${data.message}</div>
+                <div><strong>Event ID:</strong> ${data.event_id} • <strong>Blockchain Block:</strong> #${data.block_index} • <strong>Action:</strong> ${data.action} • <strong>Committed:</strong> ${data.timestamp || '—'}</div>
+                <div style="margin-top:2px;"><strong>Stored SHA-256:</strong> <span style="color:#a5f3fc;">${data.stored_hash}</span></div>
+                <div><strong>Blockchain Proof:</strong> <span style="color:#4ade80;">${data.blockchain_hash}</span> (MATCH)</div>
+              `;
+            }
+          } else {
+            if (badge) {
+              badge.className = 'badge-offline';
+              badge.style.background = 'rgba(239,68,68,0.15)';
+              badge.style.color = '#f87171';
+              badge.style.borderColor = 'rgba(239,68,68,0.4)';
+              badge.innerText = '🔴 TAMPER DETECTED';
+            }
+            if (details) {
+              details.innerHTML = `
+                <div style="color:#f87171; font-weight:700; margin-bottom:4px;">🚨 ${data.message}</div>
+                <div><strong>Event ID:</strong> ${data.event_id} • <strong>Blockchain Block:</strong> #${data.block_index || '—'}</div>
+                <div style="margin-top:2px;"><strong>Current Stored SHA-256:</strong> <span style="color:#f87171;">${data.stored_hash || 'MISSING'}</span></div>
+                <div><strong>Original Immutable Blockchain Proof:</strong> <span style="color:#4ade80;">${data.blockchain_hash || 'UNKNOWN'}</span> (MISMATCH)</div>
+              `;
+            }
+          }
+        } catch (err) {
+          if (details) details.innerHTML = `<span style="color:#f87171;">Error checking integrity: ${err.message}</span>`;
+        }
+      }
+
+      async simulateCurrentModalEventTamper() {
+        if (!this.currentModalEvent || !this.currentModalEvent.event_id) {
+          alert('No event currently loaded.');
+          return;
+        }
+        const eventId = this.currentModalEvent.event_id;
+        try {
+          const res = await fetch(`/api/blockchain/simulate-tamper/${eventId}`, { method: 'POST' });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          alert(`⚠️ TAMPERING SIMULATED FOR TEST/DEMO:\n\n${data.message}\n\nNow running integrity verification...`);
+          await this.verifyCurrentModalEventIntegrity();
+        } catch (err) {
+          alert('Tamper simulation error: ' + err.message);
+        }
+      }
+
+      async restoreCurrentModalEvent() {
+        if (!this.currentModalEvent || !this.currentModalEvent.event_id) {
+          alert('No event currently loaded.');
+          return;
+        }
+        const eventId = this.currentModalEvent.event_id;
+        try {
+          const res = await fetch(`/api/blockchain/restore/${eventId}`, { method: 'POST' });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          alert(`↺ EVIDENCE RESTORED:\n\n${data.message}\n\nRe-running cryptographic verification...`);
+          // Refresh the raw text shown in the modal
+          const evRes = await fetch(`/events/${eventId}`);
+          if (evRes.ok) {
+            const evData = await evRes.json();
+            const rawText = evData.raw_text || evData.raw_event || '';
+            const rawEl = document.getElementById('modal-raw-text');
+            if (rawEl && rawText) rawEl.innerText = rawText;
+          }
+          await this.verifyCurrentModalEventIntegrity();
+        } catch (err) {
+          alert('Restore error: ' + err.message);
+        }
       }
 
       async handleUpload() {
