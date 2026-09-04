@@ -270,6 +270,89 @@
       50% { opacity: 0.3; }
     }
     .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    /* Processing Pipeline Live Flow Animation & Stage Hover */
+    @keyframes pipelinePulseFlow {
+      0% {
+        left: -20px;
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.9;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      100% {
+        left: 100%;
+        opacity: 0;
+      }
+    }
+
+    .pipeline-pulse-particle {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 14px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, rgba(152, 203, 255, 0) 0%, rgba(152, 203, 255, 0.75) 60%, rgba(255, 255, 255, 0.95) 100%);
+      box-shadow: 0 0 5px rgba(152, 203, 255, 0.5);
+      animation: pipelinePulseFlow 2.0s linear infinite;
+      pointer-events: none;
+    }
+
+    .pipeline-stage-item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .pipeline-stage-item .pipeline-stage-circle {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pipeline-stage-item .pipeline-stage-label {
+      transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pipeline-stage-item:hover .pipeline-stage-circle {
+      border-color: #98cbff !important;
+      color: #98cbff !important;
+      background-color: rgba(152, 203, 255, 0.15) !important;
+      box-shadow: 0 0 12px rgba(152, 203, 255, 0.35);
+      transform: scale(1.1);
+    }
+    .pipeline-stage-item:hover .pipeline-stage-label {
+      color: #98cbff !important;
+      font-weight: 600;
+    }
+    .pipeline-stage-item .pipeline-tooltip {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(4px);
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+      pointer-events: none;
+      z-index: 60;
+    }
+    .pipeline-stage-item:hover .pipeline-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    /* ============================================================ */
+    /* ULPF Dashboard Chart Transitions                             */
+    /* ============================================================ */
+
+    /* 1. Event Volume Smooth Bar Transitions */
+    .volume-bar {
+      transition: height 0.65s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
+    }
+
+    /* 2. Source Donut Smooth Arc Transitions */
+    .donut-segment {
+      transition: stroke-dasharray 0.75s cubic-bezier(0.4, 0, 0.2, 1), transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+    }
   </style>
 </head>
 <body class="bg-background font-body-md text-body-md text-on-surface">
@@ -285,8 +368,8 @@
         <!-- LEFT SIDEBAR (STITCH DESIGN) -->
         <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-outline-variant z-50 flex flex-col">
           <div class="p-gutter mb-stack-md flex flex-col gap-1">
-            <div class="font-headline-md text-headline-md text-primary tracking-tighter flex items-center gap-2">
-              <span>ULPF</span>
+            <div class="flex items-center">
+              <img src="/assets/ulpf-logo.jpg" alt="ULPF Logo" class="h-8 w-auto max-w-[140px] object-contain" onerror="if(!this.dataset.failed){this.dataset.failed='1';this.src='assets/ulpf-logo.jpg';}" />
             </div>
             <div class="font-label-caps text-label-caps text-on-surface-variant opacity-60">LOG PRE-PROCESSING</div>
           </div>
@@ -1002,6 +1085,14 @@
       const loading = dashboardState.loading || false;
       const error = dashboardState.error || null;
 
+      // Pipeline stage throughput indicator if EPS metric is available
+      const stageEpsHtml = (volume && typeof volume.max_eps === 'number') ? `
+        <div class="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between font-mono text-[10px]">
+          <span class="text-on-surface-variant font-sans">Throughput</span>
+          <span class="text-primary font-semibold">${volume.max_eps} EPS</span>
+        </div>
+      ` : '';
+
       // Loading skeleton if no data has arrived yet
       if (loading && !summary.events_processed) {
         return `
@@ -1027,13 +1118,13 @@
       // Event Volume Bar Chart generation
       const buckets = volume.buckets || [];
       const maxCount = volume.max_hourly_count || 1;
-      const barsHtml = buckets.length > 0 ? buckets.map(b => {
+      const barsHtml = buckets.length > 0 ? buckets.map((b, i) => {
         const isPeak = b.count > 0 && b.count === maxCount;
         const heightPct = maxCount > 0 ? Math.max(4, Math.round((b.count / maxCount) * 100)) : 4;
         return `
-          <div class="w-full ${isPeak ? 'bg-primary/40 hover:bg-primary/60' : 'bg-primary/20 hover:bg-primary/40'} transition-colors rounded-t-sm border-t border-primary relative group cursor-pointer" style="height: ${heightPct}%;">
-            ${isPeak ? '<div class="absolute -top-1 w-2 h-2 rounded-full bg-primary left-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(152,203,255,0.8)]"></div>' : ''}
-            <div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-code-xs font-code-xs text-on-surface z-20 whitespace-nowrap border border-outline-variant shadow-lg pointer-events-none">
+          <div class="volume-bar w-full ${isPeak ? 'bg-primary/40 hover:bg-primary/60' : 'bg-primary/20 hover:bg-primary/40'} transition-all duration-700 ease-out rounded-t-sm border-t border-primary relative group cursor-pointer" style="height: ${heightPct}%;" id="vol-bar-${i}" data-hour="${b.hour}" data-count="${b.count}">
+            <div class="peak-dot ${isPeak ? '' : 'hidden'} absolute -top-1 w-2 h-2 rounded-full bg-primary left-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(152,203,255,0.8)]"></div>
+            <div class="vol-tooltip hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-code-xs font-code-xs text-on-surface z-20 whitespace-nowrap border border-outline-variant shadow-lg pointer-events-none">
               ${b.label} — ${b.count.toLocaleString()}
             </div>
           </div>
@@ -1050,15 +1141,15 @@
       const C = 289.026; // 2 * pi * 46
 
       let currentOffset = 0;
-      const svgCircles = dist.map(item => {
+      const svgCircles = dist.map((item, idx) => {
         const strokeLen = (item.pct / 100.0) * C;
         const dashArray = `${strokeLen.toFixed(1)} ${(C - strokeLen).toFixed(1)}`;
         const rotation = (currentOffset / C) * 360;
         currentOffset += strokeLen;
         return `
-          <circle cx="50" cy="50" r="46" fill="none" stroke="${item.color}" stroke-width="8"
+          <circle id="donut-segment-${idx}" class="donut-segment" cx="50" cy="50" r="46" fill="none" stroke="${item.color}" stroke-width="8"
             stroke-dasharray="${dashArray}" stroke-dashoffset="0"
-            transform="rotate(${rotation - 90} 50 50)" />
+            transform="rotate(${rotation - 90} 50 50)" style="transition: stroke-dasharray 0.75s cubic-bezier(0.4, 0, 0.2, 1), transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);" />
         `;
       }).join('');
 
@@ -1166,91 +1257,214 @@
           </div>
 
           <!-- 2. PROCESSING PIPELINE (STITCH DESIGN) -->
-          <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md">
+          <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md" id="dashboard-pipeline-card">
             <div class="flex items-center justify-between">
               <span class="font-title-sm text-title-sm text-on-surface">PROCESSING PIPELINE</span>
               <span class="font-label-caps text-label-caps text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/20 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>LIVE FLOW
               </span>
             </div>
-            <div class="w-full bg-surface-container-highest rounded-lg h-24 relative overflow-hidden flex items-center justify-between px-8 border border-outline-variant">
-              <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzI4MmMzNCIvPjwvc3ZnPg==')] opacity-50"></div>
+            <div class="w-full bg-surface-container-highest rounded-lg h-24 relative flex items-center justify-between px-8 border border-outline-variant">
+              <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzI4MmMzNCIvPjwvc3ZnPg==')] opacity-50 rounded-lg overflow-hidden pointer-events-none"></div>
               <div class="flex items-center gap-2 relative z-10 w-full justify-between">
-                <!-- SRC: Sources -->
-                <div class="flex flex-col items-center gap-1" title="Sources: Multi-vendor log collectors">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 1. SRC: Sources -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-0 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">SOURCE</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 1</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Collects incoming logs and telemetry from connected systems and security sources.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-3.5 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">hub</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">SRC</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">SRC</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2 relative"><div class="absolute inset-0 bg-primary w-1/3 animate-[pulse_2s_ease-in-out_infinite]"></div></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.00s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.00s;"></div>
+                </div>
 
-                <!-- ING: Ingestion -->
-                <div class="flex flex-col items-center gap-1" title="Ingestion: Stream & batch intake">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 2. ING: Ingestion -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">INGEST</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 2</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Receives and accepts incoming log data into ULPF for processing.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">input</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">ING</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">ING</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.22s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.22s;"></div>
+                </div>
 
-                <!-- DET: Detection -->
-                <div class="flex flex-col items-center gap-1" title="Detection: Multi-format signature detector">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 3. DET: Detection -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">DETECT</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 3</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Identifies the incoming log format and determines the appropriate processing path.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">radar</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">DET</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">DET</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.44s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.44s;"></div>
+                </div>
 
-                <!-- PRS: Parsing -->
-                <div class="flex flex-col items-center gap-1" title="Parsing: Regex & rule-based parser engine">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 4. PRS: Parsing -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">PARSE</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 4</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Extracts structured fields and information from raw log messages.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">code</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">PRS</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">PRS</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.66s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.66s;"></div>
+                </div>
 
-                <!-- NRM: Normalization -->
-                <div class="flex flex-col items-center gap-1" title="Normalization: Lossless field extraction & taxonomy">
-                  <div class="w-8 h-8 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center">
+                <!-- 5. NRM: Normalization -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">NORMALIZE</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 5</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Converts parsed events into a unified internal structure.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">transform</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-primary">NRM</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">NRM</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2 relative"><div class="absolute inset-0 bg-primary w-full animate-[pulse_1.5s_ease-in-out_infinite]"></div></div>
-
-                <!-- OCSF: OCSF Mapping -->
-                <div class="flex flex-col items-center gap-1" title="OCSF: Open Cybersecurity Schema Framework Taxonomy">
-                  <div class="w-8 h-8 rounded-full bg-primary border border-primary text-on-primary flex items-center justify-center font-label-caps text-label-caps font-bold">OCSF</div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.88s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.88s;"></div>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
 
-                <!-- VAL: Validation -->
-                <div class="flex flex-col items-center gap-1" title="Validation: Integrity & schema compliance">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 6. OCSF: OCSF Mapping -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">OCSF</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 6</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Maps normalized events to OCSF event classes and attributes.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant font-label-caps text-[10px] font-bold pipeline-stage-circle">OCSF</div>
+                </div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.10s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.10s;"></div>
+                </div>
+
+                <!-- 7. VAL: Validation -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">VALIDATE</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 7</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Checks the processed event for schema, field, and data integrity.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">fact_check</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">VAL</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">VAL</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.32s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.32s;"></div>
+                </div>
 
-                <!-- STR: Storage -->
-                <div class="flex flex-col items-center gap-1" title="Storage: DuckDB columnar & Parquet SQL store">
-                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+                <!-- 8. STR: Storage -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">STORE</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 8</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Persists processed and normalized event data for querying, analysis, and traceability.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">database</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-on-surface-variant">STR</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">STR</span>
                 </div>
-                <div class="h-px bg-outline-variant flex-1 mx-2"></div>
+                <div class="h-[2px] bg-outline-variant/60 flex-1 mx-2 relative overflow-hidden rounded-full">
+                  <div class="pipeline-pulse-particle" style="animation-delay: -1.54s;"></div>
+                  <div class="pipeline-pulse-particle" style="animation-delay: -0.54s;"></div>
+                </div>
 
-                <!-- BC: Blockchain -->
-                <div class="flex flex-col items-center gap-1" title="Blockchain: Local tamper-evident ledger integrity">
-                  <div class="w-8 h-8 rounded-full bg-tertiary-container/20 border border-tertiary text-tertiary flex items-center justify-center">
+                <!-- 9. BC: Blockchain -->
+                <div class="pipeline-stage-item">
+                  <div class="pipeline-tooltip absolute bottom-[calc(100%+12px)] right-0 w-60 p-3 bg-[#0b0e14]/95 border border-outline-variant rounded-lg shadow-2xl backdrop-blur-md text-left">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-label-caps text-label-caps text-on-surface font-bold">BLOCKCHAIN</span>
+                      <span class="font-code-xs text-[10px] text-primary/80 font-normal">STAGE 9</span>
+                    </div>
+                    <p class="font-body-sm text-[11px] leading-relaxed text-on-surface-variant font-normal">
+                      Anchors integrity metadata so processed data can later be verified.
+                    </p>
+                    ${stageEpsHtml}
+                    <div class="absolute -bottom-1 right-3.5 w-2 h-2 bg-[#0b0e14] border-r border-b border-outline-variant rotate-45"></div>
+                  </div>
+                  <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant pipeline-stage-circle">
                     <span class="material-symbols-outlined text-[16px]">link</span>
                   </div>
-                  <span class="font-code-xs text-code-xs text-tertiary">BC</span>
+                  <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">BC</span>
                 </div>
               </div>
             </div>
@@ -1259,30 +1473,44 @@
           <!-- 3. ROW OF TWO CHARTS (EVENT VOLUME & SOURCE DISTRIBUTION) -->
           <div class="grid grid-cols-2 gap-gutter">
             <!-- Left: EVENT VOLUME (24H) -->
-            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64">
+            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64 relative">
               <div class="flex items-center justify-between">
-                <span class="font-title-sm text-title-sm text-on-surface">EVENT VOLUME (24H)</span>
+                <div class="flex items-center gap-2">
+                  <span class="font-title-sm text-title-sm text-on-surface">EVENT VOLUME (24H)</span>
+                  <span id="vol-refresh-indicator" class="hidden font-code-xs text-[10px] text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded items-center gap-1 animate-pulse">
+                    <span class="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                    <span>Refreshing...</span>
+                  </span>
+                </div>
                 <span class="font-code-xs text-code-xs text-on-surface-variant" id="vol-max-eps">MAX: ${volume.max_eps || 0} EPS</span>
               </div>
               <div class="flex-1 w-full bg-surface-container-lowest rounded border border-outline-variant flex items-end px-4 pt-6 pb-2 gap-1 relative overflow-hidden">
-                <div class="w-full flex items-end justify-between h-full gap-1">
+                <div class="w-full flex items-end justify-between h-full gap-1" id="volume-bars-container">
                   ${barsHtml}
                 </div>
               </div>
             </div>
 
             <!-- Right: SOURCE DISTRIBUTION -->
-            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64">
-              <span class="font-title-sm text-title-sm text-on-surface">SOURCE DISTRIBUTION</span>
+            <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md h-64 relative">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="font-title-sm text-title-sm text-on-surface">SOURCE DISTRIBUTION</span>
+                  <span id="src-refresh-indicator" class="hidden font-code-xs text-[10px] text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded items-center gap-1 animate-pulse">
+                    <span class="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                    <span>Refreshing...</span>
+                  </span>
+                </div>
+              </div>
               <div class="flex-1 w-full bg-surface-container-lowest rounded border border-outline-variant flex items-center justify-center p-4">
                 <div class="flex w-full h-full gap-6 items-center">
                   <div class="w-32 h-32 rounded-full border-[8px] border-surface-container-highest relative flex items-center justify-center flex-shrink-0">
-                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" id="source-donut-svg">
                       ${svgCircles}
                     </svg>
-                    <span class="font-code-sm text-code-sm text-on-surface font-semibold">${formatKpiNumber(totalSrcEvents)}</span>
+                    <span class="font-code-sm text-code-sm text-on-surface font-semibold" id="src-total-events">${formatKpiNumber(totalSrcEvents)}</span>
                   </div>
-                  <div class="flex-1 flex flex-col gap-2 overflow-y-auto max-h-40 pr-2">
+                  <div class="flex-1 flex flex-col gap-2 overflow-y-auto max-h-40 pr-2" id="source-legend-container">
                     ${legendHtml}
                   </div>
                 </div>
@@ -6014,6 +6242,13 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           await this.navigate(this.currentPage);
         }
         await this.refreshCurrentPage();
+
+        // 8-second auto-refresh interval for live dashboard telemetry
+        setInterval(() => {
+          if (this.currentPage === 'dashboard' && document.visibilityState !== 'hidden') {
+            this.refreshDashboardData(false);
+          }
+        }, 8000);
       }
 
       async navigate(page, eventId = null) {
@@ -6061,6 +6296,13 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
       }
 
       async loadDashboardData() {
+        // If dashboard DOM is already mounted, perform seamless in-place refresh without resetting pipeline animations
+        const pipelineCard = document.getElementById('dashboard-pipeline-card');
+        if (this.dashboardState.summary && pipelineCard) {
+          await this.refreshDashboardData(false);
+          return;
+        }
+
         this.dashboardState.loading = true;
         if (this.currentPage === 'dashboard') {
           this.renderView();
@@ -6091,6 +6333,235 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         }
         if (this.currentPage === 'dashboard') {
           this.renderView();
+        }
+      }
+
+      async refreshDashboardData(showIndicator = true) {
+        if (this._isRefreshingDashboard) return;
+        this._isRefreshingDashboard = true;
+
+        const volIndicator = document.getElementById('vol-refresh-indicator');
+        const srcIndicator = document.getElementById('src-refresh-indicator');
+        const iconEl = document.getElementById('global-refresh-icon');
+
+        if (showIndicator) {
+          if (volIndicator) {
+            volIndicator.classList.remove('hidden');
+            volIndicator.classList.add('flex');
+          }
+          if (srcIndicator) {
+            srcIndicator.classList.remove('hidden');
+            srcIndicator.classList.add('flex');
+          }
+          if (iconEl) iconEl.classList.add('animate-spin');
+        }
+
+        const minLoadingPromise = showIndicator
+          ? new Promise(r => setTimeout(r, 650))
+          : Promise.resolve();
+
+        try {
+          const [sumRes, volRes, srcRes, recRes, hltRes] = await Promise.all([
+            fetch('/api/dashboard/summary'),
+            fetch('/api/dashboard/event-volume'),
+            fetch('/api/dashboard/source-distribution'),
+            fetch('/api/dashboard/recent-events?limit=10'),
+            fetch('/api/dashboard/system-health'),
+            minLoadingPromise
+          ]);
+
+          if (sumRes.ok) this.dashboardState.summary = await sumRes.json();
+          if (volRes.ok) this.dashboardState.volume = await volRes.json();
+          if (srcRes.ok) this.dashboardState.sources = await srcRes.json();
+          if (recRes.ok) this.dashboardState.recentEvents = await recRes.json();
+          if (hltRes.ok) {
+            this.dashboardState.health = await hltRes.json();
+            this.updateHealthIndicators(this.dashboardState.health);
+          }
+          this.dashboardState.error = null;
+
+          // If on dashboard page and DOM is mounted, update in-place without touching the pipeline!
+          if (this.currentPage === 'dashboard') {
+            this.updateDashboardDomInPlace();
+          }
+        } catch (err) {
+          console.error('Error refreshing dashboard data:', err);
+        } finally {
+          this._isRefreshingDashboard = false;
+          if (volIndicator) {
+            volIndicator.classList.add('hidden');
+            volIndicator.classList.remove('flex');
+          }
+          if (srcIndicator) {
+            srcIndicator.classList.add('hidden');
+            srcIndicator.classList.remove('flex');
+          }
+          if (iconEl && showIndicator) {
+            setTimeout(() => iconEl.classList.remove('animate-spin'), 300);
+          }
+        }
+      }
+
+      updateDashboardDomInPlace() {
+        const summary = this.dashboardState.summary || {};
+        const volume = this.dashboardState.volume || { buckets: [], max_eps: 0 };
+        const sources = this.dashboardState.sources || { distribution: [], total_events: 0 };
+        const recentEvents = this.dashboardState.recentEvents || [];
+
+        // 1. Update KPI Cards
+        const elEvt = document.getElementById('kpi-events-processed');
+        if (elEvt) elEvt.textContent = formatKpiNumber(summary.events_processed);
+
+        const elNorm = document.getElementById('kpi-normalized-pct');
+        if (elNorm) elNorm.textContent = `${summary.normalized_pct ?? 0}%`;
+
+        const elOcsf = document.getElementById('kpi-ocsf-events');
+        if (elOcsf) elOcsf.textContent = formatKpiNumber(summary.ocsf_events_count);
+
+        const elUnk = document.getElementById('kpi-unknown-formats');
+        if (elUnk) elUnk.textContent = formatKpiNumber(summary.unknown_formats_count);
+
+        const elAnom = document.getElementById('kpi-anomalies');
+        if (elAnom) elAnom.textContent = formatKpiNumber(summary.anomalies_count);
+
+        const elBc = document.getElementById('kpi-blockchain-verified');
+        if (elBc) elBc.textContent = formatKpiNumber(summary.blockchain_verified_count);
+
+        // 2. Update Event Volume (24H)
+        const elMaxEps = document.getElementById('vol-max-eps');
+        if (elMaxEps) elMaxEps.textContent = `MAX: ${volume.max_eps || 0} EPS`;
+
+        const barsContainer = document.getElementById('volume-bars-container');
+        if (barsContainer && volume.buckets && volume.buckets.length > 0) {
+          const maxCount = volume.max_hourly_count || 1;
+          const existingBars = barsContainer.querySelectorAll('.volume-bar');
+          if (existingBars.length === volume.buckets.length) {
+            // Smoothly morph existing bars
+            volume.buckets.forEach((b, i) => {
+              const bar = existingBars[i];
+              const isPeak = b.count > 0 && b.count === maxCount;
+              const heightPct = maxCount > 0 ? Math.max(4, Math.round((b.count / maxCount) * 100)) : 4;
+              bar.style.height = `${heightPct}%`;
+              if (isPeak) {
+                bar.classList.add('bg-primary/40');
+                bar.classList.remove('bg-primary/20');
+              } else {
+                bar.classList.add('bg-primary/20');
+                bar.classList.remove('bg-primary/40');
+              }
+              const peakDot = bar.querySelector('.peak-dot');
+              if (peakDot) {
+                if (isPeak) peakDot.classList.remove('hidden');
+                else peakDot.classList.add('hidden');
+              }
+              const tip = bar.querySelector('.vol-tooltip');
+              if (tip) {
+                tip.textContent = `${b.label} — ${b.count.toLocaleString()}`;
+              }
+            });
+          } else {
+            // Re-render bars if count differs
+            barsContainer.innerHTML = volume.buckets.map((b, i) => {
+              const isPeak = b.count > 0 && b.count === maxCount;
+              const heightPct = maxCount > 0 ? Math.max(4, Math.round((b.count / maxCount) * 100)) : 4;
+              return `
+                <div class="volume-bar w-full ${isPeak ? 'bg-primary/40 hover:bg-primary/60' : 'bg-primary/20 hover:bg-primary/40'} transition-all duration-700 ease-out rounded-t-sm border-t border-primary relative group cursor-pointer" style="height: ${heightPct}%;" id="vol-bar-${i}" data-hour="${b.hour}" data-count="${b.count}">
+                  <div class="peak-dot ${isPeak ? '' : 'hidden'} absolute -top-1 w-2 h-2 rounded-full bg-primary left-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(152,203,255,0.8)]"></div>
+                  <div class="vol-tooltip hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest px-2 py-1 rounded text-code-xs font-code-xs text-on-surface z-20 whitespace-nowrap border border-outline-variant shadow-lg pointer-events-none">
+                    ${b.label} — ${b.count.toLocaleString()}
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
+        // 3. Update Source Distribution Donut & Legend
+        const elSrcTotal = document.getElementById('src-total-events');
+        if (elSrcTotal) elSrcTotal.textContent = formatKpiNumber(sources.total_events || 0);
+
+        const donutSvg = document.getElementById('source-donut-svg');
+        const dist = sources.distribution || [];
+        const C = 289.026;
+        if (donutSvg && dist.length > 0) {
+          let currentOffset = 0;
+          const existingSegments = donutSvg.querySelectorAll('.donut-segment');
+          if (existingSegments.length === dist.length) {
+            dist.forEach((item, idx) => {
+              const seg = existingSegments[idx];
+              const strokeLen = (item.pct / 100.0) * C;
+              const dashArray = `${strokeLen.toFixed(1)} ${(C - strokeLen).toFixed(1)}`;
+              const rotation = (currentOffset / C) * 360;
+              currentOffset += strokeLen;
+              seg.setAttribute('stroke', item.color);
+              seg.style.strokeDasharray = dashArray;
+              seg.setAttribute('transform', `rotate(${rotation - 90} 50 50)`);
+            });
+          } else {
+            donutSvg.innerHTML = dist.map((item, idx) => {
+              const strokeLen = (item.pct / 100.0) * C;
+              const dashArray = `${strokeLen.toFixed(1)} ${(C - strokeLen).toFixed(1)}`;
+              const rotation = (currentOffset / C) * 360;
+              currentOffset += strokeLen;
+              return `
+                <circle id="donut-segment-${idx}" class="donut-segment" cx="50" cy="50" r="46" fill="none" stroke="${item.color}" stroke-width="8"
+                  stroke-dasharray="${dashArray}" stroke-dashoffset="0"
+                  transform="rotate(${rotation - 90} 50 50)" style="transition: stroke-dasharray 0.75s cubic-bezier(0.4, 0, 0.2, 1), transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);" />
+              `;
+            }).join('');
+          }
+        }
+
+        // Legend
+        const legendContainer = document.getElementById('source-legend-container');
+        if (legendContainer) {
+          legendContainer.innerHTML = dist.length > 0 ? dist.map(item => `
+            <div class="flex items-center justify-between font-code-xs text-code-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" style="background-color: ${item.color};"></div>
+                <span class="text-on-surface-variant">${item.source}</span>
+              </div>
+              <span class="text-on-surface font-medium">${item.pct}%</span>
+            </div>
+          `).join('') : '<div class="text-on-surface-variant text-code-xs">No source data available</div>';
+        }
+
+        // 4. Update Recent Security Events Table Body
+        const tbody = document.getElementById('recent-events-tbody');
+        if (tbody && recentEvents.length > 0) {
+          tbody.innerHTML = recentEvents.map(e => {
+            let sevBadge = '';
+            const sevUpper = (e.severity || 'INFO').toUpperCase();
+            if (sevUpper === 'CRITICAL' || sevUpper === 'HIGH') {
+              sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-error-container/10 text-error font-label-caps text-label-caps border border-error-container">${sevUpper}</span>`;
+            } else if (sevUpper === 'MEDIUM' || sevUpper === 'WARN' || sevUpper === 'WARNING') {
+              sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-tertiary/10 text-tertiary font-label-caps text-label-caps border border-tertiary/20">MEDIUM</span>`;
+            } else if (sevUpper === 'LOW') {
+              sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-primary/10 text-primary font-label-caps text-label-caps border border-primary/20">LOW</span>`;
+            } else {
+              sevBadge = `<span class="px-2 py-0.5 rounded-sm bg-outline-variant/30 text-on-surface-variant font-label-caps text-label-caps border border-outline-variant">INFO</span>`;
+            }
+            const anmIcon = e.is_anomaly
+              ? '<span class="material-symbols-outlined text-[16px] text-error" title="Anomaly Detected by Isolation Forest">warning</span>'
+              : '<span class="material-symbols-outlined text-[16px] text-outline-variant">remove</span>';
+            const intIcon = e.is_verified
+              ? '<span class="material-symbols-outlined text-[16px] text-primary" title="Cryptographically Verified in Blockchain Ledger">verified</span>'
+              : '<span class="material-symbols-outlined text-[16px] text-outline-variant animate-pulse" title="Integrity Check Pending">sync</span>';
+            const shortId = e.event_id.length > 12 ? e.event_id.slice(0, 10) + '...' : e.event_id;
+            return `
+              <tr class="border-b border-outline-variant/50 hover:bg-surface-container-high/40 transition-colors cursor-pointer" onclick="app.inspectEvent('${e.event_id}')" title="Click to inspect raw forensic payload & blockchain proof">
+                <td class="p-2 pl-4 text-on-surface-variant whitespace-nowrap text-code-xs">${e.time}</td>
+                <td class="p-2 font-code-xs text-code-xs text-primary font-medium hover:underline">${shortId}</td>
+                <td class="p-2 text-on-surface font-code-xs">${escapeHtml(e.source)}</td>
+                <td class="p-2 text-on-surface-variant text-code-xs">${escapeHtml(e.format)}</td>
+                <td class="p-2 text-on-surface text-code-xs">${escapeHtml(e.type)}</td>
+                <td class="p-2">${sevBadge}</td>
+                <td class="p-2 text-on-surface-variant text-code-xs">${escapeHtml(e.ocsf)}</td>
+                <td class="p-2 text-center">${anmIcon}</td>
+                <td class="p-2 pr-4 text-center">${intIcon}</td>
+              </tr>
+            `;
+          }).join('');
         }
       }
 
@@ -6233,7 +6704,7 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
 
         try {
           if (this.currentPage === 'dashboard') {
-            await this.loadDashboardData();
+            await this.refreshDashboardData(true);
           } else if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
             await this.loadIngestionData();
           } else if (this.currentPage === 'sources') {

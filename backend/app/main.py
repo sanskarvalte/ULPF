@@ -127,6 +127,14 @@ if FRONTEND_DIR.exists():
         if font_p.exists():
             return FileResponse(str(font_p), media_type="font/woff2")
         return RedirectResponse(url="/static/material-symbols.woff2")
+
+    @app.get("/ulpf-logo.jpg", include_in_schema=False)
+    @app.get("/assets/ulpf-logo.jpg", include_in_schema=False)
+    def serve_logo():
+        logo_p = FRONTEND_DIR / "assets" / "ulpf-logo.jpg"
+        if logo_p.exists():
+            return FileResponse(str(logo_p), media_type="image/jpeg")
+        return RedirectResponse(url="/static/assets/ulpf-logo.jpg")
 else:
     @app.get("/", include_in_schema=False)
     def root():
