@@ -91,12 +91,25 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
   };
   const integrityLabel = integrityMap[integrityFilter.toLowerCase()] || integrityFilter;
 
-  const availableSources = filterOptions.sources || [];
-  const sourceOptionsHtml = availableSources.slice(0, 40).map(s => `
-    <button onclick="event.stopPropagation(); app.setFilter('sourceFilter', '${escapeHtml(s)}')" class="w-full text-left px-3 py-1.5 hover:bg-surface-container-highest transition-colors font-code-xs text-code-xs ${sourceFilter === s ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'} truncate" title="${escapeHtml(s)}">
-      ${escapeHtml(s)}
-    </button>
-  `).join('');
+  let availableSources = filterOptions.sources || [];
+  if (!availableSources.length && events && events.length) {
+    availableSources = [...new Set(events.map(e => e.source_display || e.src_hostname || e.source_file || e.product).filter(Boolean))].sort();
+  }
+  if (!availableSources.length && window.app && window.app.state && window.app.state.sources && window.app.state.sources.length) {
+    availableSources = window.app.state.sources.map(s => s.source_name).filter(Boolean).sort();
+  }
+  const sourceOptionsHtml = availableSources.length > 0 ? availableSources.slice(0, 50).map(s => {
+    const isSel = sourceFilter === s;
+    return `
+      <button onclick="event.stopPropagation(); app.setFilter('sourceFilter', '${escapeHtml(s)}')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary transition-colors font-code-xs text-code-xs ${isSel ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'} truncate" title="${escapeHtml(s)}">
+        <span class="truncate flex items-center gap-2">
+          <span class="material-symbols-outlined text-[15px] text-outline">description</span>
+          ${escapeHtml(s)}
+        </span>
+        ${isSel ? '<span class="text-primary font-bold ml-2">✓</span>' : ''}
+      </button>
+    `;
+  }).join('') : '<div class="px-3 py-2 text-on-surface-variant text-[11px] italic">No sources detected yet</div>';
 
   const activeChips = [];
   if (ocsfFilter && ocsfFilter !== 'all') {
@@ -195,9 +208,9 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
 
   return `
     <div class="flex flex-col w-full h-full p-gutter gap-stack-md" onclick="app.closeDropdowns()">
-      <!-- TOP SEARCH & FILTER PANEL -->
-      <div class="flex flex-col bg-surface-container rounded shadow-sm relative overflow-hidden">
-        <div class="p-container-padding flex flex-col gap-stack-md z-10 relative">
+      <!-- TOP SEARCH & FILTER PANEL (overflow-visible ensures dropdowns are never clipped) -->
+      <div class="flex flex-col bg-surface-container rounded shadow-sm relative overflow-visible z-30">
+        <div class="p-container-padding flex flex-col gap-stack-md relative overflow-visible">
           <!-- LOG EXPLORER TITLE & ACTION BUTTONS -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -231,8 +244,8 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
             </div>
           </div>
 
-          <!-- FILTER BAR -->
-          <div class="flex flex-wrap gap-x-stack-md gap-y-stack-sm items-center relative">
+          <!-- FILTER BAR (relative z-40 overflow-visible allows dropdowns to freely float over table) -->
+          <div class="flex flex-wrap gap-x-stack-md gap-y-stack-sm items-center relative z-40 overflow-visible">
             <span class="font-label-caps text-label-caps text-outline">FILTERS:</span>
 
             <!-- TIME RANGE DROPDOWN -->
@@ -243,12 +256,13 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
                 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
               </button>
               ${activeDropdown === 'time' ? `
-                <div class="absolute left-0 top-full mt-1 w-48 bg-surface-container-high border border-outline-variant rounded shadow-xl z-30 py-1 font-code-xs text-code-xs">
-                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', 'all')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${timeRange === 'all' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">All Time</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '15m')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${timeRange === '15m' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">Last 15 Minutes</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '1h')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${timeRange === '1h' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">Last 1 Hour</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '24h')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${timeRange === '24h' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">Last 24 Hours</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '7d')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${timeRange === '7d' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">Last 7 Days</button>
+                <div class="absolute left-0 top-full mt-2 w-52 bg-[#181c26] border border-[#3b4354] rounded-lg shadow-2xl z-50 py-1.5 font-code-xs text-code-xs ring-1 ring-black/50 backdrop-blur-md">
+                  <div class="px-3 py-1 text-[10px] font-label-caps uppercase text-outline border-b border-[#2b3342] mb-1">Time Range</div>
+                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', 'all')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${timeRange === 'all' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>All Time</span>${timeRange === 'all' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '15m')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${timeRange === '15m' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>Last 15 Minutes</span>${timeRange === '15m' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '1h')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${timeRange === '1h' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>Last 1 Hour</span>${timeRange === '1h' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '24h')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${timeRange === '24h' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>Last 24 Hours</span>${timeRange === '24h' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('timeRange', '7d')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${timeRange === '7d' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>Last 7 Days</span>${timeRange === '7d' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
                 </div>
               ` : ''}
             </div>
@@ -257,12 +271,19 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
             <div class="relative">
               <button onclick="event.stopPropagation(); app.toggleFilterDropdown('source')" class="flex items-center gap-2 px-3 py-1.5 bg-[#080A0E] border ${sourceFilter !== 'all' ? 'border-primary/60 text-primary' : 'border-outline-variant text-on-surface'} rounded hover:border-primary/50 transition-colors cursor-pointer text-left">
                 <span class="font-code-xs text-code-xs text-on-surface-variant">Source:</span>
-                <span class="font-code-xs text-code-xs text-on-surface">${escapeHtml(sourceLabel)}</span>
+                <span class="font-code-xs text-code-xs text-on-surface font-semibold">${escapeHtml(sourceLabel)}</span>
                 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
               </button>
               ${activeDropdown === 'source' ? `
-                <div class="absolute left-0 top-full mt-1 w-56 max-h-60 overflow-y-auto bg-surface-container-high border border-outline-variant rounded shadow-xl z-30 py-1 font-code-xs text-code-xs">
-                  <button onclick="event.stopPropagation(); app.setFilter('sourceFilter', 'all')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${sourceFilter === 'all' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">All Sources</button>
+                <div class="absolute left-0 top-full mt-2 w-72 max-h-80 overflow-y-auto bg-[#181c26] border border-[#3b4354] rounded-lg shadow-2xl z-50 py-1.5 font-code-xs text-code-xs ring-1 ring-black/50 backdrop-blur-md">
+                  <div class="px-3 py-1.5 text-[10px] font-label-caps uppercase text-outline border-b border-[#2b3342] mb-1 flex items-center justify-between">
+                    <span>Log Sources</span>
+                    <span class="text-primary font-bold">${availableSources.length} detected</span>
+                  </div>
+                  <button onclick="event.stopPropagation(); app.setFilter('sourceFilter', 'all')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${sourceFilter === 'all' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}">
+                    <span>📁 All Sources</span>
+                    ${sourceFilter === 'all' ? '<span class="text-primary font-bold">✓</span>' : ''}
+                  </button>
                   ${sourceOptionsHtml}
                 </div>
               ` : ''}
@@ -276,14 +297,15 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
                 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
               </button>
               ${activeDropdown === 'severity' ? `
-                <div class="absolute left-0 top-full mt-1 w-44 bg-surface-container-high border border-outline-variant rounded shadow-xl z-30 py-1 font-code-xs text-code-xs">
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'all')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${severityFilter === 'all' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">All Severities</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'high+')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-error font-bold ${severityFilter === 'high+' ? 'bg-primary/10' : ''}">High+ (Critical & High)</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'critical')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-error ${severityFilter === 'critical' ? 'font-bold bg-primary/10' : ''}">Critical</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'high')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-tertiary ${severityFilter === 'high' ? 'font-bold bg-primary/10' : ''}">High</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'medium')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-tertiary ${severityFilter === 'medium' ? 'font-bold bg-primary/10' : ''}">Medium</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'low')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-primary ${severityFilter === 'low' ? 'font-bold bg-primary/10' : ''}">Low</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'info')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-on-surface-variant ${severityFilter === 'info' ? 'font-bold bg-primary/10' : ''}">Info</button>
+                <div class="absolute left-0 top-full mt-2 w-56 bg-[#181c26] border border-[#3b4354] rounded-lg shadow-2xl z-50 py-1.5 font-code-xs text-code-xs ring-1 ring-black/50 backdrop-blur-md">
+                  <div class="px-3 py-1 text-[10px] font-label-caps uppercase text-outline border-b border-[#2b3342] mb-1">Severity Level</div>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'all')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${severityFilter === 'all' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>All Severities</span>${severityFilter === 'all' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'high+')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-error font-bold ${severityFilter === 'high+' ? 'bg-primary/15' : ''}"><span>High+ (Critical & High)</span>${severityFilter === 'high+' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'critical')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-error ${severityFilter === 'critical' ? 'font-bold bg-primary/15' : ''}"><span>Critical</span>${severityFilter === 'critical' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'high')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-tertiary ${severityFilter === 'high' ? 'font-bold bg-primary/15' : ''}"><span>High</span>${severityFilter === 'high' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'medium')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-tertiary ${severityFilter === 'medium' ? 'font-bold bg-primary/15' : ''}"><span>Medium</span>${severityFilter === 'medium' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'low')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-primary ${severityFilter === 'low' ? 'font-bold bg-primary/15' : ''}"><span>Low</span>${severityFilter === 'low' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('severityFilter', 'info')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-on-surface-variant ${severityFilter === 'info' ? 'font-bold bg-primary/15' : ''}"><span>Info</span>${severityFilter === 'info' ? '<span>✓</span>' : ''}</button>
                 </div>
               ` : ''}
             </div>
@@ -296,11 +318,12 @@ export function renderLogExplorerPage(events = [], total = 0, page = 1, pageSize
                 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
               </button>
               ${activeDropdown === 'integrity' ? `
-                <div class="absolute left-0 top-full mt-1 w-44 bg-surface-container-high border border-outline-variant rounded shadow-xl z-30 py-1 font-code-xs text-code-xs">
-                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'all')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer ${integrityFilter === 'all' ? 'text-primary font-bold bg-primary/10' : 'text-on-surface'}">All Statuses</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'verified')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-[#86efac] ${integrityFilter === 'verified' ? 'font-bold bg-primary/10' : ''}">✓ Verified Only</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'failed')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-error ${integrityFilter === 'failed' ? 'font-bold bg-primary/10' : ''}">⚠ Failed / Tampered</button>
-                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'pending')" class="w-full text-left px-3 py-2 hover:bg-surface-container-highest cursor-pointer text-outline ${integrityFilter === 'pending' ? 'font-bold bg-primary/10' : ''}">○ Pending Proof</button>
+                <div class="absolute left-0 top-full mt-2 w-52 bg-[#181c26] border border-[#3b4354] rounded-lg shadow-2xl z-50 py-1.5 font-code-xs text-code-xs ring-1 ring-black/50 backdrop-blur-md">
+                  <div class="px-3 py-1 text-[10px] font-label-caps uppercase text-outline border-b border-[#2b3342] mb-1">Blockchain Proof</div>
+                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'all')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer ${integrityFilter === 'all' ? 'text-primary font-bold bg-primary/15' : 'text-on-surface'}"><span>All Statuses</span>${integrityFilter === 'all' ? '<span class="text-primary font-bold">✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'verified')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-[#86efac] ${integrityFilter === 'verified' ? 'font-bold bg-primary/15' : ''}"><span>✓ Verified Only</span>${integrityFilter === 'verified' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'failed')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-error ${integrityFilter === 'failed' ? 'font-bold bg-primary/15' : ''}"><span>⚠ Failed / Tampered</span>${integrityFilter === 'failed' ? '<span>✓</span>' : ''}</button>
+                  <button onclick="event.stopPropagation(); app.setFilter('integrityFilter', 'pending')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-primary/10 hover:text-primary cursor-pointer text-outline ${integrityFilter === 'pending' ? 'font-bold bg-primary/15' : ''}"><span>○ Pending Proof</span>${integrityFilter === 'pending' ? '<span>✓</span>' : ''}</button>
                 </div>
               ` : ''}
             </div>
