@@ -1,6 +1,6 @@
 # ULPF Real-World LogHub Benchmarking & Accuracy Evaluation Report
 
-**Generated:** 2026-09-05T15:43:20.618660+00:00  
+**Generated:** 2026-09-05T15:58:47.351969+00:00  
 **Framework Version:** ULPF-1.0.0-Phase1  
 **Environment:** Windows | Python 3.14.3 | DuckDB 1.1.3 | Air-Gapped Mode: True  
 
@@ -17,8 +17,8 @@ This evaluation establishes rigorous, empirical benchmarks for the Universal Log
 - **Field Extraction Accuracy (Ground-Truth Weighted):** 93.75%
 - **Semantic Classification Accuracy (Ground-Truth Weighted):** 100.0%
 - **Known-Format Ollama Calls:** 0 (Verified 0 calls across all known datasets)
-- **Blockchain SHA-256 Ledger Integrity:** True (35846 blocks verified)
-- **Aggregate Processing Throughput:** 80.9 events/sec
+- **Blockchain SHA-256 Ledger Integrity:** True (43204 blocks verified)
+- **Aggregate Processing Throughput:** 33.9 events/sec
 
 ---
 
@@ -150,17 +150,17 @@ ULPF standardizes heterogeneous log formats into standard OCSF taxonomy:
 
 | Dataset | Assigned OCSF Categories | Sample OCSF Classes | Status |
 | :--- | :--- | :--- | :--- |
-| **Android_100** | Application Activity, System Activity | Application Lifecycle, Operating System | Verified |
-| **Android_1k** | Application Activity, System Activity | Application Lifecycle, Operating System | Verified |
-| **Android_2k_Full** | Application Activity, System Activity | Application Lifecycle, Operating System | Verified |
-| **Mac_100** | Application Activity, System Activity, Network Activity | Application Lifecycle, System Activity, Kernel Activity, Scheduled Job Activity, DNS Activity, Web Resource Access Activity | Verified |
-| **Mac_1k** | Application Activity, System Activity, Network Activity | Application Lifecycle, System Activity, Kernel Activity, Scheduled Job Activity, DNS Activity, Web Resource Access Activity | Verified |
-| **Mac_2k_Full** | Application Activity, System Activity, Network Activity | Application Lifecycle, System Activity, Kernel Activity, Scheduled Job Activity, DNS Activity, Web Resource Access Activity | Verified |
-| **Linux_sample** | System Activity, Identity & Access Management | Authentication, Kernel Activity, Scheduled Job Activity | Verified |
+| **Android_100** | Application Activity, System Activity | Operating System, Application Lifecycle | Verified |
+| **Android_1k** | Application Activity, System Activity | Operating System, Application Lifecycle | Verified |
+| **Android_2k_Full** | Application Activity, System Activity | Operating System, Application Lifecycle | Verified |
+| **Mac_100** | System Activity, Network Activity, Application Activity | System Activity, Scheduled Job Activity, Kernel Activity, Web Resource Access Activity, Application Lifecycle, DNS Activity | Verified |
+| **Mac_1k** | System Activity, Network Activity, Application Activity | System Activity, Scheduled Job Activity, Kernel Activity, Web Resource Access Activity, Application Lifecycle, DNS Activity | Verified |
+| **Mac_2k_Full** | System Activity, Network Activity, Application Activity | System Activity, Scheduled Job Activity, Kernel Activity, Web Resource Access Activity, Application Lifecycle, DNS Activity | Verified |
+| **Linux_sample** | System Activity, Identity & Access Management | Kernel Activity, Scheduled Job Activity, Authentication | Verified |
 | **SSH_sample** | Identity & Access Management | Authentication | Verified |
 | **Apache_sample** | Network Activity | HTTP Activity | Verified |
 | **Hadoop_sample** | Application Activity | Application Lifecycle | Verified |
-| **JSON_server** | Identity & Access Management, Network Activity | Authentication, Network Activity | Verified |
+| **JSON_server** | Network Activity, Identity & Access Management | Authentication, Network Activity | Verified |
 | **XML_device** | Network Activity | Network Activity | Verified |
 | **CEF_security** | Identity & Access Management | Authentication | Verified |
 | **CSV_application** | Identity & Access Management | Authentication | Verified |
@@ -195,8 +195,8 @@ Demonstrates ULPF's adaptive learning pipeline on genuinely unknown formats:
 
 | Unknown Dataset | Fingerprint | Run 1 (Cold Exposure) | Run 2 (Learned Cache) | Speedup Ratio | Zero Calls on Run 2? |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **ZooKeeper_Cluster** | `f465f07d29323fe8` | 0.183s (calls: 0) | 0.1669s (calls: 0) | **1.1x faster** | True |
-| **OpenVPN_Tunnel** | `909556374a29ac71` | 0.4192s (calls: 0) | 0.1749s (calls: 0) | **2.4x faster** | True |
+| **ZooKeeper_Cluster** | `f465f07d29323fe8` | 0.6414s (calls: 0) | 0.2354s (calls: 0) | **2.73x faster** | True |
+| **OpenVPN_Tunnel** | `909556374a29ac71` | 0.5129s (calls: 0) | 0.1938s (calls: 0) | **2.65x faster** | True |
 
 ---
 
@@ -208,9 +208,9 @@ Verified that all 20,568 processed events were persisted directly to local DuckD
 
 ## 12. SHA-256 Lineage & Cryptographic Proof Verification
 
-- **Blockchain Ledger Blocks:** 35846 blocks verified
+- **Blockchain Ledger Blocks:** 43204 blocks verified
 - **Cryptographic Chain Validity:** True
-- **Chain Continuity Result:** Blockchain integrity verified successfully (35846/35846 blocks cryptographically validated).
+- **Chain Continuity Result:** Blockchain integrity verified successfully (43204/43204 blocks cryptographically validated).
 
 ---
 
@@ -218,16 +218,16 @@ Verified that all 20,568 processed events were persisted directly to local DuckD
 
 | Benchmark Tier | Events Processed | Elapsed Time | Throughput (Events/Sec) | Throughput (MB/Sec) | Peak Memory |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Android_100** | 100 | 2.8267s | **35.4 eps** | 0.005 MB/s | 11.894 MB |
-| **Android_1k** | 1,000 | 21.1896s | **47.2 eps** | 0.006 MB/s | 11.426 MB |
-| **Android_2k_Full** | 2,000 | 42.0547s | **47.6 eps** | 0.006 MB/s | 22.317 MB |
-| **Mac_100** | 100 | 2.1665s | **46.2 eps** | 0.006 MB/s | 1.49 MB |
-| **Mac_1k** | 1,000 | 20.6761s | **48.4 eps** | 0.007 MB/s | 13.026 MB |
-| **Mac_2k_Full** | 2,000 | 42.3047s | **47.3 eps** | 0.007 MB/s | 25.96 MB |
-| **WiFi_100** | 100 | 4.2672s | **23.4 eps** | 0.005 MB/s | 5.321 MB |
-| **WiFi_1k** | 1,000 | 31.5798s | **31.7 eps** | 0.007 MB/s | 13.48 MB |
-| **WiFi_7.6k_Full** | 7,690 | 82.3141s | **93.4 eps** | 0.02 MB/s | 76.019 MB |
-| **Install_10k_Streaming** | 10,000 | 59.2455s | **168.8 eps** | 0.025 MB/s | 66.316 MB |
+| **Android_100** | 100 | 2.8965s | **34.5 eps** | 0.005 MB/s | 11.899 MB |
+| **Android_1k** | 1,000 | 21.1476s | **47.3 eps** | 0.006 MB/s | 11.43 MB |
+| **Android_2k_Full** | 2,000 | 40.6387s | **49.2 eps** | 0.007 MB/s | 22.322 MB |
+| **Mac_100** | 100 | 2.0907s | **47.8 eps** | 0.007 MB/s | 1.492 MB |
+| **Mac_1k** | 1,000 | 19.492s | **51.3 eps** | 0.008 MB/s | 13.026 MB |
+| **Mac_2k_Full** | 2,000 | 40.8238s | **49.0 eps** | 0.007 MB/s | 25.951 MB |
+| **WiFi_100** | 100 | 3.9389s | **25.4 eps** | 0.006 MB/s | 1.635 MB |
+| **WiFi_1k** | 1,000 | 32.0365s | **31.2 eps** | 0.007 MB/s | 12.695 MB |
+| **WiFi_7.6k_Full** | 7,690 | 218.7822s | **35.1 eps** | 0.008 MB/s | 70.208 MB |
+| **Install_10k_Streaming** | 10,000 | 356.6306s | **28.0 eps** | 0.004 MB/s | 60.463 MB |
 
 ---
 

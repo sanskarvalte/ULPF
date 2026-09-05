@@ -1,0 +1,213 @@
+{
+  "16b7b2b39d868d85": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.616204+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.616214+00:00"
+  },
+  "2ac043b1ceeb0c7d": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.636672+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.636685+00:00"
+  },
+  "8ab7a38b8947444a": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.658719+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.658731+00:00"
+  },
+  "73f543035fcd9367": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.683003+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.683013+00:00"
+  },
+  "7f23efb1c76b4952": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.706124+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.706134+00:00"
+  },
+  "eadb11c4635561bf": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:47.725726+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:47.725736+00:00"
+  },
+  "6a58d9806095938e": {
+    "parser_spec": {
+      "format_name": "zookeeper_custom",
+      "parser_type": "delimited",
+      "delimiter": " ",
+      "fields": [
+        {
+          "name": "date",
+          "type": "string"
+        },
+        {
+          "name": "time",
+          "type": "string"
+        },
+        {
+          "name": "component",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "confidence": 0.95
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "zookeeper_custom",
+          "parser_type": "delimited",
+          "delimiter": " ",
+          "fields": [
+            {
+              "name": "date",
+              "type": "string"
+            },
+            {
+              "name": "time",
+              "type": "string"
+            },
+            {
+              "name": "component",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ],
+          "confidence": 0.95
+        },
+        "status": "active",
+        "created_at": "2026-09-05T15:59:49.388515+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T15:59:49.388526+00:00"
+  }
+}
