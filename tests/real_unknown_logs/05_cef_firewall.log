@@ -1,0 +1,2 @@
+CEF:0|PaloAltoNetworks|PAN-OS|11.1|threat|SQL Injection Attempt|8|src=203.0.113.201 dst=10.0.2.30 spt=51422 dpt=443 act=blocked proto=TCP
+CEF:0|CheckPoint|VPN-1|R81|drop|Traffic Dropped|5|src=198.51.100.66 dst=10.0.0.5 proto=UDP dpt=500 rule=42

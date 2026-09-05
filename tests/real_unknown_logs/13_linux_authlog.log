@@ -1,0 +1,4 @@
+Aug 24 10:02:15 gateway sshd[9931]: Invalid user oracle from 198.51.100.201 port 39422
+Aug 24 10:02:17 gateway sshd[9931]: Failed password for invalid user oracle from 198.51.100.201 port 39422 ssh2
+Aug 24 10:02:20 gateway sshd[9931]: Connection closed by invalid user oracle 198.51.100.201 port 39422 [preauth]
+Aug 24 10:03:01 gateway su: pam_unix(su:session): session opened for user root by deploy(uid=1001)

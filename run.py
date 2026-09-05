@@ -11,6 +11,13 @@ import sys
 import argparse
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Add backend directory to sys.path
 root_dir = Path(__file__).resolve().parent
 backend_dir = root_dir / "backend"

@@ -1,0 +1,3 @@
+2026-09-05T11:31:02Z turbine=T-884 location=ZONE-A rpm=1840 vibration=0.031 condition=NORMAL
+2026-09-05T11:32:15Z turbine=T-217 location=ZONE-C rpm=2310 vibration=0.087 condition=WARNING
+2026-09-05T11:33:44Z turbine=T-884 location=ZONE-A rpm=0 vibration=0.421 condition=SHUTDOWN

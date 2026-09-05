@@ -1,0 +1,2 @@
+date=2026-08-24 time=09:45:03 devname="FGT-EDGE-01" logid="0000000013" type="traffic" subtype="forward" level="notice" srcip=10.0.1.20 dstip=52.84.150.11 srcport=51230 dstport=443 proto=6 action="accept" policyid=12
+date=2026-08-24 time=09:45:11 devname="FGT-EDGE-01" logid="0419016384" type="utm" subtype="ips" level="alert" srcip=203.0.113.44 dstip=10.0.2.9 attack="MS.SMB.Server.SMBv1.Remote.Code.Execution" action="dropped"

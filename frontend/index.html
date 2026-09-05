@@ -693,8 +693,17 @@
         };
       }
 
+      const showAiStage = selectedJob && (
+        selectedJob.ollama_calls > 0 || 
+        (selectedJob.lifecycle && selectedJob.lifecycle.ai_analysis && selectedJob.lifecycle.ai_analysis.status !== 'SKIPPED' && selectedJob.lifecycle.ai_analysis.status !== 'PENDING') || 
+        selectedJob.status === 'AI_ANALYSIS' || 
+        selectedJob.status === 'AI_ROUTED' ||
+        selectedJob.parser === 'ai-generated dynamic'
+      );
+
       const step1 = getStepConfig(lifecycle.received, 'download');
       const step2 = getStepConfig(lifecycle.detected, 'search');
+      const stepAi = getStepConfig(lifecycle.ai_analysis || { name: 'AI Analysis', status: 'PENDING', label: 'Pending' }, 'psychology');
       const step3 = getStepConfig(lifecycle.parsed, 'code_blocks');
       const step4 = getStepConfig(lifecycle.normalized, 'transform');
       const step5 = getStepConfig(lifecycle.validated, 'fact_check');
@@ -809,7 +818,7 @@
                       Processing Lifecycle Status
                     </h2>
                     <p class="text-body-sm text-on-surface-variant mt-0.5">
-                      Current job: <strong class="text-on-surface font-mono">${selectedJob ? selectedJob.file_name : 'No active file selected'}</strong>
+                      Current job: <strong class="text-on-surface font-mono">${selectedJob ? (selectedJob.file_name || selectedJob.filename) : 'No active file selected'}</strong>
                       ${selectedJob ? `<span class="ml-2 text-outline">(${selectedJob.job_id} • ${selectedJob.file_size_str})</span>` : ''}
                     </p>
                   </div>
@@ -831,13 +840,13 @@
                   ` : ''}
                 </div>
 
-                <!-- 6-Stage Progress Track -->
+                <!-- Stage Progress Track -->
                 <div class="relative py-2">
                   <!-- Background Track Line -->
                   <div class="hidden sm:block absolute top-7 left-8 right-8 h-1 bg-surface-container-highest -translate-y-1/2 z-0"></div>
 
-                  <!-- Stages Grid -->
-                  <div class="grid grid-cols-2 sm:grid-cols-6 gap-4 relative z-10">
+                  <!-- Stages Grid: 7 stages if AI analysis needed, 6 stages if known/learned -->
+                  <div class="grid grid-cols-2 ${showAiStage ? 'sm:grid-cols-7' : 'sm:grid-cols-6'} gap-3 relative z-10">
                     <!-- Stage 1: Received -->
                     <div class="flex flex-col items-center text-center">
                       <div class="w-12 h-12 rounded-full ${step1.bgClass} ${step1.borderClass} flex items-center justify-center mb-2 transition-all">
@@ -855,6 +864,17 @@
                       <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">Detected</span>
                       <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${step2.label}">${step2.label}</span>
                     </div>
+
+                    ${showAiStage ? `
+                      <!-- Stage: AI Analysis (Shown only when AI genuinely invoked) -->
+                      <div class="flex flex-col items-center text-center">
+                        <div class="w-12 h-12 rounded-full ${stepAi.bgClass} ${stepAi.borderClass} flex items-center justify-center mb-2 transition-all">
+                          <span class="material-symbols-outlined text-[22px]">${stepAi.icon}</span>
+                        </div>
+                        <span class="text-label-caps font-label-caps uppercase text-on-surface text-[11px] font-bold">AI Analysis</span>
+                        <span class="text-code-xs font-code-xs text-on-surface-variant truncate max-w-[100px] mt-0.5" title="${stepAi.label}">${stepAi.label}</span>
+                      </div>
+                    ` : ''}
 
                     <!-- Stage 3: Parsed -->
                     <div class="flex flex-col items-center text-center">
@@ -893,6 +913,62 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Real Job Execution Details Strip -->
+                ${selectedJob ? `
+                  <div class="mt-6 pt-4 border-t border-outline-variant/60 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">AI Used</div>
+                      <div class="mt-1 font-mono text-[11px]">
+                        ${selectedJob.ollama_calls > 0 ? `
+                          <span class="inline-flex items-center gap-1 text-primary font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> YES (${selectedJob.ollama_calls} call${selectedJob.ollama_calls > 1 ? 's' : ''})
+                          </span>
+                        ` : (selectedJob.parser_source === 'learned' || selectedJob.parser_source === 'learned/registry' || selectedJob.ai_resolution_status === 'cached') ? `
+                          <span class="inline-flex items-center gap-1 text-[#34d399] font-medium">
+                            <span class="material-symbols-outlined text-[13px]">auto_mode</span> NO (Learned Reuse)
+                          </span>
+                        ` : `
+                          <span class="inline-flex items-center gap-1 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[13px]">check</span> NO (Deterministic)
+                          </span>
+                        `}
+                      </div>
+                    </div>
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Parser</div>
+                      <div class="mt-1 font-mono text-[11px] text-on-surface font-semibold truncate" title="${escapeHtml(selectedJob.parser || 'rule-based')}">
+                        ${escapeHtml(selectedJob.parser || 'rule-based')}
+                        <span class="text-[10px] text-outline font-normal">(${escapeHtml(selectedJob.parser_source || 'builtin')})</span>
+                      </div>
+                    </div>
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Detected Format</div>
+                      <div class="mt-1 font-mono text-[11px] text-on-surface font-semibold truncate">
+                        ${escapeHtml(selectedJob.format || 'UNKNOWN')}
+                      </div>
+                    </div>
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Events Persisted</div>
+                      <div class="mt-1 font-mono text-[11px] text-primary font-bold">
+                        ${Number(selectedJob.events_stored ?? selectedJob.events_parsed ?? 0).toLocaleString()}
+                        <span class="text-on-surface-variant font-normal text-[10px]">/ ${Number(selectedJob.events_received ?? 0).toLocaleString()} recv</span>
+                      </div>
+                    </div>
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Validation Rate</div>
+                      <div class="mt-1 font-mono text-[11px] text-on-surface font-semibold">
+                        ${selectedJob.validation_rate != null ? (selectedJob.validation_rate * 100).toFixed(1) + '%' : '--'}
+                      </div>
+                    </div>
+                    <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
+                      <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Storage & Lineage</div>
+                      <div class="mt-1 font-mono text-[11px] text-[#4ade80] flex items-center gap-1 font-medium">
+                        <span class="material-symbols-outlined text-[13px]">verified</span> DuckDB + Block
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
               </section>
 
               <!-- Active & Recent Jobs Section -->
@@ -917,11 +993,11 @@
                       <tr class="bg-surface-container-high border-b border-outline-variant text-on-surface-variant font-label-caps text-label-caps uppercase text-[11px]">
                         <th class="py-2.5 px-4 font-semibold">Source</th>
                         <th class="py-2.5 px-4 font-semibold">File</th>
-                        <th class="py-2.5 px-4 font-semibold">Format</th>
+                        <th class="py-2.5 px-4 font-semibold">Format / Parser</th>
+                        <th class="py-2.5 px-4 font-semibold text-center">AI Used</th>
                         <th class="py-2.5 px-4 font-semibold text-right">Events</th>
                         <th class="py-2.5 px-4 font-semibold text-center">Status</th>
                         <th class="py-2.5 px-4 font-semibold text-right">Time</th>
-                        <th class="py-2.5 px-4 font-semibold text-right">Errors</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant/40 font-code-xs">
@@ -943,11 +1019,28 @@
                             }"
                           >
                             <td class="py-3 px-4 text-on-surface font-semibold">${escapeHtml(j.source)}</td>
-                            <td class="py-3 px-4 text-on-surface-variant truncate max-w-[160px]" title="${escapeHtml(j.file_name)}">${escapeHtml(j.file_name)}</td>
+                            <td class="py-3 px-4 text-on-surface-variant truncate max-w-[160px]" title="${escapeHtml(j.file_name || j.filename)}">${escapeHtml(j.file_name || j.filename)}</td>
                             <td class="py-3 px-4">
-                              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface text-[11px] font-mono">${escapeHtml(j.format)}</span>
+                              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface text-[11px] font-mono">${escapeHtml(j.format)} <span class="text-outline">(${escapeHtml(j.parser || 'builtin')})</span></span>
                             </td>
-                            <td class="py-3 px-4 text-right text-on-surface font-mono">${Number(j.event_count).toLocaleString()}</td>
+                            <td class="py-3 px-4 text-center">
+                              ${
+                                j.ollama_calls > 0 ? `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase border border-primary/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> YES (${j.ollama_calls})
+                                  </span>
+                                ` : (j.parser_source === 'learned' || j.parser_source === 'learned/registry' || j.ai_resolution_status === 'cached') ? `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#34d399]/20 text-[#34d399] text-[10px] font-medium uppercase border border-[#34d399]/30">
+                                    <span class="material-symbols-outlined text-[11px]">auto_mode</span> LEARNED
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-mono uppercase">
+                                    NO (RULE)
+                                  </span>
+                                `
+                              }
+                            </td>
+                            <td class="py-3 px-4 text-right text-on-surface font-mono">${Number(j.events_stored ?? j.events_parsed ?? j.event_count ?? 0).toLocaleString()}</td>
                             <td class="py-3 px-4 text-center">
                               ${
                                 j.status === 'COMPLETED' ? `
@@ -970,7 +1063,6 @@
                               }
                             </td>
                             <td class="py-3 px-4 text-right text-on-surface-variant font-mono">${escapeHtml(j.elapsed_time_str || '--')}</td>
-                            <td class="py-3 px-4 text-right ${j.error_count > 0 ? 'text-error font-bold' : 'text-outline'} font-mono">${j.error_count}</td>
                           </tr>
                         `;
                       }).join('')}
@@ -1028,6 +1120,9 @@
                     } else if (sev === 'SUCCESS') {
                       badgeClass = 'text-[#4ade80] font-bold';
                       rowClass = 'border-l-2 border-[#4ade80]/60 pl-2 bg-[#4ade80]/5 py-0.5';
+                    } else if (sev === 'AI') {
+                      badgeClass = 'text-[#c084fc] font-bold';
+                      rowClass = 'border-l-2 border-[#a855f7]/80 pl-2 bg-[#a855f7]/10 py-0.5';
                     }
 
                     return `
@@ -1077,11 +1172,65 @@
       return n.toLocaleString();
     }
 
+    function renderAiResolutionsTableRows(aiResolutions = []) {
+      if (!aiResolutions || aiResolutions.length === 0) {
+        return `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-on-surface-variant font-code-xs">
+              No unknown format resolutions recorded yet. Known formats and learned parsers execute with 0 Ollama calls.
+            </td>
+          </tr>
+        `;
+      }
+      return aiResolutions.map(r => {
+        let aiUsedBadge = '';
+        if (r.ai_used === true) {
+          aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-primary/15 text-primary border border-primary/30 font-mono text-[10px] font-bold">YES (${escapeHtml(r.model || 'qwen3:4b')})</span>`;
+        } else if (r.resolution_status === 'cached' || r.parser_type === 'learned_cache') {
+          aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-[#34d399]/15 text-[#34d399] border border-[#34d399]/30 font-mono text-[10px] font-medium">NO (Learned Reuse)</span>`;
+        } else {
+          aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-outline-variant/30 text-on-surface-variant border border-outline-variant font-mono text-[10px]">NO (Rule-Based)</span>`;
+        }
+
+        let resBadge = '';
+        const stLower = (r.resolution_status || '').toLowerCase();
+        if (stLower === 'promoted') {
+          resBadge = `<span class="px-2 py-0.5 rounded bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30 font-mono text-[10px] font-bold">PROMOTED</span>`;
+        } else if (stLower === 'cached') {
+          resBadge = `<span class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary border border-tertiary/30 font-mono text-[10px]">CACHED</span>`;
+        } else if (stLower === 'pending_review' || stLower === 'review' || stLower === 'rejected') {
+          resBadge = `<span class="px-2 py-0.5 rounded bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30 font-mono text-[10px]">REVIEW</span>`;
+        } else {
+          resBadge = `<span class="px-2 py-0.5 rounded bg-outline-variant/30 text-on-surface-variant border border-outline-variant font-mono text-[10px]">${escapeHtml(r.resolution_status || 'UNKNOWN')}</span>`;
+        }
+
+        const latStr = r.latency_ms > 0 ? (r.latency_ms >= 1000 ? (r.latency_ms / 1000).toFixed(1) + 's' : Math.round(r.latency_ms) + 'ms') : '0.0ms';
+        const accStr = r.accuracy != null ? `${r.accuracy}%` : (r.confidence != null ? `${Math.round(r.confidence * 100)}% conf` : '—');
+        const shortFp = (r.fingerprint && r.fingerprint.length > 12) ? r.fingerprint.slice(0, 10) + '...' : (r.fingerprint || '—');
+
+        return `
+          <tr class="border-b border-outline-variant/40 hover:bg-surface-container-high/40 transition-colors">
+            <td class="p-2.5 pl-3 text-on-surface-variant whitespace-nowrap text-[11px]">${r.timestamp || '—'}</td>
+            <td class="p-2.5 text-on-surface font-mono text-[11px]">${escapeHtml(r.source || '—')}</td>
+            <td class="p-2.5 font-mono text-[11px] text-primary" title="${escapeHtml(r.fingerprint || '')}">${escapeHtml(shortFp)}</td>
+            <td class="p-2.5 text-on-surface-variant font-mono text-[11px]">${escapeHtml(r.format || r.parser_type || '—')}</td>
+            <td class="p-2.5 text-center">${aiUsedBadge}</td>
+            <td class="p-2.5 text-center">${resBadge}</td>
+            <td class="p-2.5 text-right font-mono text-on-surface text-[11px]">${accStr}</td>
+            <td class="p-2.5 pr-3 text-right font-mono text-on-surface-variant text-[11px]">${latStr}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     function renderDashboardPage(dashboardState = {}) {
       const summary = dashboardState.summary || {};
       const volume = dashboardState.volume || { buckets: [], max_eps: 0 };
       const sources = dashboardState.sources || { distribution: [], total_events: 0 };
       const recentEvents = dashboardState.recentEvents || [];
+      const aiStatus = dashboardState.aiStatus || {};
+      const aiMetrics = dashboardState.aiMetrics || {};
+      const aiResolutions = dashboardState.aiResolutions || [];
       const loading = dashboardState.loading || false;
       const error = dashboardState.error || null;
 
@@ -1466,6 +1615,143 @@
                   </div>
                   <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">BC</span>
                 </div>
+              </div>
+            </div>
+
+          <!-- 2.5 REAL ULPF AI ENGINE & TELEMETRY -->
+          <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md" id="dashboard-ai-engine-card">
+            <!-- Header -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-outline-variant">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                  <span class="material-symbols-outlined text-[24px]">psychology</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-title-sm text-title-sm text-on-surface font-bold tracking-tight">ULPF AI ENGINE</span>
+                    <span id="ai-engine-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide border flex items-center gap-1.5 ${aiStatus.status === 'UNAVAILABLE' ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30' : (aiStatus.status === 'TIMEOUT' ? 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/30' : (aiStatus.status === 'MODEL_NOT_FOUND' ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30' : (aiStatus.status === 'CONNECTED' ? 'bg-[#10b981]/15 text-[#34d399] border-[#10b981]/30' : 'bg-outline-variant/30 text-on-surface-variant border-outline-variant')))}">
+                      <span class="w-1.5 h-1.5 rounded-full ${aiStatus.status === 'UNAVAILABLE' ? 'bg-[#ef4444]' : (aiStatus.status === 'TIMEOUT' ? 'bg-[#f59e0b]' : (aiStatus.status === 'MODEL_NOT_FOUND' ? 'bg-[#ef4444]' : (aiStatus.status === 'CONNECTED' ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-outline-variant')))}"></span>
+                      ${aiStatus.status || 'INITIALIZING...'}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3 font-code-xs text-[11px] text-on-surface-variant mt-0.5">
+                    <span>Provider: <strong class="text-on-surface font-semibold font-mono">Ollama</strong></span>
+                    <span>•</span>
+                    <span>Model: <strong class="text-primary font-semibold font-mono" id="ai-model-label">${escapeHtml(aiStatus.model || 'qwen3:4b')}</strong></span>
+                    <span>•</span>
+                    <span>Mode: <strong class="text-on-surface font-semibold font-mono" id="ai-mode-label">${aiStatus.air_gap_mode ? 'Air-gapped / Local' : 'Local'}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              <div class="flex items-center gap-2">
+                <button onclick="app.navigate('mappings')" class="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-label-caps border border-outline-variant transition-colors flex items-center gap-1.5 cursor-pointer" title="Inspect Review Queue">
+                  <span class="material-symbols-outlined text-[15px] text-[#f59e0b]">rate_review</span>
+                  Review Queue (<span id="ai-kpi-review-btn-count">${aiMetrics.review_required ?? summary.unknown_formats_count ?? 0}</span>)
+                </button>
+              </div>
+            </div>
+
+            <!-- Offline Warning banner if Ollama is unavailable -->
+            <div id="ai-offline-banner" class="${(aiStatus.status === 'UNAVAILABLE' || aiStatus.status === 'TIMEOUT') ? 'flex' : 'hidden'} p-3 rounded-lg bg-error-container/20 border border-error-container text-error text-code-xs items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">cloud_off</span>
+              <span>Local Ollama is unavailable. Known and learned parsers continue normally with 0 Ollama calls. New unresolved formats will enter the human review queue.</span>
+            </div>
+
+            <!-- AI Activity & Performance Metric Cards (Grid of 6) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <!-- Ollama Calls -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>OLLAMA CALLS</span>
+                  <span class="material-symbols-outlined text-[14px] text-primary">chat</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-primary font-mono" id="ai-kpi-ollama-calls">${aiMetrics.ollama_calls ?? 0}</span>
+                <span class="text-[10px] text-on-surface-variant">Genuine LLM calls</span>
+              </div>
+
+              <!-- AI Generated Parsers -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>AI PARSERS</span>
+                  <span class="material-symbols-outlined text-[14px] text-tertiary">auto_fix_high</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-tertiary font-mono" id="ai-kpi-ai-parsers">${aiMetrics.ai_generated_parsers ?? 0}</span>
+                <span class="text-[10px] text-on-surface-variant">Synthesized & promoted</span>
+              </div>
+
+              <!-- Learned Reuse -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>LEARNED REUSE</span>
+                  <span class="material-symbols-outlined text-[14px] text-[#34d399]">replay</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-[#34d399] font-mono" id="ai-kpi-learned-reuse">${aiMetrics.learned_parser_reuses ?? 0}</span>
+                <span class="text-[10px] text-on-surface-variant">0 Ollama calls (Cached)</span>
+              </div>
+
+              <!-- Latency -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>AI LATENCY</span>
+                  <span class="material-symbols-outlined text-[14px] text-on-surface-variant">timer</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-on-surface font-mono" id="ai-kpi-latency">${aiMetrics.last_latency_ms ? (aiMetrics.last_latency_ms >= 1000 ? (aiMetrics.last_latency_ms / 1000).toFixed(1) + 's' : Math.round(aiMetrics.last_latency_ms) + 'ms') : '0ms'}</span>
+                <span class="text-[10px] text-on-surface-variant">Last LLM inference</span>
+              </div>
+
+              <!-- Parser Accuracy -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>PARSER ACCURACY</span>
+                  <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-primary font-mono" id="ai-kpi-accuracy">${aiMetrics.parser_accuracy != null ? aiMetrics.parser_accuracy + '%' : 'N/A'}</span>
+                <span class="text-[10px] text-on-surface-variant">Extraction benchmark</span>
+              </div>
+
+              <!-- Validation Rate -->
+              <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+                <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                  <span>VALIDATION</span>
+                  <span class="material-symbols-outlined text-[14px] text-tertiary">task_alt</span>
+                </div>
+                <span class="font-display-sm text-display-sm text-tertiary font-mono" id="ai-kpi-validation">${aiMetrics.validation_rate != null ? aiMetrics.validation_rate + '%' : '100%'}</span>
+                <span class="text-[10px] text-on-surface-variant">Schema conformance</span>
+              </div>
+            </div>
+
+            <!-- Recent AI Resolutions Table -->
+            <div class="flex flex-col gap-2 pt-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="font-title-xs text-[12px] font-bold uppercase tracking-wider text-on-surface">Recent Unknown Formats & AI Resolutions</span>
+                  <span class="text-[10px] text-on-surface-variant">(Truthful Telemetry Audit Log)</span>
+                </div>
+                <div class="text-[11px] text-on-surface-variant font-code-xs">
+                  Semantic Engine: <strong class="text-[#34d399]">OCSF Deterministic Active</strong>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto rounded-lg border border-outline-variant bg-surface-container-lowest">
+                <table class="w-full text-left font-code-xs text-code-xs border-collapse">
+                  <thead class="bg-surface-container border-b border-outline-variant text-[11px] uppercase tracking-wider text-on-surface-variant">
+                    <tr>
+                      <th class="p-2.5 pl-3">Timestamp</th>
+                      <th class="p-2.5">Source</th>
+                      <th class="p-2.5">Fingerprint</th>
+                      <th class="p-2.5">Parser</th>
+                      <th class="p-2.5 text-center">AI Used</th>
+                      <th class="p-2.5 text-center">Resolution</th>
+                      <th class="p-2.5 text-right">Accuracy</th>
+                      <th class="p-2.5 pr-3 text-right">Latency</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ai-resolutions-table-body">
+                    ${renderAiResolutionsTableRows(aiResolutions)}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -2452,7 +2738,19 @@
       if (!state) {
         state = {
           activeTab: 'unknown-logs',
-          stats: { ai_engine: 'READY', mode: 'OFFLINE', unknown_formats_count: 127, analyzed_samples_count: 84, approved_parsers_count: 6, rejected_suggestions_count: 3, avg_confidence_percent: 92 },
+          stats: {
+            ai_engine: 'CONNECTING',
+            ollama_status: 'UNKNOWN',
+            mode: 'AIR-GAPPED / LOCAL',
+            model: 'qwen3:4b',
+            unknown_formats_count: 0,
+            analyzed_samples_count: 0,
+            approved_parsers_count: 0,
+            learned_parser_reuses: 0,
+            avg_confidence_percent: null,
+            ollama_latency_ms: 0.0,
+            validation_rate: 100.0,
+          },
           unknownLogs: [],
           selectedLogId: null,
           currentAnalysis: null,
@@ -2470,7 +2768,7 @@
       const analysis = state.currentAnalysis || (selectedLog && selectedLog.analysis) || null;
       const validation = state.validationResult || (analysis && analysis.validation_result) || null;
       const fields = (analysis && analysis.discovered_fields) || [];
-      const confidencePct = (analysis && analysis.confidence_percent) != null ? analysis.confidence_percent : 92;
+      const confidencePct = (analysis && analysis.confidence_percent) != null ? analysis.confidence_percent : (stats.avg_confidence_percent || 95);
       const rawLogText = (analysis && analysis.raw_log) || (selectedLog && selectedLog.raw_log) || '# No sample log selected';
 
       // Line numbers for raw log
@@ -2490,18 +2788,18 @@
               <div class="flex items-center gap-3.5 text-xs flex-wrap">
                 <span class="flex items-center gap-1.5 text-[#94a3b8]">
                   <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <span class="${stats.ollama_status === 'CONNECTED' ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full ${stats.ollama_status === 'CONNECTED' ? 'bg-[#10b981]' : 'bg-[#ef4444]'} opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 ${stats.ollama_status === 'CONNECTED' ? 'bg-[#10b981]' : 'bg-[#ef4444]'}"></span>
                   </span>
-                  AI Engine: <strong class="text-primary font-mono ml-0.5">${stats.ai_engine || 'READY'}</strong>
+                  Ollama: <strong class="${stats.ollama_status === 'CONNECTED' ? 'text-[#34d399]' : 'text-[#f87171]'} font-mono ml-0.5">${stats.ollama_status || 'UNKNOWN'} (${escapeHtml(stats.model || 'qwen3:4b')})</strong>
                 </span>
                 <span class="flex items-center gap-1.5 text-[#94a3b8]">
-                  <span class="material-symbols-outlined text-[15px] text-[#64748b]">wifi_off</span>
-                  Mode: <strong class="text-[#cbd5e1] font-mono ml-0.5">${stats.mode || 'OFFLINE'}</strong>
+                  <span class="material-symbols-outlined text-[15px] text-[#64748b]">security</span>
+                  Mode: <strong class="text-[#cbd5e1] font-mono ml-0.5">${stats.mode || 'AIR-GAPPED / LOCAL'}</strong>
                 </span>
                 <span class="flex items-center gap-1.5 text-[#f59e0b]">
                   <span class="material-symbols-outlined text-[15px]">warning</span>
-                  Unknown Formats: <strong class="font-mono ml-0.5">${stats.unknown_formats_count || 127}</strong>
+                  Unknown Formats: <strong class="font-mono ml-0.5">${stats.unknown_formats_count ?? 0}</strong>
                 </span>
               </div>
             </div>
@@ -2524,7 +2822,7 @@
             </button>
             <button onclick="app.setAiTab('unknown-logs')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap relative cursor-pointer ${activeTab === 'unknown-logs' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
               Unknown Logs
-              <span class="ml-1.5 bg-[#ef4444] text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">${unknownLogs.length || 127}</span>
+              <span class="ml-1.5 bg-[#ef4444] text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">${unknownLogs.length}</span>
             </button>
             <button onclick="app.setAiTab('field-discovery')" class="text-xs font-label uppercase tracking-wider py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${activeTab === 'field-discovery' ? 'text-primary border-primary font-bold' : 'text-[#828ea2] hover:text-[#cbd5e1] border-transparent'}">
               Field Discovery
@@ -2800,27 +3098,37 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
     function renderAiOverviewTab(stats, unknownLogs) {
       return `
         <div class="p-6 overflow-y-auto h-full space-y-6 max-w-7xl mx-auto">
-          <!-- Top KPI Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
-              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Unknown Formats</div>
-              <div class="text-2xl font-bold font-mono text-[#f59e0b]">${stats.unknown_formats_count || 127}</div>
-              <div class="text-[11px] text-[#64748b] mt-1">Pending structural synthesis</div>
+          <!-- Top KPI Grid (Real Telemetry) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">Unknown in Queue</div>
+              <div class="text-xl font-bold font-mono text-[#f59e0b]">${stats.unknown_formats_count ?? 0}</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">Pending review queue</div>
             </div>
-            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
-              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Samples Analyzed</div>
-              <div class="text-2xl font-bold font-mono text-[#38bdf8]">${stats.analyzed_samples_count || 84}</div>
-              <div class="text-[11px] text-[#64748b] mt-1">Processed across log relays</div>
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">Ollama LLM Calls</div>
+              <div class="text-xl font-bold font-mono text-primary">${stats.analyzed_samples_count ?? 0}</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">Genuine network calls</div>
             </div>
-            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
-              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Approved Parsers</div>
-              <div class="text-2xl font-bold font-mono text-[#34d399]">${stats.approved_parsers_count || 6}</div>
-              <div class="text-[11px] text-[#64748b] mt-1">Registered in active pipeline</div>
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">AI Parsers Created</div>
+              <div class="text-xl font-bold font-mono text-[#38bdf8]">${stats.approved_parsers_count ?? 0}</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">Synthesized & active</div>
             </div>
-            <div class="p-4 bg-[#121620] border border-[#232734] rounded-lg">
-              <div class="text-xs text-[#94a3b8] uppercase tracking-wider mb-1 font-medium">Average Confidence</div>
-              <div class="text-2xl font-bold font-mono text-[#a855f7]">${stats.avg_confidence_percent || 92}%</div>
-              <div class="text-[11px] text-[#64748b] mt-1">Local heuristic match accuracy</div>
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">Learned Reuses</div>
+              <div class="text-xl font-bold font-mono text-[#34d399]">${stats.learned_parser_reuses ?? 0}</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">0 Ollama calls (Fast Path)</div>
+            </div>
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">Parser Accuracy</div>
+              <div class="text-xl font-bold font-mono text-[#a855f7]">${stats.avg_confidence_percent != null ? stats.avg_confidence_percent + '%' : 'N/A'}</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">Extraction benchmark</div>
+            </div>
+            <div class="p-3.5 bg-[#121620] border border-[#232734] rounded-lg">
+              <div class="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1 font-medium font-label">Validation Rate</div>
+              <div class="text-xl font-bold font-mono text-[#34d399]">${(stats.validation_rate ?? 100)}%</div>
+              <div class="text-[10px] text-[#64748b] mt-0.5">OCSF Schema conformance</div>
             </div>
           </div>
 
@@ -6039,6 +6347,9 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           sources: { distribution: [], total_events: 0 },
           recentEvents: [],
           health: { status: 'online', api: 'online', database: 'online', ai: 'online', blockchain: 'online' },
+          aiStatus: null,
+          aiMetrics: null,
+          aiResolutions: [],
           loading: false,
           error: null
         };
@@ -6175,13 +6486,17 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         this.aiState = {
           activeTab: 'unknown-logs',
           stats: {
-            ai_engine: 'READY',
-            mode: 'OFFLINE',
-            unknown_formats_count: 127,
-            analyzed_samples_count: 84,
-            approved_parsers_count: 6,
-            rejected_suggestions_count: 3,
-            avg_confidence_percent: 92
+            ai_engine: 'CONNECTING',
+            ollama_status: 'UNKNOWN',
+            mode: 'AIR-GAPPED / LOCAL',
+            model: 'qwen3:4b',
+            unknown_formats_count: 0,
+            analyzed_samples_count: 0,
+            approved_parsers_count: 0,
+            learned_parser_reuses: 0,
+            avg_confidence_percent: null,
+            ollama_latency_ms: 0.0,
+            validation_rate: 100.0,
           },
           unknownLogs: [],
           selectedLogId: null,
@@ -6308,12 +6623,15 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           this.renderView();
         }
         try {
-          const [sumRes, volRes, srcRes, recRes, hltRes] = await Promise.all([
+          const [sumRes, volRes, srcRes, recRes, hltRes, aiStatRes, aiMetRes, aiResRes] = await Promise.all([
             fetch('/api/dashboard/summary'),
             fetch('/api/dashboard/event-volume'),
             fetch('/api/dashboard/source-distribution'),
             fetch('/api/dashboard/recent-events?limit=10'),
-            fetch('/api/dashboard/system-health')
+            fetch('/api/dashboard/system-health'),
+            fetch('/api/v1/ai/status').catch(() => null),
+            fetch('/api/v1/ai/metrics').catch(() => null),
+            fetch('/api/v1/ai/resolutions?limit=10').catch(() => null),
           ]);
 
           if (sumRes.ok) this.dashboardState.summary = await sumRes.json();
@@ -6323,6 +6641,18 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           if (hltRes.ok) {
             this.dashboardState.health = await hltRes.json();
             this.updateHealthIndicators(this.dashboardState.health);
+          }
+          if (aiStatRes && aiStatRes.ok) {
+            const d = await aiStatRes.json();
+            this.dashboardState.aiStatus = d.data || d;
+          }
+          if (aiMetRes && aiMetRes.ok) {
+            const d = await aiMetRes.json();
+            this.dashboardState.aiMetrics = d.data || d;
+          }
+          if (aiResRes && aiResRes.ok) {
+            const d = await aiResRes.json();
+            this.dashboardState.aiResolutions = d.data || d;
           }
           this.dashboardState.loading = false;
           this.dashboardState.error = null;
@@ -6361,12 +6691,15 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           : Promise.resolve();
 
         try {
-          const [sumRes, volRes, srcRes, recRes, hltRes] = await Promise.all([
+          const [sumRes, volRes, srcRes, recRes, hltRes, aiStatRes, aiMetRes, aiResRes] = await Promise.all([
             fetch('/api/dashboard/summary'),
             fetch('/api/dashboard/event-volume'),
             fetch('/api/dashboard/source-distribution'),
             fetch('/api/dashboard/recent-events?limit=10'),
             fetch('/api/dashboard/system-health'),
+            fetch('/api/v1/ai/status').catch(() => null),
+            fetch('/api/v1/ai/metrics').catch(() => null),
+            fetch('/api/v1/ai/resolutions?limit=10').catch(() => null),
             minLoadingPromise
           ]);
 
@@ -6377,6 +6710,18 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           if (hltRes.ok) {
             this.dashboardState.health = await hltRes.json();
             this.updateHealthIndicators(this.dashboardState.health);
+          }
+          if (aiStatRes && aiStatRes.ok) {
+            const d = await aiStatRes.json();
+            this.dashboardState.aiStatus = d.data || d;
+          }
+          if (aiMetRes && aiMetRes.ok) {
+            const d = await aiMetRes.json();
+            this.dashboardState.aiMetrics = d.data || d;
+          }
+          if (aiResRes && aiResRes.ok) {
+            const d = await aiResRes.json();
+            this.dashboardState.aiResolutions = d.data || d;
           }
           this.dashboardState.error = null;
 
@@ -6562,6 +6907,90 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
               </tr>
             `;
           }).join('');
+        }
+
+        // 5. Update Real AI Engine & Telemetry Card
+        const aiStatus = this.dashboardState.aiStatus || {};
+        const aiMetrics = this.dashboardState.aiMetrics || {};
+        const aiResolutions = this.dashboardState.aiResolutions || [];
+
+        const isConnected = aiStatus.status === 'CONNECTED';
+        const isUnavail = aiStatus.status === 'UNAVAILABLE';
+        const isTimeout = aiStatus.status === 'TIMEOUT';
+        const isModelNotFound = aiStatus.status === 'MODEL_NOT_FOUND';
+
+        const aiBadgeEl = document.getElementById('ai-engine-status-badge');
+        if (aiBadgeEl) {
+          let badgeCls = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide border flex items-center gap-1.5 ';
+          let dotCls = 'w-1.5 h-1.5 rounded-full ';
+          let txt = aiStatus.status || 'INITIALIZING...';
+          if (isConnected) {
+            badgeCls += 'bg-[#10b981]/15 text-[#34d399] border-[#10b981]/30';
+            dotCls += 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+          } else if (isTimeout) {
+            badgeCls += 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/30';
+            dotCls += 'bg-[#f59e0b]';
+          } else if (isUnavail || isModelNotFound) {
+            badgeCls += 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30';
+            dotCls += 'bg-[#ef4444]';
+          } else {
+            badgeCls += 'bg-outline-variant/30 text-on-surface-variant border-outline-variant';
+            dotCls += 'bg-outline-variant';
+          }
+          aiBadgeEl.className = badgeCls;
+          aiBadgeEl.innerHTML = `<span class="${dotCls}"></span>${txt}`;
+        }
+
+        const offlineBannerEl = document.getElementById('ai-offline-banner');
+        if (offlineBannerEl) {
+          if (isUnavail || isTimeout) {
+            offlineBannerEl.classList.remove('hidden');
+            offlineBannerEl.classList.add('flex');
+          } else {
+            offlineBannerEl.classList.add('hidden');
+            offlineBannerEl.classList.remove('flex');
+          }
+        }
+
+        const modelLbl = document.getElementById('ai-model-label');
+        if (modelLbl) modelLbl.textContent = aiStatus.model || 'qwen3:4b';
+
+        const modeLbl = document.getElementById('ai-mode-label');
+        if (modeLbl) modeLbl.textContent = aiStatus.air_gap_mode ? 'Air-gapped / Local' : 'Local';
+
+        const kpiCalls = document.getElementById('ai-kpi-ollama-calls');
+        if (kpiCalls) kpiCalls.textContent = aiMetrics.ollama_calls ?? 0;
+
+        const kpiParsers = document.getElementById('ai-kpi-ai-parsers');
+        if (kpiParsers) kpiParsers.textContent = aiMetrics.ai_generated_parsers ?? 0;
+
+        const kpiReuse = document.getElementById('ai-kpi-learned-reuse');
+        if (kpiReuse) kpiReuse.textContent = aiMetrics.learned_parser_reuses ?? 0;
+
+        const kpiLatency = document.getElementById('ai-kpi-latency');
+        if (kpiLatency) {
+          const lat = aiMetrics.last_latency_ms;
+          kpiLatency.textContent = lat ? (lat >= 1000 ? (lat / 1000).toFixed(1) + 's' : Math.round(lat) + 'ms') : '0ms';
+        }
+
+        const kpiAccuracy = document.getElementById('ai-kpi-accuracy');
+        if (kpiAccuracy) {
+          kpiAccuracy.textContent = aiMetrics.parser_accuracy != null ? `${aiMetrics.parser_accuracy}%` : 'N/A';
+        }
+
+        const kpiValidation = document.getElementById('ai-kpi-validation');
+        if (kpiValidation) {
+          kpiValidation.textContent = aiMetrics.validation_rate != null ? `${aiMetrics.validation_rate}%` : '100%';
+        }
+
+        const reviewBtnCount = document.getElementById('ai-kpi-review-btn-count');
+        if (reviewBtnCount) {
+          reviewBtnCount.textContent = aiMetrics.review_required ?? summary.unknown_formats_count ?? 0;
+        }
+
+        const aiTableBody = document.getElementById('ai-resolutions-table-body');
+        if (aiTableBody) {
+          aiTableBody.innerHTML = renderAiResolutionsTableRows(aiResolutions);
         }
       }
 
@@ -7477,21 +7906,105 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
             method: 'POST',
             body: formData
           });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error(errData.detail || `Upload failed with HTTP ${res.status}`);
+          }
           const result = await res.json();
-          await this.loadIngestionData();
           if (result && result.job) {
-            this.ingestionState.selectedJobId = result.job.job_id;
+            const newJob = result.job;
+            this.ingestionState.selectedJobId = newJob.job_id;
+            const existingIdx = this.ingestionState.jobs.findIndex(j => j.job_id === newJob.job_id);
+            if (existingIdx >= 0) {
+              this.ingestionState.jobs[existingIdx] = newJob;
+            } else {
+              this.ingestionState.jobs.unshift(newJob);
+            }
+            if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+              this.renderView();
+              this.scrollFeedToBottom();
+            }
+            this.pollIngestionJob(newJob.job_id);
+          } else {
+            await this.loadIngestionData();
           }
         } catch (err) {
           console.error("Upload error:", err);
           alert("Ingestion error: " + err.message);
-        } finally {
           this.ingestionState.isUploading = false;
           if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
             this.renderView();
-            this.scrollFeedToBottom();
           }
         }
+      }
+
+      pollIngestionJob(jobId) {
+        if (this._ingestPollInterval) {
+          clearInterval(this._ingestPollInterval);
+          this._ingestPollInterval = null;
+        }
+
+        let pollCount = 0;
+        const maxPolls = 200; // 100 seconds max
+
+        this._ingestPollInterval = setInterval(async () => {
+          pollCount++;
+          if (pollCount > maxPolls) {
+            clearInterval(this._ingestPollInterval);
+            this._ingestPollInterval = null;
+            this.ingestionState.isUploading = false;
+            return;
+          }
+
+          try {
+            const [jobRes, ovRes] = await Promise.all([
+              fetch(`/api/ingest/jobs/${jobId}`),
+              fetch('/api/ingest/overview')
+            ]);
+
+            if (ovRes.ok) {
+              this.ingestionState.overview = await ovRes.json();
+            }
+
+            if (jobRes.ok) {
+              const job = await jobRes.json();
+              const idx = this.ingestionState.jobs.findIndex(j => j.job_id === jobId);
+              if (idx >= 0) {
+                this.ingestionState.jobs[idx] = job;
+              } else {
+                this.ingestionState.jobs.unshift(job);
+              }
+
+              if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+                this.renderView();
+                this.scrollFeedToBottom();
+              }
+
+              const terminalStatuses = ['COMPLETED', 'FAILED', 'REVIEW', 'TIMEOUT', 'SKIPPED'];
+              if (terminalStatuses.includes(job.status)) {
+                clearInterval(this._ingestPollInterval);
+                this._ingestPollInterval = null;
+                this.ingestionState.isUploading = false;
+
+                // Reactive refresh of global dashboard statistics & AI intelligence
+                if (typeof this.loadDashboardData === 'function') this.loadDashboardData();
+                if (typeof this.loadAiData === 'function') this.loadAiData();
+                if (typeof this.loadAnalyticsData === 'function') this.loadAnalyticsData();
+
+                if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
+                  this.renderView();
+                  this.scrollFeedToBottom();
+                }
+              }
+            } else if (jobRes.status === 404) {
+              clearInterval(this._ingestPollInterval);
+              this._ingestPollInterval = null;
+              this.ingestionState.isUploading = false;
+            }
+          } catch (pollErr) {
+            console.warn("Polling error for job", jobId, pollErr);
+          }
+        }, 500);
       }
 
       downloadJSON(obj, filename = 'normalized_result.json') {
@@ -8159,19 +8672,53 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         this.aiState.loading = true;
         this.renderView();
         try {
-          const [statsRes, logsRes, histRes] = await Promise.all([
+          const [statsRes, logsRes, histRes, realMetRes, realStatRes, realResRes] = await Promise.all([
             fetch('/api/ai/stats').catch(() => null),
             fetch('/api/ai/unknown-logs').catch(() => null),
             fetch('/api/ai/history').catch(() => null),
+            fetch('/api/v1/ai/metrics').catch(() => null),
+            fetch('/api/v1/ai/status').catch(() => null),
+            fetch('/api/v1/ai/resolutions?limit=25').catch(() => null),
           ]);
 
           if (statsRes && statsRes.ok) {
             this.aiState.stats = await statsRes.json();
           }
+          if (realMetRes && realMetRes.ok) {
+            const met = await realMetRes.json();
+            const d = met.data || met;
+            this.aiState.stats = Object.assign({}, this.aiState.stats, {
+              analyzed_samples_count: d.ollama_calls ?? 0,
+              approved_parsers_count: d.ai_generated_parsers ?? 0,
+              learned_parser_reuses: d.learned_parser_reuses ?? 0,
+              unknown_formats_count: d.review_required ?? 0,
+              avg_confidence_percent: d.parser_accuracy != null ? d.parser_accuracy : null,
+              ollama_latency_ms: d.last_latency_ms || d.ollama_latency_ms || 0.0,
+              validation_rate: d.validation_rate ?? 100.0,
+            });
+          }
+          if (realStatRes && realStatRes.ok) {
+            const st = await realStatRes.json();
+            const d = st.data || st;
+            this.aiState.stats = Object.assign({}, this.aiState.stats, {
+              ollama_status: d.status,
+              model: d.model,
+              mode: d.air_gap_mode ? 'AIR-GAPPED / LOCAL' : 'LOCAL',
+              ai_engine: d.available ? 'READY' : 'UNAVAILABLE',
+            });
+          }
           if (logsRes && logsRes.ok) {
             this.aiState.unknownLogs = await logsRes.json();
           }
-          if (histRes && histRes.ok) {
+          if (realResRes && realResRes.ok) {
+            const rData = await realResRes.json();
+            const list = rData.data || rData;
+            if (Array.isArray(list) && list.length > 0) {
+              this.aiState.history = list;
+            } else if (histRes && histRes.ok) {
+              this.aiState.history = await histRes.json();
+            }
+          } else if (histRes && histRes.ok) {
             this.aiState.history = await histRes.json();
           }
 

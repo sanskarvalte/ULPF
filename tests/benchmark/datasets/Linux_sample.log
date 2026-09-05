@@ -1,0 +1,3 @@
+Sep  5 12:01:01 server01 CRON[1024]: (root) CMD (/usr/local/bin/backup.sh)
+Sep  5 12:02:02 server01 sudo:   alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/bin/ls
+Sep  5 12:03:03 server01 kernel: [ 1234.56] usb 1-1: new high-speed USB device number 2

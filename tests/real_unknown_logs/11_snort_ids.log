@@ -1,0 +1,4 @@
+[**] [1:2010935:2] ET POLICY Suspicious inbound to mySQL port 3306 [**]
+[Classification: A Network Trojan was detected] [Priority: 1]
+08/24-09:55:12.223421 203.0.113.99:39211 -> 10.0.5.100:3306
+TCP TTL:112 TOS:0x0 ID:53212 IpLen:20 DgmLen:60

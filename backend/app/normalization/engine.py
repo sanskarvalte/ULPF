@@ -67,6 +67,15 @@ def _apply_losslessness_guard(d: Dict[str, Any], raw_event: str) -> None:
         if val is not None and isinstance(val, str) and val.strip():
             # Check if literal field value exists in raw_event
             if val not in raw_event:
+                # Handle IPv6 compression/expansion differences between parser and raw text
+                if field in ("src_ip", "dst_ip") and ":" in val:
+                    try:
+                        import ipaddress
+                        ip_obj = ipaddress.ip_address(val)
+                        if ip_obj.exploded in raw_event or ip_obj.compressed in raw_event:
+                            continue
+                    except Exception:
+                        pass
                 logger.warning(
                     f"Losslessness guard rejected field '{field}'='{val}': value not found in raw_event."
                 )
@@ -82,13 +91,100 @@ def _apply_losslessness_guard(d: Dict[str, Any], raw_event: str) -> None:
         d["unmapped"] = unmapped
 
 
+# ---------------------------------------------------------------------------
+# Semantic activity groups
+# ---------------------------------------------------------------------------
+
+AUTHENTICATION_ACTIVITIES = {
+    "login", "logon", "logout", "logoff", "authentication", "authenticate", "auth",
+    "auth_success", "authentication_success", "login_success", "logon_success",
+    "successful_login", "successful_logon", "auth_failed", "authentication_failed",
+    "login_failed", "logon_failed", "failed_login", "failed_logon", "login_failure",
+    "logon_failure", "access_denied", "invalid_login", "invalid_logon", "invalid_credentials",
+}
+
+AUTHENTICATION_FAILURE_ACTIVITIES = {
+    "auth_failed", "authentication_failed", "login_failed", "logon_failed",
+    "failed_login", "failed_logon", "login_failure", "logon_failure",
+    "access_denied", "invalid_login", "invalid_logon", "invalid_credentials",
+}
+
+AUTHENTICATION_SUCCESS_ACTIVITIES = {
+    "auth_success", "authentication_success", "login_success", "logon_success",
+    "successful_login", "successful_logon", "mfa_verified",
+}
+
+QUERY_ACTIVITIES = {
+    "query", "query_executed", "query_execute", "database_query", "db_query",
+    "sql_query", "select", "insert", "update", "delete", "execute_query", "executed_query",
+}
+
+NETWORK_ACTIVITIES = {
+    "connection", "connect", "connected", "connection_open", "open_connection",
+    "connection_close", "close_connection", "disconnect", "traffic", "network",
+    "packet", "http", "https", "dns", "ssh", "ftp", "rdp", "smb", "firewall",
+}
+
+SECURITY_ACTIVITIES = {
+    "alert", "threat", "vulnerability", "attack", "exploit", "malware", "incident", "finding",
+}
+
+
+def _normalize_key(value: Any) -> str:
+    """Convert a value into a normalized comparison key."""
+    if value is None:
+        return ""
+    return str(value).strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _get_activity_candidates(mapped: Dict[str, Any]) -> list[str]:
+    """Extract candidate activity strings from mapped event attributes."""
+    candidates: list[str] = []
+    for key in (
+        "activity_name",
+        "action",
+        "event_action",
+        "operation",
+        "event_type",
+        "type_name",
+    ):
+        val = mapped.get(key)
+        if val is not None and str(val).strip():
+            candidates.append(_normalize_key(val))
+
+    # Also check message prefix / keywords
+    msg = mapped.get("message")
+    if msg and isinstance(msg, str):
+        msg_clean = _normalize_key(msg[:120])
+        for token in msg_clean.split("_"):
+            if len(token) >= 3:
+                candidates.append(token)
+    return candidates
+
+
+from app.normalization.classifier import classify_event_semantics
+
+
 def enrich_classification(mapped: Dict[str, Any]) -> None:
     """Enrich raw mapped fields with OCSF numeric UIDs and standard names."""
-    # Process / Subsystem lookup if category, class, activity, or vendor is missing
+    # 1. Process / Subsystem lookup if category, class, activity, or vendor is missing
     proc = mapped.get("product")
-    if proc:
+    raw_event_lower = (mapped.get("raw_event") or "").lower()
+    is_kernel_firewall = (
+        proc == "kernel"
+        and (
+            "iptables" in raw_event_lower
+            or "ufw" in raw_event_lower
+            or "netfilter" in raw_event_lower
+            or "action=drop" in raw_event_lower
+            or "proto=" in raw_event_lower
+        )
+    )
+    daemon_matched = False
+    if proc and not is_kernel_firewall:
         tax = resolve_process_taxonomy(proc)
         if tax:
+            daemon_matched = True
             if not mapped.get("vendor") and tax.get("vendor"):
                 mapped["vendor"] = tax["vendor"]
             if not mapped.get("category_name") and tax.get("category_name"):
@@ -104,38 +200,54 @@ def enrich_classification(mapped: Dict[str, Any]) -> None:
             if not mapped.get("activity_id") and tax.get("activity_id"):
                 mapped["activity_id"] = tax["activity_id"]
 
-    # Category
+    # 2. Evidence-based semantic classification if not already authoritatively classified
+    has_authoritative_cat = (
+        mapped.get("category_name")
+        and mapped.get("category_name") not in ("System Activity", "unknown", "generic")
+    )
+    if (has_authoritative_cat or daemon_matched) and not is_kernel_firewall:
+        mapped.setdefault("classification_confidence", 1.0)
+        mapped.setdefault("classification_reason", f"authoritative_{mapped.get('category_name', 'daemon')}")
+        mapped.setdefault("classification_evidence", [f"specified:{mapped.get('category_name')}"])
+        mapped.setdefault("classification_status", "classified")
+    else:
+        # Evaluate multi-signal evidence across parsed fields, message, verbs, ports, protocols
+        classify_event_semantics(mapped)
+
+    # 3. Standardize Category
     cat = mapped.get("category_name")
     if cat:
         key = cat.strip().lower().replace(" ", "_").replace("&", "and")
         if key in CATEGORY_MAP:
             mapped["category_name"] = CATEGORY_MAP[key][0]
-            mapped.setdefault("category_uid", CATEGORY_MAP[key][1])
+            mapped["category_uid"] = CATEGORY_MAP[key][1]
 
-    # Class
-    if cat and "class_name" not in mapped:
+    # 4. Standardize Class
+    if cat and not mapped.get("class_name"):
         key = cat.strip().lower().replace(" ", "_").replace("&", "and")
         if key in CLASS_MAP:
             mapped["class_name"], mapped["class_uid"] = CLASS_MAP[key]
-    elif mapped.get("class_name") and "class_uid" not in mapped:
+    elif mapped.get("class_name") and not mapped.get("class_uid"):
         key = mapped["class_name"].strip().lower().replace(" ", "_").replace("&", "and")
         if key in CLASS_MAP:
             mapped["class_name"], mapped["class_uid"] = CLASS_MAP[key]
 
-    # Activity
+    # 5. Standardize Activity
+    if not mapped.get("activity_name") and mapped.get("action"):
+        mapped["activity_name"] = mapped["action"]
     act = mapped.get("activity_name")
-    if act and "activity_id" not in mapped:
+    if act and not mapped.get("activity_id"):
         key = act.strip().lower()
         if key in ACTIVITY_MAP:
             mapped["activity_name"], mapped["activity_id"] = ACTIVITY_MAP[key]
 
-    # Type composite
-    if "class_name" in mapped and "activity_name" in mapped:
+    # 6. Type composite
+    if mapped.get("class_name") and mapped.get("activity_name"):
         mapped.setdefault("type_name", f"{mapped['class_name']}: {mapped['activity_name']}")
     if mapped.get("class_uid") is not None and mapped.get("activity_id") is not None:
         mapped.setdefault("type_uid", mapped["class_uid"] * 100 + mapped["activity_id"])
 
-    # Severity canonical validation
+    # 7. Severity canonical validation
     sev_name, sev_id = validate_severity(mapped.get("severity"), mapped.get("severity_id"))
     if sev_name is not None:
         mapped["severity"] = sev_name
@@ -143,13 +255,45 @@ def enrich_classification(mapped: Dict[str, Any]) -> None:
     elif "severity_id" in mapped and mapped["severity_id"] is None:
         mapped.pop("severity_id")
 
-    # Status canonical validation
+    # 8. Check if status contains an HTTP status code (e.g. 200, 404, 500)
+    curr_status = mapped.get("status")
+    if curr_status is not None:
+        try:
+            status_num = int(curr_status)
+            if 100 <= status_num <= 599:
+                if not mapped.get("status_code"):
+                    mapped["status_code"] = str(status_num)
+                if status_num < 400:
+                    mapped["status"] = "Success"
+                    mapped["status_id"] = 1
+                else:
+                    mapped["status"] = "Failure"
+                    mapped["status_id"] = 2
+        except (ValueError, TypeError):
+            pass
+
+    # 9. Status canonical validation
     st_name, st_id = validate_status(mapped.get("status"), mapped.get("status_id"))
     if st_name is not None:
         mapped["status"] = st_name
         mapped["status_id"] = st_id
     elif "status_id" in mapped and mapped["status_id"] is None:
         mapped.pop("status_id")
+
+    # 10. Mirror semantic classification metadata into unmapped for backwards compatibility
+    unmapped = mapped.get("unmapped")
+    if not isinstance(unmapped, dict):
+        unmapped = {}
+    if mapped.get("classification_confidence") is not None:
+        unmapped["classification_confidence"] = mapped["classification_confidence"]
+    if mapped.get("classification_reason") is not None:
+        unmapped["classification_reason"] = mapped["classification_reason"]
+    if mapped.get("classification_evidence") is not None:
+        unmapped["classification_evidence"] = mapped["classification_evidence"]
+    if mapped.get("classification_status") is not None:
+        unmapped["classification_status"] = mapped["classification_status"]
+    if unmapped:
+        mapped["unmapped"] = unmapped
 
 
 def normalize_event(event: UnifiedEvent) -> UnifiedEvent:

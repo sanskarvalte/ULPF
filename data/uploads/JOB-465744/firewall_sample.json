@@ -1,0 +1,2 @@
+{"timestamp": "2026-09-05T10:00:00Z", "src_ip": "10.0.0.1", "dst_ip": "10.0.0.2", "action": "allow", "message": "Firewall accept"}
+{"timestamp": "2026-09-05T10:00:01Z", "src_ip": "10.0.0.3", "dst_ip": "10.0.0.4", "action": "deny", "message": "Firewall drop"}

@@ -1,0 +1,45 @@
+{
+  "dataset": "Hadoop_sample",
+  "version": "1.0",
+  "events": [
+    {
+      "id": "hadoop_001",
+      "expected": {
+        "category_name": "Application Activity",
+        "class_name": "Application Lifecycle",
+        "activity_name": "Log",
+        "severity": "Informational"
+      },
+      "aliases": {
+        "category": ["Application"],
+        "class": ["Application Activity"]
+      }
+    },
+    {
+      "id": "hadoop_002",
+      "expected": {
+        "category_name": "Application Activity",
+        "class_name": "Application Lifecycle",
+        "activity_name": "Log",
+        "status": "Failure"
+      },
+      "aliases": {
+        "category": ["Application"],
+        "class": ["Application Activity"]
+      }
+    },
+    {
+      "id": "hadoop_003",
+      "expected": {
+        "category_name": "Application Activity",
+        "class_name": "Application Lifecycle",
+        "activity_name": "Log",
+        "severity": "Informational"
+      },
+      "aliases": {
+        "category": ["Application"],
+        "class": ["Application Activity"]
+      }
+    }
+  ]
+}

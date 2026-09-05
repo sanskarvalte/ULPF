@@ -1,0 +1,3 @@
+{"device_id":"sensor-hvac-014","ts":1756000000,"temp_c":22.4,"humidity":48,"status":"ok"}
+{"device_id":"sensor-hvac-014","ts":1756000060,"temp_c":41.2,"humidity":47,"status":"alert_high_temp"}
+{"device_id":"badge-reader-03","ts":1756000090,"event":"access_granted","card_id":"A19273","door":"server_room_east"}

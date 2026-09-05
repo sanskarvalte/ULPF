@@ -1,0 +1,3 @@
+2026-09-05T11:45:12Z client=192.168.10.44 server=10.0.0.8 sport=49221 dport=22 protocol=SSH result=DENIED reason=INVALID_CREDENTIALS
+2026-09-05T11:46:31Z client=192.168.10.51 server=10.0.0.8 sport=49287 dport=22 protocol=SSH result=ACCEPTED reason=VALID_CREDENTIALS
+2026-09-05T11:47:08Z client=192.168.10.77 server=10.0.0.8 sport=49301 dport=22 protocol=SSH result=DENIED reason=INVALID_CREDENTIALS

@@ -1,0 +1,262 @@
+{
+  "0efeed427dad7888": {
+    "parser_spec": {
+      "format_name": "custom_inventory",
+      "parser_type": "key_value",
+      "delimiter": " ",
+      "fields": [
+        {
+          "name": "timestamp",
+          "type": "datetime"
+        },
+        {
+          "name": "pkg",
+          "type": "number"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        }
+      ],
+      "timestamp_field": "timestamp",
+      "key_value_separator": ":",
+      "optional_fields": [],
+      "confidence": 0.98
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "custom_inventory",
+          "parser_type": "key_value",
+          "delimiter": " ",
+          "fields": [
+            {
+              "name": "timestamp",
+              "type": "datetime"
+            },
+            {
+              "name": "pkg",
+              "type": "number"
+            },
+            {
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "timestamp_field": "timestamp",
+          "key_value_separator": ":",
+          "optional_fields": [],
+          "confidence": 0.98
+        },
+        "status": "active",
+        "created_at": "2026-09-05T06:39:58.107411+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T06:39:58.107439+00:00"
+  },
+  "980d57ab99575489": {
+    "parser_spec": {
+      "format_name": "custom_inventory",
+      "parser_type": "key_value",
+      "delimiter": " ",
+      "fields": [
+        {
+          "name": "timestamp",
+          "type": "datetime"
+        },
+        {
+          "name": "t10",
+          "type": "string"
+        }
+      ],
+      "timestamp_field": "timestamp",
+      "key_value_separator": ":",
+      "optional_fields": [],
+      "confidence": 0.96
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "custom_inventory",
+          "parser_type": "key_value",
+          "delimiter": " ",
+          "fields": [
+            {
+              "name": "timestamp",
+              "type": "datetime"
+            },
+            {
+              "name": "t10",
+              "type": "string"
+            }
+          ],
+          "timestamp_field": "timestamp",
+          "key_value_separator": ":",
+          "optional_fields": [],
+          "confidence": 0.96
+        },
+        "status": "active",
+        "created_at": "2026-09-05T09:40:24.483830+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T09:40:24.484260+00:00"
+  },
+  "e4a0c589836a9c40": {
+    "parser_spec": {
+      "format_name": "custom_inventory",
+      "parser_type": "delimited",
+      "delimiter": " ",
+      "fields": [
+        {
+          "name": "timestamp",
+          "type": "datetime"
+        },
+        {
+          "name": "user",
+          "type": "string"
+        },
+        {
+          "name": "src_ip",
+          "type": "ip"
+        },
+        {
+          "name": ":",
+          "type": "string"
+        }
+      ],
+      "timestamp_field": "timestamp",
+      "key_value_separator": ":",
+      "optional_fields": [],
+      "confidence": 0.96
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "custom_inventory",
+          "parser_type": "delimited",
+          "delimiter": " ",
+          "fields": [
+            {
+              "name": "timestamp",
+              "type": "datetime"
+            },
+            {
+              "name": "user",
+              "type": "string"
+            },
+            {
+              "name": "src_ip",
+              "type": "ip"
+            },
+            {
+              "name": ":",
+              "type": "string"
+            }
+          ],
+          "timestamp_field": "timestamp",
+          "key_value_separator": ":",
+          "optional_fields": [],
+          "confidence": 0.96
+        },
+        "status": "active",
+        "created_at": "2026-09-05T09:40:45.221153+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T09:40:45.221178+00:00"
+  },
+  "bc065e92656fb456": {
+    "parser_spec": {
+      "format_name": "custom_inventory",
+      "parser_type": "key_value",
+      "delimiter": " ",
+      "fields": [
+        {
+          "name": "timestamp",
+          "type": "datetime"
+        },
+        {
+          "name": "turbine",
+          "type": "string"
+        },
+        {
+          "name": "location",
+          "type": "string"
+        },
+        {
+          "name": "rpm",
+          "type": "number"
+        },
+        {
+          "name": "vibration",
+          "type": "number"
+        },
+        {
+          "name": "condition",
+          "type": "string"
+        }
+      ],
+      "timestamp_field": "timestamp",
+      "key_value_separator": ":",
+      "optional_fields": [],
+      "confidence": 0.99
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "custom_inventory",
+          "parser_type": "key_value",
+          "delimiter": " ",
+          "fields": [
+            {
+              "name": "timestamp",
+              "type": "datetime"
+            },
+            {
+              "name": "turbine",
+              "type": "string"
+            },
+            {
+              "name": "location",
+              "type": "string"
+            },
+            {
+              "name": "rpm",
+              "type": "number"
+            },
+            {
+              "name": "vibration",
+              "type": "number"
+            },
+            {
+              "name": "condition",
+              "type": "string"
+            }
+          ],
+          "timestamp_field": "timestamp",
+          "key_value_separator": ":",
+          "optional_fields": [],
+          "confidence": 0.99
+        },
+        "status": "active",
+        "created_at": "2026-09-05T09:41:24.861218+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-05T09:41:24.861276+00:00"
+  }
+}

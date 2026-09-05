@@ -14,9 +14,11 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from app.models.event_schema import UnifiedEvent
 from app.parsers.android_parser import parse_android_log
+from app.parsers.apache_parser import parse_apache_log
 from app.parsers.cef_parser import parse_cef_log
 from app.parsers.csv_parser import parse_csv_log
 from app.parsers.generic_parser import parse_generic_log
+from app.parsers.hadoop_parser import parse_hadoop_log
 from app.parsers.json_parser import parse_json_log
 from app.parsers.leef_parser import parse_leef_log
 from app.parsers.syslog_parser import parse_syslog_log
@@ -58,7 +60,8 @@ def _looks_like_leef(s: str) -> bool:
 
 def _looks_like_syslog(s: str) -> bool:
     test = s.strip()
-    if _looks_like_syslog_priority(test):
+    had_pri = _looks_like_syslog_priority(test)
+    if had_pri:
         close = test.index(">")
         test = test[close + 1:].strip()
         # Handle RFC 5424 version prefix like "1 "
@@ -81,8 +84,12 @@ def _looks_like_syslog(s: str) -> bool:
     if re.match(r"^[A-Z][a-z]{2}\s+\d{1,2}(?:\s+\d{4})?\s+\d{2}:\d{2}:\d{2}(?::|\s)", test):
         return True
 
-    # RFC 5424 / ISO timestamp syslog with process/message marker or PRI header
-    if re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+\S+\s+(?:\[.*\]|[^\[:\s]+(?:\[\d+\])?(?::|\s+\[|\s+\d+\s+))", test):
+    # RFC 5424 with explicit PRI header
+    if had_pri and re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}", test):
+        return True
+
+    # ISO timestamp syslog without PRI header: MUST have process name followed by colon or brackets
+    if re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+\S+\s+(?:\[.*\]|[^\[:\s]+(?:\[\d+\])?(?::|\s+\[))", test):
         return True
 
     return False
@@ -140,6 +147,16 @@ def _looks_like_xml(s: str) -> bool:
         except Exception:
             pass
     return False
+
+
+def _looks_like_apache(s: str) -> bool:
+    first_line = s.splitlines()[0].strip() if s else ""
+    return bool(re.match(r'^\S+\s+\S+\s+\S+\s+\[[^\]]+\]\s+"[A-Z]+\s+[^"]*"\s+\d{3}\s+\S+', first_line))
+
+
+def _looks_like_hadoop(s: str) -> bool:
+    first_line = s.splitlines()[0].strip() if s else ""
+    return bool(re.match(r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}[,\.]\d{3}|\d{6}\s+\d{6}(?:\s+\d+)?)\s+(INFO|WARN|WARNING|ERROR|FATAL|DEBUG|TRACE)\s+(?:\[[^\]]+\]\s+)?(?:org\.apache\.|dfs\.)[^:]+:", first_line))
 
 
 # ── Runtime-Mutable Format Matcher Registry ────────────────────────────
@@ -230,6 +247,8 @@ def register_custom_parser_matcher(
     product: Optional[str] = None,
 ) -> None:
     """Dynamically register an approved custom regex pattern and parser into the runtime registry."""
+    if not pattern_regex or not str(pattern_regex).strip():
+        return
     from app.parsers.dynamic_parser import DynamicPatternParser
     compiled_re = re.compile(pattern_regex, re.DOTALL | re.IGNORECASE)
     parser_instance = DynamicPatternParser(format_name, pattern_regex, field_mapping, vendor, product)

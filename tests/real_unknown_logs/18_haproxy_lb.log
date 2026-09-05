@@ -1,0 +1,2 @@
+Aug 24 10:20:01 lb01 haproxy[1832]: 10.0.1.9:52344 [24/Aug/2026:10:20:01.221] frontend_https backend_web/web01 0/0/1/45/46 200 5324 - - ---- 12/12/1/1/0 0/0 "GET /api/status HTTP/1.1"
+Aug 24 10:20:05 lb01 haproxy[1832]: 203.0.113.201:44210 [24/Aug/2026:10:20:05.100] frontend_https backend_web/<NOSRV> 0/-1/-1/-1/5000 503 212 - - SC-- 12/12/0/0/3 0/0 "GET /admin HTTP/1.1"

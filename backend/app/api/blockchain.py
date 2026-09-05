@@ -71,7 +71,8 @@ def list_blocks(
     """
     if type == "event":
         return get_all_blocks(limit=limit, offset=offset)
-    return get_all_batch_blocks(limit=limit, offset=offset, search=search)
+    search_str = search if isinstance(search, str) and search.strip() else None
+    return get_all_batch_blocks(limit=limit, offset=offset, search=search_str)
 
 
 @router.get("/blocks/{block_id}", response_model=BatchBlock, summary="Get Batch Block Details")

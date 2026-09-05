@@ -1,0 +1,42 @@
+{
+  "dataset": "Linux_sample",
+  "version": "1.0",
+  "events": [
+    {
+      "id": "linux_001",
+      "expected": {
+        "category_name": "System Activity",
+        "class_name": "Scheduled Job Activity",
+        "activity_name": "Scheduled Activity"
+      },
+      "aliases": {
+        "category": ["System"],
+        "activity": ["Schedule", "Execute", "Run"]
+      }
+    },
+    {
+      "id": "linux_002",
+      "expected": {
+        "category_name": "Identity & Access Management",
+        "class_name": "Authentication",
+        "activity_name": "Elevate"
+      },
+      "aliases": {
+        "category": ["IAM"],
+        "activity": ["Logon", "Login", "Sudo"]
+      }
+    },
+    {
+      "id": "linux_003",
+      "expected": {
+        "category_name": "System Activity",
+        "class_name": "Kernel Activity",
+        "activity_name": "Log"
+      },
+      "aliases": {
+        "category": ["System"],
+        "class": ["Device Activity", "Operating System"]
+      }
+    }
+  ]
+}

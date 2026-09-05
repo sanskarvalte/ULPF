@@ -1,0 +1,3 @@
+24-Aug-2026 10:15:02.331 queries: client 10.0.1.44#52344 (malicious-domain.example): query: malicious-domain.example IN A + (10.0.0.53)
+24-Aug-2026 10:15:03.109 queries: client 10.0.1.44#52345 (google.com): query: google.com IN AAAA + (10.0.0.53)
+24-Aug-2026 10:15:05.500 security: client 203.0.113.9#41200: query (cache) 'internal.corp/A/IN' denied

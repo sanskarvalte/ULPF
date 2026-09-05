@@ -7,3 +7,4 @@ if exist "%SCRIPT_DIR%.venv\Scripts\python.exe" (
 ) else (
     python "%SCRIPT_DIR%backend\app\main.py" %*
 )
+exit /b %ERRORLEVEL%

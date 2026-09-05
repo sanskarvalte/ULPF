@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 from app.ingestion.banner_scanner import scan_stream_header
 
@@ -217,3 +217,85 @@ class LogCollector:
             source_name=p.name,
             source_metadata=meta,
         )
+
+    @staticmethod
+    def collect_from_lines(
+        lines: Iterable[str],
+        source_name: str = "api_stream",
+        source_metadata: Optional[Dict[str, Any]] = None,
+    ) -> List[CollectedRawChunk]:
+        """Collect log chunks from an iterable collection of string lines."""
+        raw_text = "\n".join(lines)
+        return LogCollector.collect_from_text(
+            raw_text=raw_text,
+            source_name=source_name,
+            source_metadata=source_metadata,
+        )
+
+    @staticmethod
+    def collect_from_file_stream(
+        file_path: str | Path,
+        chunk_size: int = 1000,
+        source_metadata: Optional[Dict[str, Any]] = None,
+    ) -> Iterator[List[CollectedRawChunk]]:
+        """
+        Stream raw log chunks from a file in bounded batches without loading the whole file into RAM.
+        Preserves multi-line record grouping across batch boundaries.
+        """
+        p = Path(file_path)
+        meta = dict(source_metadata or {})
+        meta.setdefault("file_path", str(p.resolve()))
+        sz = 0
+        try:
+            sz = p.stat().st_size
+            meta.setdefault("file_size_bytes", sz)
+        except Exception:
+            pass
+
+        # If file begins with structured XML or JSON array, parse and chunk
+        if sz < 512 * 1024:
+            try:
+                with open(p, "rb") as peek_f:
+                    head = peek_f.read(256).strip()
+                    if head.startswith(b"<") or head.startswith(b"["):
+                        all_chunks = LogCollector.collect_from_file(p, source_metadata=meta)
+                        for i in range(0, len(all_chunks), chunk_size):
+                            yield all_chunks[i : i + chunk_size]
+                        return
+            except Exception:
+                pass
+
+        batch: List[CollectedRawChunk] = []
+        with open(p, "r", encoding="utf-8", errors="replace") as f:
+            current_record: List[str] = []
+            for line in f:
+                if not line.strip():
+                    continue
+                stripped_line = line.strip()
+                is_stack = (
+                    line.startswith("\t")
+                    or line.startswith("   ")
+                    or stripped_line.startswith("at ")
+                    or stripped_line.startswith("Caused by:")
+                )
+                if current_record:
+                    acc = "\n".join(current_record)
+                    has_ts = _has_timestamp_prefix(line)
+                    if _has_unclosed_delimiters(acc) or is_stack or (not has_ts and (line.startswith(" ") or line.startswith("\t"))):
+                        current_record.append(line)
+                        continue
+                    else:
+                        batch.append(CollectedRawChunk(raw_text=acc, source_name=p.name, source_metadata=meta))
+                        current_record = [line]
+                else:
+                    current_record = [line]
+
+                if len(batch) >= chunk_size:
+                    yield batch
+                    batch = []
+
+            if current_record:
+                batch.append(CollectedRawChunk(raw_text="\n".join(current_record), source_name=p.name, source_metadata=meta))
+
+            if batch:
+                yield batch

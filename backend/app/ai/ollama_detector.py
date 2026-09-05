@@ -194,7 +194,7 @@ def _generate_deterministic_suggestion(raw_stripped: str, raw_kv: Dict[str, Any]
         "user": _clean_val(raw_kv.get("usr") or raw_kv.get("user") or raw_kv.get("username")),
         "action": _clean_val(raw_kv.get("action") or raw_kv.get("act") or raw_kv.get("method")),
         "severity": sev_mapped,
-        "category_name": "System Activity",
+        "category_name": None,
         "message": str(msg_val),
     }
 
@@ -271,28 +271,13 @@ def _async_fetch_ollama_suggestion(raw_stripped: str, fp_hash: str, model: str, 
 
 
 def query_ollama_suggestion(raw_line: str, model: str = DEFAULT_MODEL) -> Optional[Dict[str, Any]]:
-    """Query local Ollama with temperature=0 and JSON format."""
-    payload = {
-        "model": model,
-        "prompt": PROMPT_TEMPLATE.format(raw_log=raw_line.strip()[:800]),
-        "stream": False,
-        "format": "json",
-        "options": {
-            "temperature": 0.0,
-        },
-    }
-
+    """Query local Ollama with temperature=0 and JSON format using tracked client and configurable timeout."""
+    from app.ai.ollama_client import generate_json
+    from app.config import get_config
+    prompt = PROMPT_TEMPLATE.format(raw_log=raw_line.strip()[:800])
+    timeout = get_config().ai_timeout
     try:
-        req = urllib.request.Request(
-            OLLAMA_API_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "User-Agent": "ULPF/2.0"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=1.5) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            response_text = data.get("response", "{}")
-            return json.loads(response_text)
+        return generate_json(prompt, model=model, timeout=timeout)
     except Exception as e:
         logger.debug(f"Ollama query failed or offline: {e}")
         return None
@@ -312,6 +297,7 @@ def process_unmatched_log_with_ai(
     model: str = DEFAULT_MODEL,
     conn=None,
     sync_ai: bool = False,
+    async_ai: bool = False,
 ) -> UnifiedEvent:
     """
     Node 5 execution (Non-blocking):
@@ -319,7 +305,7 @@ def process_unmatched_log_with_ai(
     2. Extracts all delimited key-value pairs fresh from current line.
     3. Dynamically refines confidence based on repeat occurrences.
     4. Auto-promotes stable templates (>=3 occurrences) to learned format identifier.
-    5. Dispatches Ollama LLM suggestion generation in background worker.
+    5. Dispatches Ollama LLM suggestion generation if sync_ai or async_ai requested.
     """
     raw_stripped = raw_line.strip()
     template, regex_pattern, fp_hash = compute_log_fingerprint(raw_stripped)
@@ -341,7 +327,7 @@ def process_unmatched_log_with_ai(
             if ai_sugg:
                 suggestion = ai_sugg
                 _FINGERPRINT_SUGGESTION_CACHE[fp_hash] = suggestion
-        else:
+        elif async_ai:
             if fp_hash not in _PENDING_SUGGESTION_TASKS:
                 _PENDING_SUGGESTION_TASKS.add(fp_hash)
                 _EXECUTOR.submit(
@@ -407,6 +393,7 @@ def process_unmatched_log_with_ai(
     src_port = coerce_int(raw_kv.get("src_port") or raw_kv.get("sport"))
     dst_port = coerce_int(raw_kv.get("dst_port") or raw_kv.get("dport"))
     act_val = _clean_val(raw_kv.get("action") or raw_kv.get("act") or raw_kv.get("method") or raw_kv.get("op"))
+    status_val = _clean_val(raw_kv.get("status") or raw_kv.get("res") or raw_kv.get("result"))
 
     # Service / App name
     service_name = (
@@ -456,7 +443,13 @@ def process_unmatched_log_with_ai(
     }
     for k, v in raw_kv.items():
         k_lower = k.lower()
-        if k_lower not in ("ts", "time", "timestamp", "lvl", "level", "msg", "message", "svc", "service", "usr", "user", "username", "src", "src_ip", "dst", "dst_ip", "sport", "dport"):
+        if k_lower not in (
+            "ts", "time", "timestamp", "lvl", "level", "msg", "message",
+            "svc", "service", "app", "usr", "user", "username", "targetusername",
+            "suser", "src", "src_ip", "client_ip", "ip", "dst", "dst_ip",
+            "server_ip", "sport", "src_port", "dport", "dst_port",
+            "action", "act", "method", "op", "status", "res", "result"
+        ):
             unmapped[k] = _coerce_primitive(_strip_key_prefix(k, v))
 
     # Construct UnifiedEvent
@@ -474,8 +467,10 @@ def process_unmatched_log_with_ai(
         "dst_port": dst_port,
         "user": _clean_val(user_val),
         "activity_name": _clean_val(act_val),
+        "action": _clean_val(act_val),
+        "status": _clean_val(status_val),
         "severity": norm_severity,
-        "category_name": "System Activity",
+        "category_name": None,
         "unmapped": unmapped,
     }
 

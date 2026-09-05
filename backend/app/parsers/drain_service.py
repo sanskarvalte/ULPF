@@ -267,11 +267,12 @@ def parse_drain_log(raw: str, drain_service: Optional[SimpleDrainService] = None
         mapped["activity_name"] = "Update"
         mapped["activity_id"] = 1
     else:
-        mapped["category_name"] = "System Activity"
-        mapped["category_uid"] = 1
-        mapped["class_name"] = "System Activity"
-        mapped["class_uid"] = 1004
-        mapped["activity_id"] = 99
+        mapped["category_name"] = None
+        mapped["category_uid"] = None
+        mapped["class_name"] = None
+        mapped["class_uid"] = None
+        mapped["activity_name"] = None
+        mapped["activity_id"] = None
 
     enrich_classification(mapped)
     return UnifiedEvent(**mapped)

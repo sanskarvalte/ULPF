@@ -13,3 +13,4 @@ if (-not (Test-Path $PythonExe)) {
 
 $env:PYTHONPATH = Join-Path $ScriptDir "backend"
 & $PythonExe $MainPy @ScriptArgs
+exit $LASTEXITCODE

@@ -1,0 +1,2 @@
+id=firewall sn=C0EAE4XXXXXX time="2026-08-24 10:25:03" fw=203.0.113.1 pri=5 c=1024 m=97 msg="Connection Opened" n=442210 src=10.0.1.60:52001:X0 dst=17.253.144.10:443:X1 proto=tcp/https
+id=firewall sn=C0EAE4XXXXXX time="2026-08-24 10:25:44" fw=203.0.113.1 pri=1 c=32 m=605 msg="Possible port scan detected" n=442288 src=198.51.100.220:0:X1

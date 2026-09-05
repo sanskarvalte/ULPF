@@ -1,0 +1,2 @@
+LEEF:2.0|IBM|QRadar|7.5|401|src=192.0.2.88	dst=10.0.5.10	srcPort=52344	dstPort=22	usrName=admin	sev=7	cat=AuthenticationFailure
+LEEF:2.0|IBM|Guardium|11.4|DBACCESS|src=10.0.5.55	dst=10.0.5.100	dbUser=app_svc	query=SELECT	sev=3

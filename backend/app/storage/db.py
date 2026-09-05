@@ -12,24 +12,46 @@ import duckdb
 
 # Determine database path
 DEFAULT_DB_PATH = Path(
-    os.getenv("ULPF_DB_PATH")
+    os.getenv("ULPF_DATABASE_PATH")
+    or os.getenv("ULPF_DB_PATH")
     or (Path(__file__).resolve().parent.parent.parent.parent / "ulpf.duckdb")
 )
 
 _GLOBAL_CONN: Optional[duckdb.DuckDBPyConnection] = None
 
 
+def reset_db_connection():
+    """Reset the global DuckDB connection singleton (primarily for testing)."""
+    global _GLOBAL_CONN
+    if _GLOBAL_CONN is not None:
+        try:
+            _GLOBAL_CONN.close()
+        except Exception:
+            pass
+        _GLOBAL_CONN = None
+
+
 def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duckdb.DuckDBPyConnection:
     """Connect to local DuckDB and initialize tables with cached singleton."""
     global _GLOBAL_CONN
-    if db_path is None and _GLOBAL_CONN is not None:
+
+    env_path = os.getenv("ULPF_DB_PATH") or os.getenv("ULPF_DATABASE_PATH")
+    path = str(db_path or (Path(env_path) if env_path else DEFAULT_DB_PATH))
+
+    # If caller requests read_only, and we already have an active read-write singleton, reuse cursor
+    if read_only and db_path is None and _GLOBAL_CONN is not None:
         try:
             return _GLOBAL_CONN.cursor()
         except Exception:
             _GLOBAL_CONN = None
 
-    env_path = os.getenv("ULPF_DB_PATH")
-    path = str(db_path or (Path(env_path) if env_path else DEFAULT_DB_PATH))
+    # If caller requests read-write, return singleton cursor if available
+    if not read_only and db_path is None and _GLOBAL_CONN is not None:
+        try:
+            return _GLOBAL_CONN.cursor()
+        except Exception:
+            _GLOBAL_CONN = None
+
     is_ro = read_only
     try:
         conn = duckdb.connect(path, read_only=is_ro)
@@ -40,8 +62,12 @@ def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duc
         else:
             raise e
 
-    if db_path is None and _GLOBAL_CONN is None:
-        _GLOBAL_CONN = conn
+    # ONLY cache read-write connections in _GLOBAL_CONN
+    if not is_ro:
+        if db_path is None:
+            _GLOBAL_CONN = conn
+        elif _GLOBAL_CONN is None:
+            _GLOBAL_CONN = conn
 
     if is_ro:
         return conn.cursor()
@@ -180,6 +206,39 @@ def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duc
         reviewer VARCHAR,
         reason TEXT,
         parser_config TEXT,
+        created_at TIMESTAMP NOT NULL
+    );
+    """)
+
+    # 8. Ingestion Jobs Persistence
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS ingestion_jobs (
+        job_id VARCHAR PRIMARY KEY,
+        filename VARCHAR,
+        file_size BIGINT,
+        file_size_str VARCHAR,
+        source VARCHAR,
+        format VARCHAR,
+        parser VARCHAR,
+        parser_source VARCHAR,
+        status VARCHAR,
+        events_received INTEGER,
+        events_parsed INTEGER,
+        events_normalized INTEGER,
+        events_stored INTEGER,
+        validation_rate DOUBLE,
+        accuracy DOUBLE,
+        confidence DOUBLE,
+        ollama_calls INTEGER,
+        ollama_latency DOUBLE,
+        ai_resolution_status VARCHAR,
+        error VARCHAR,
+        fingerprint VARCHAR,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        elapsed_time_str VARCHAR,
+        lifecycle_json TEXT,
+        logs_json TEXT,
         created_at TIMESTAMP NOT NULL
     );
     """)

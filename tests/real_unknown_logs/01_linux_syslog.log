@@ -1,0 +1,5 @@
+Aug 24 09:12:01 web01 sshd[2312]: Accepted publickey for deploy from 10.0.1.15 port 51322 ssh2
+Aug 24 09:12:05 web01 sudo: deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+Aug 24 09:13:44 web01 kernel: [123456.789] TCP: request_sock_TCP: Possible SYN flooding on port 443
+Aug 24 09:14:02 web01 CRON[4521]: (root) CMD (/usr/local/bin/backup.sh)
+Aug 24 09:15:37 web01 sshd[2399]: Failed password for invalid user admin from 203.0.113.55 port 44210 ssh2

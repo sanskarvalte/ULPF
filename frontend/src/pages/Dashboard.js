@@ -23,11 +23,65 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+export function renderAiResolutionsTableRows(aiResolutions = []) {
+  if (!aiResolutions || aiResolutions.length === 0) {
+    return `
+      <tr>
+        <td colspan="8" class="p-6 text-center text-on-surface-variant font-code-xs">
+          No unknown format resolutions recorded yet. Known formats and learned parsers execute with 0 Ollama calls.
+        </td>
+      </tr>
+    `;
+  }
+  return aiResolutions.map(r => {
+    let aiUsedBadge = '';
+    if (r.ai_used === true) {
+      aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-primary/15 text-primary border border-primary/30 font-mono text-[10px] font-bold">YES (${escapeHtml(r.model || 'qwen3:4b')})</span>`;
+    } else if (r.resolution_status === 'cached' || r.parser_type === 'learned_cache') {
+      aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-[#34d399]/15 text-[#34d399] border border-[#34d399]/30 font-mono text-[10px] font-medium">NO (Learned Reuse)</span>`;
+    } else {
+      aiUsedBadge = `<span class="px-2 py-0.5 rounded bg-outline-variant/30 text-on-surface-variant border border-outline-variant font-mono text-[10px]">NO (Rule-Based)</span>`;
+    }
+
+    let resBadge = '';
+    const stLower = (r.resolution_status || '').toLowerCase();
+    if (stLower === 'promoted') {
+      resBadge = `<span class="px-2 py-0.5 rounded bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30 font-mono text-[10px] font-bold">PROMOTED</span>`;
+    } else if (stLower === 'cached') {
+      resBadge = `<span class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary border border-tertiary/30 font-mono text-[10px]">CACHED</span>`;
+    } else if (stLower === 'pending_review' || stLower === 'review' || stLower === 'rejected') {
+      resBadge = `<span class="px-2 py-0.5 rounded bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30 font-mono text-[10px]">REVIEW</span>`;
+    } else {
+      resBadge = `<span class="px-2 py-0.5 rounded bg-outline-variant/30 text-on-surface-variant border border-outline-variant font-mono text-[10px]">${escapeHtml(r.resolution_status || 'UNKNOWN')}</span>`;
+    }
+
+    const latStr = r.latency_ms > 0 ? (r.latency_ms >= 1000 ? (r.latency_ms / 1000).toFixed(1) + 's' : Math.round(r.latency_ms) + 'ms') : '0.0ms';
+    const accStr = r.accuracy != null ? `${r.accuracy}%` : (r.confidence != null ? `${Math.round(r.confidence * 100)}% conf` : '-');
+    const shortFp = (r.fingerprint && r.fingerprint.length > 12) ? r.fingerprint.slice(0, 10) + '...' : (r.fingerprint || '-');
+
+    return `
+      <tr class="border-b border-outline-variant/40 hover:bg-surface-container-high/40 transition-colors">
+        <td class="p-2.5 pl-3 text-on-surface-variant whitespace-nowrap text-[11px]">${r.timestamp || '—'}</td>
+        <td class="p-2.5 text-on-surface font-mono text-[11px]">${escapeHtml(r.source || '—')}</td>
+        <td class="p-2.5 font-mono text-[11px] text-primary" title="${escapeHtml(r.fingerprint || '')}">${escapeHtml(shortFp)}</td>
+        <td class="p-2.5 text-on-surface-variant font-mono text-[11px]">${escapeHtml(r.format || r.parser_type || '—')}</td>
+        <td class="p-2.5 text-center">${aiUsedBadge}</td>
+        <td class="p-2.5 text-center">${resBadge}</td>
+        <td class="p-2.5 text-right font-mono text-on-surface text-[11px]">${accStr}</td>
+        <td class="p-2.5 pr-3 text-right font-mono text-on-surface-variant text-[11px]">${latStr}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
 export function renderDashboardPage(dashboardState = {}) {
   const summary = dashboardState.summary || {};
   const volume = dashboardState.volume || { buckets: [], max_eps: 0 };
   const sources = dashboardState.sources || { distribution: [], total_events: 0 };
   const recentEvents = dashboardState.recentEvents || [];
+  const aiStatus = dashboardState.aiStatus || {};
+  const aiMetrics = dashboardState.aiMetrics || {};
+  const aiResolutions = dashboardState.aiResolutions || [];
   const loading = dashboardState.loading || false;
   const error = dashboardState.error || null;
 
@@ -412,6 +466,144 @@ export function renderDashboardPage(dashboardState = {}) {
               </div>
               <span class="font-code-xs text-code-xs text-on-surface-variant pipeline-stage-label">BC</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2.5 REAL ULPF AI ENGINE & TELEMETRY -->
+      <div class="bg-surface-container shadow-sm p-6 rounded-xl border border-outline-variant flex flex-col gap-stack-md" id="dashboard-ai-engine-card">
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-outline-variant">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-[24px]">psychology</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-title-sm text-title-sm text-on-surface font-bold tracking-tight">ULPF AI ENGINE</span>
+                <span id="ai-engine-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide border flex items-center gap-1.5 ${aiStatus.status === 'UNAVAILABLE' ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30' : (aiStatus.status === 'TIMEOUT' ? 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/30' : (aiStatus.status === 'MODEL_NOT_FOUND' ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30' : (aiStatus.status === 'CONNECTED' ? 'bg-[#10b981]/15 text-[#34d399] border-[#10b981]/30' : 'bg-outline-variant/30 text-on-surface-variant border-outline-variant')))}">
+                  <span class="w-1.5 h-1.5 rounded-full ${aiStatus.status === 'UNAVAILABLE' ? 'bg-[#ef4444]' : (aiStatus.status === 'TIMEOUT' ? 'bg-[#f59e0b]' : (aiStatus.status === 'MODEL_NOT_FOUND' ? 'bg-[#ef4444]' : (aiStatus.status === 'CONNECTED' ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-outline-variant')))}"></span>
+                  ${aiStatus.status || 'INITIALIZING...'}
+                </span>
+              </div>
+              <div class="flex items-center gap-3 font-code-xs text-[11px] text-on-surface-variant mt-0.5">
+                <span>Provider: <strong class="text-on-surface font-semibold font-mono">Ollama</strong></span>
+                <span>•</span>
+                <span>Model: <strong class="text-primary font-semibold font-mono" id="ai-model-label">${escapeHtml(aiStatus.model || 'qwen3:4b')}</strong></span>
+                <span>•</span>
+                <span>Mode: <strong class="text-on-surface font-semibold font-mono" id="ai-mode-label">${aiStatus.air_gap_mode ? 'Air-gapped / Local' : 'Local'}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action button -->
+          <div class="flex items-center gap-2">
+            <button onclick="app.navigate('mappings')" class="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-label-caps border border-outline-variant transition-colors flex items-center gap-1.5 cursor-pointer" title="Inspect Review Queue">
+              <span class="material-symbols-outlined text-[15px] text-[#f59e0b]">rate_review</span>
+              Review Queue (<span id="ai-kpi-review-btn-count">${aiMetrics.review_required ?? summary.unknown_formats_count ?? 0}</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Offline Warning banner if Ollama is unavailable -->
+        <div id="ai-offline-banner" class="${(aiStatus.status === 'UNAVAILABLE' || aiStatus.status === 'TIMEOUT') ? 'flex' : 'hidden'} p-3 rounded-lg bg-error-container/20 border border-error-container text-error text-code-xs items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">cloud_off</span>
+          <span>Local Ollama is unavailable. Known and learned parsers continue normally with 0 Ollama calls. New unresolved formats will enter the human review queue.</span>
+        </div>
+
+        <!-- AI Activity & Performance Metric Cards (Grid of 6) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <!-- Ollama Calls -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>OLLAMA CALLS</span>
+              <span class="material-symbols-outlined text-[14px] text-primary">chat</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-primary font-mono" id="ai-kpi-ollama-calls">${aiMetrics.ollama_calls ?? 0}</span>
+            <span class="text-[10px] text-on-surface-variant">Genuine LLM calls</span>
+          </div>
+
+          <!-- AI Generated Parsers -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>AI PARSERS</span>
+              <span class="material-symbols-outlined text-[14px] text-tertiary">auto_fix_high</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-tertiary font-mono" id="ai-kpi-ai-parsers">${aiMetrics.ai_generated_parsers ?? 0}</span>
+            <span class="text-[10px] text-on-surface-variant">Synthesized & promoted</span>
+          </div>
+
+          <!-- Learned Reuse -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>LEARNED REUSE</span>
+              <span class="material-symbols-outlined text-[14px] text-[#34d399]">replay</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-[#34d399] font-mono" id="ai-kpi-learned-reuse">${aiMetrics.learned_parser_reuses ?? 0}</span>
+            <span class="text-[10px] text-on-surface-variant">0 Ollama calls (Cached)</span>
+          </div>
+
+          <!-- Latency -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>AI LATENCY</span>
+              <span class="material-symbols-outlined text-[14px] text-on-surface-variant">timer</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-on-surface font-mono" id="ai-kpi-latency">${aiMetrics.last_latency_ms ? (aiMetrics.last_latency_ms >= 1000 ? (aiMetrics.last_latency_ms / 1000).toFixed(1) + 's' : Math.round(aiMetrics.last_latency_ms) + 'ms') : '0ms'}</span>
+            <span class="text-[10px] text-on-surface-variant">Last LLM inference</span>
+          </div>
+
+          <!-- Parser Accuracy -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>PARSER ACCURACY</span>
+              <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-primary font-mono" id="ai-kpi-accuracy">${aiMetrics.parser_accuracy != null ? aiMetrics.parser_accuracy + '%' : 'N/A'}</span>
+            <span class="text-[10px] text-on-surface-variant">Extraction benchmark</span>
+          </div>
+
+          <!-- Validation Rate -->
+          <div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant flex flex-col gap-1">
+            <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+              <span>VALIDATION</span>
+              <span class="material-symbols-outlined text-[14px] text-tertiary">task_alt</span>
+            </div>
+            <span class="font-display-sm text-display-sm text-tertiary font-mono" id="ai-kpi-validation">${aiMetrics.validation_rate != null ? aiMetrics.validation_rate + '%' : '100%'}</span>
+            <span class="text-[10px] text-on-surface-variant">Schema conformance</span>
+          </div>
+        </div>
+
+        <!-- Recent AI Resolutions Table -->
+        <div class="flex flex-col gap-2 pt-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-title-xs text-[12px] font-bold uppercase tracking-wider text-on-surface">Recent Unknown Formats & AI Resolutions</span>
+              <span class="text-[10px] text-on-surface-variant">(Truthful Telemetry Audit Log)</span>
+            </div>
+            <div class="text-[11px] text-on-surface-variant font-code-xs">
+              Semantic Engine: <strong class="text-[#34d399]">OCSF Deterministic Active</strong>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-lg border border-outline-variant bg-surface-container-lowest">
+            <table class="w-full text-left font-code-xs text-code-xs border-collapse">
+              <thead class="bg-surface-container border-b border-outline-variant text-[11px] uppercase tracking-wider text-on-surface-variant">
+                <tr>
+                  <th class="p-2.5 pl-3">Timestamp</th>
+                  <th class="p-2.5">Source</th>
+                  <th class="p-2.5">Fingerprint</th>
+                  <th class="p-2.5">Parser</th>
+                  <th class="p-2.5 text-center">AI Used</th>
+                  <th class="p-2.5 text-center">Resolution</th>
+                  <th class="p-2.5 text-right">Accuracy</th>
+                  <th class="p-2.5 pr-3 text-right">Latency</th>
+                </tr>
+              </thead>
+              <tbody id="ai-resolutions-table-body">
+                ${renderAiResolutionsTableRows(aiResolutions)}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -513,7 +513,7 @@ def get_all_batch_blocks(
         FROM blockchain_batch_ledger
     """
     params: List[Any] = []
-    if search:
+    if search and isinstance(search, str) and search.strip():
         s = f"%{search.strip()}%"
         query += " WHERE CAST(block_index AS VARCHAR) LIKE ? OR batch_id LIKE ? OR batch_hash LIKE ? OR anchor_hash LIKE ?"
         params.extend([s, s, s, s])

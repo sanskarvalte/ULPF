@@ -1,0 +1,3 @@
+receive_time,serial,type,threat_id,src,dst,sport,dport,proto,action,rule
+2026/08/24 09:50:01,001801012345,TRAFFIC,0,10.0.1.30,142.250.183.14,52344,443,tcp,allow,Allow-Web
+2026/08/24 09:50:22,001801012345,THREAT,40001,203.0.113.88,10.0.2.15,44100,3389,tcp,block-url,Block-RDP-External

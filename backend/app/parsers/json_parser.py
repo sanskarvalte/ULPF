@@ -104,14 +104,11 @@ def parse_json_log(raw: str) -> UnifiedEvent:
 
     # Classification inference for standard JSON logs
     if not mapped.get("category_name"):
-        act_name = str(mapped.get("activity_name") or "").lower()
+        act_name = str(mapped.get("action") or mapped.get("activity_name") or "").lower()
         if act_name in ("login", "logon", "auth", "authenticate"):
             mapped["category_name"] = "Identity & Access Management"
             mapped["class_name"] = "Authentication"
             mapped["activity_name"] = "Logon"
-        elif "src_ip" in mapped and "dst_ip" in mapped:
-            mapped["category_name"] = "Network Activity"
-            mapped["class_name"] = "Network Activity"
 
     # Tableau Hyper detection (k, v, sev structure)
     if "vendor" not in mapped:

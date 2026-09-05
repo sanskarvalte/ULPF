@@ -869,6 +869,26 @@ PROCESS_TAXONOMY_MAP: Dict[str, Dict[str, Any]] = {
         "activity_name": "Log",
         "activity_id": 1,
     },
+    "newsyslog": {
+        "vendor": "Apple",
+        "product": "newsyslog",
+        "category_name": "System Activity",
+        "category_uid": 1,
+        "class_name": "Operating System",
+        "class_uid": 1000,
+        "activity_name": "Log",
+        "activity_id": 1,
+    },
+    "cron": {
+        "vendor": "Linux",
+        "product": "cron",
+        "category_name": "System Activity",
+        "category_uid": 1,
+        "class_name": "Scheduled Job Activity",
+        "class_uid": 1008,
+        "activity_name": "Scheduled Activity",
+        "activity_id": 1,
+    },
 }
 
 

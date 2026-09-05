@@ -1,0 +1,49 @@
+{
+  "dataset": "SSH_sample",
+  "version": "1.0",
+  "events": [
+    {
+      "id": "ssh_001",
+      "expected": {
+        "category_name": "Identity & Access Management",
+        "class_name": "Authentication",
+        "activity_name": "Logon",
+        "status": "Success",
+        "user": "root",
+        "src_ip": "192.168.1.50"
+      },
+      "aliases": {
+        "category": ["IAM", "Identity and Access Management"],
+        "activity": ["Login", "Sign In"]
+      }
+    },
+    {
+      "id": "ssh_002",
+      "expected": {
+        "category_name": "Identity & Access Management",
+        "class_name": "Authentication",
+        "activity_name": "Logon",
+        "status": "Failure",
+        "user": "admin",
+        "src_ip": "192.168.1.99"
+      },
+      "aliases": {
+        "category": ["IAM", "Identity and Access Management"],
+        "activity": ["Login", "Sign In", "Auth Failed"]
+      }
+    },
+    {
+      "id": "ssh_003",
+      "expected": {
+        "category_name": "Identity & Access Management",
+        "class_name": "Authentication",
+        "activity_name": "Logoff",
+        "src_ip": "192.168.1.50"
+      },
+      "aliases": {
+        "category": ["IAM", "Identity and Access Management"],
+        "activity": ["Logout", "Disconnect"]
+      }
+    }
+  ]
+}

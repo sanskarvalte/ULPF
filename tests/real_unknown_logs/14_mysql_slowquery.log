@@ -1,0 +1,4 @@
+# Time: 2026-08-24T10:05:22.123456Z
+# User@Host: app_svc[app_svc] @ [10.0.5.50]
+# Query_time: 4.523100  Lock_time: 0.000210 Rows_sent: 1  Rows_examined: 1500000
+SELECT * FROM transactions WHERE account_id = 4521 ORDER BY created_at DESC;

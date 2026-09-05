@@ -7,6 +7,7 @@ Integrates dynamic YAML mappings without hardcoding rigid logic.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -586,33 +587,57 @@ def parse_syslog_log(
             mapped["severity"] = "Informational"
             mapped["severity_id"] = 1
 
+    # Extract Embedded JSON if message payload contains a JSON object (e.g. mixed syslog + JSON)
+    msg_trimmed = raw_message.strip()
+    json_start = msg_trimmed.find("{")
+    json_end = msg_trimmed.rfind("}")
+    if json_start != -1 and json_end > json_start:
+        try:
+            parsed_json = json.loads(msg_trimmed[json_start : json_end + 1])
+            if isinstance(parsed_json, dict):
+                for jk, jv in parsed_json.items():
+                    norm_jk = jk.lower()
+                    canon_jk = _FIELD_MAP.get(norm_jk, norm_jk)
+                    if canon_jk in ("src_ip", "dst_ip", "user", "action", "status", "severity", "protocol", "service_name") and canon_jk not in mapped:
+                        mapped[canon_jk] = jv
+                    elif canon_jk in ("src_port", "dst_port"):
+                        pv = coerce_int(jv)
+                        if pv is not None and canon_jk not in mapped:
+                            mapped[canon_jk] = pv
+                    else:
+                        unmapped[jk] = jv
+        except Exception:
+            pass
+
     for kv_match in _KV_RE.finditer(raw_message):
         key = kv_match.group(1).lower()
         val = kv_match.group(2).strip("\"';,")
         if not val or val.lower() in ("null", "none", "-", ""):
             continue
 
-        if key in ("srcip", "srcaddr", "rhost") and "src_ip" not in mapped:
+        if key in ("srcip", "srcaddr", "rhost", "src", "source_ip", "sourceip") and "src_ip" not in mapped:
             if _IPV4_RE.match(val) or _IPV6_RE.match(val):
                 mapped["src_ip"] = val
             else:
                 mapped["src_hostname"] = val
+                mapped["src_endpoint_name"] = val
             continue
 
-        if key in ("dstip", "dstaddr") and "dst_ip" not in mapped:
+        if key in ("dstip", "dstaddr", "dst", "destination_ip", "destip") and "dst_ip" not in mapped:
             if _IPV4_RE.match(val) or _IPV6_RE.match(val):
                 mapped["dst_ip"] = val
             else:
                 mapped["dst_hostname"] = val
+                mapped["dst_endpoint_name"] = val
             continue
 
-        if key in ("srcport", "sport") and "src_port" not in mapped:
+        if key in ("srcport", "sport", "spt", "source_port") and "src_port" not in mapped:
             p = coerce_int(val)
             if p is not None:
                 mapped["src_port"] = p
             continue
 
-        if key in ("dstport", "dport") and "dst_port" not in mapped:
+        if key in ("dstport", "dport", "dpt", "destination_port") and "dst_port" not in mapped:
             p = coerce_int(val)
             if p is not None:
                 mapped["dst_port"] = p
@@ -666,17 +691,22 @@ def parse_syslog_log(
             mapped["timestamp"] = parsed_dt
 
     # 6. Network extraction for sshd / auth messages
+    proc_clean = (mapped.get("product") or "").split("(")[0].strip().lower()
     if "src_ip" not in mapped and "src_endpoint_name" not in mapped:
         from_match = _SSHD_FROM_RE.search(raw_message)
         if from_match:
             host_val = from_match.group("host")
             if _IPV4_RE.match(host_val) or _IPV6_RE.match(host_val):
                 mapped["src_ip"] = host_val
-            else:
-                mapped["src_endpoint_name"] = host_val
-                mapped["src_hostname"] = host_val
-            if from_match.group("port") and "src_port" not in mapped:
-                mapped["src_port"] = int(from_match.group("port"))
+                if from_match.group("port") and "src_port" not in mapped:
+                    mapped["src_port"] = int(from_match.group("port"))
+            elif from_match.group("port") or (proc_clean in _AUTH_PROCESS_NAMES and ("." in host_val or host_val.isalnum())):
+                # Exclude SQL keywords like FROM users
+                if host_val.lower() not in ("users", "table", "dual", "where", "select", "accounts", "orders"):
+                    mapped["src_endpoint_name"] = host_val
+                    mapped["src_hostname"] = host_val
+                    if from_match.group("port") and "src_port" not in mapped:
+                        mapped["src_port"] = int(from_match.group("port"))
 
     # Also check generic "from <ip> port <port>"
     if "src_ip" not in mapped:
@@ -687,7 +717,6 @@ def parse_syslog_log(
                 mapped["src_port"] = int(gen_from_match.group("port"))
 
     # 7. User extraction and status for Linux Auth / SSH / Sudo daemons
-    proc_clean = (mapped.get("product") or "").split("(")[0].strip().lower()
     if proc_clean in _AUTH_PROCESS_NAMES or "sshd" in proc_clean:
         if "vendor" not in mapped and proc_clean in ("sshd", "sudo", "pam_unix", "su", "login"):
             mapped["vendor"] = "Linux"
@@ -721,6 +750,8 @@ def parse_syslog_log(
                     elif "Accepted" in auth_match.group(0):
                         mapped["status"] = "Success"
                         mapped["status_id"] = 1
+                        mapped["severity"] = "Informational"
+                        mapped["severity_id"] = 1
                 else:
                     inv_match = re.search(r"\bInvalid\s+user\s+(?P<user>[a-zA-Z0-9_\-\.\$]+)\s+from\b", raw_message, re.IGNORECASE)
                     if inv_match:
@@ -735,6 +766,29 @@ def parse_syslog_log(
                             mapped["user"] = sess_match.group("user")
                             mapped["status"] = "Success"
                             mapped["status_id"] = 1
+                        elif "disconnect" in raw_message.lower():
+                            mapped["activity_name"] = "Disconnect"
+                            mapped["status"] = "Success"
+                            mapped["status_id"] = 1
+                            mapped["severity"] = "Informational"
+                            mapped["severity_id"] = 1
+
+    # Database authentication failure pattern (e.g. MySQL)
+    if "user" not in mapped and "access denied for user" in raw_message.lower():
+        ad_match = re.search(r"Access denied for user '(?P<user>[^']+)'@'(?P<host>[^']+)'", raw_message, re.IGNORECASE)
+        if ad_match:
+            mapped["user"] = ad_match.group("user")
+            h = ad_match.group("host")
+            if _IPV4_RE.match(h) or _IPV6_RE.match(h):
+                mapped["src_ip"] = h
+            else:
+                mapped["src_hostname"] = h
+            mapped["category_name"] = "Identity & Access Management"
+            mapped["activity_name"] = "Logon"
+            mapped["status"] = "Failure"
+            mapped["status_id"] = 2
+            mapped["severity"] = "High"
+            mapped["severity_id"] = 4
 
     # Standard Linux daemons default
     if proc_clean == "firewalld":
@@ -747,6 +801,36 @@ def parse_syslog_log(
         if "severity" not in mapped:
             mapped["severity"] = "Informational"
             mapped["severity_id"] = 1
+
+    if proc_clean == "cron":
+        if "category_name" not in mapped:
+            mapped["category_name"] = "System Activity"
+        if "activity_name" not in mapped:
+            mapped["activity_name"] = "Scheduled Activity"
+        if "severity" not in mapped:
+            mapped["severity"] = "Informational"
+            mapped["severity_id"] = 1
+        cron_user_match = re.search(r"^\((?P<user>[^)]+)\)\s+CMD", raw_message)
+        if cron_user_match and "user" not in mapped:
+            mapped["user"] = cron_user_match.group("user")
+
+    if proc_clean == "newsyslog":
+        if "category_name" not in mapped:
+            mapped["category_name"] = "System Activity"
+        if "activity_name" not in mapped:
+            mapped["activity_name"] = "Log"
+        if "severity" not in mapped:
+            mapped["severity"] = "Informational"
+            mapped["severity_id"] = 1
+
+    if proc_clean == "systemd":
+        if "category_name" not in mapped:
+            mapped["category_name"] = "System Activity"
+        if "severity" not in mapped:
+            mapped["severity"] = "Informational"
+            mapped["severity_id"] = 1
+        if "started" in raw_message.lower() and "activity_name" not in mapped:
+            mapped["activity_name"] = "Service Start"
 
     if unmapped:
         mapped["unmapped"] = unmapped

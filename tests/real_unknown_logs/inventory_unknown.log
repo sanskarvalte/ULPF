@@ -1,0 +1,4 @@
+2026-09-05T09:42:17Z warehouse=WH-07 sku=AX91 qty=42 reorder_point=10 action=RESTOCK
+2026-09-05T09:43:03Z warehouse=WH-02 sku=BX22 qty=3 reorder_point=15 action=LOW_STOCK
+2026-09-05T09:44:51Z warehouse=WH-07 sku=AX91 qty=0 reorder_point=10 action=OUT_OF_STOCK
+2026-09-05T09:45:12Z warehouse=WH-11 sku=CX73 qty=27 reorder_point=8 action=RECEIVE

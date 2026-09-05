@@ -39,6 +39,7 @@ class UnifiedEvent(BaseModel):
     class_name: Optional[str] = Field(default=None, description="Event class (e.g. Authentication, Network Activity).")
     class_uid: Optional[int] = Field(default=None, description="Numeric class UID.")
     activity_name: Optional[str] = Field(default=None, description="Specific activity (e.g. Logon, Logoff, Open, Close).")
+    action: Optional[str] = Field(default=None, description="Action or event verb.")
     activity_id: Optional[int] = Field(default=None, description="Numeric activity identifier.")
     type_name: Optional[str] = Field(default=None, description="Full type name (e.g. Authentication: Logon).")
     type_uid: Optional[int] = Field(default=None, description="Numeric type identifier.")
@@ -88,3 +89,9 @@ class UnifiedEvent(BaseModel):
     # Catch-all & Traceability
     unmapped: Optional[Dict[str, Any]] = Field(default=None, description="Unmapped vendor attributes.")
     raw_event: str = Field(..., description="Original untouched raw log text for lossless forensic traceability.")
+
+    # Semantic Classification Evidence
+    classification_confidence: Optional[float] = Field(default=None, description="Confidence score of semantic classification.")
+    classification_reason: Optional[str] = Field(default=None, description="Rule triggering classification or reason for lack of classification.")
+    classification_evidence: Optional[List[str]] = Field(default=None, description="Tokens and indicators evidencing classification.")
+    classification_status: Optional[str] = Field(default=None, description="Semantic classification outcome status: 'classified', 'review', or 'unknown'.")

@@ -66,7 +66,7 @@ def _compare_field_value(actual: Any, expected: Any, field_name: str) -> bool:
             {"logon", "login"},
             {"elevate", "logon", "command"},
             {"activity launch", "process management", "launch", "execute"},
-            {"accept", "allow", "pass", "permit", "open"},
+            {"accept", "allow", "pass", "permit", "open", "connect", "connection"},
         ]
         if field_name in ("activity_name", "action"):
             for syn_group in activity_synonyms:

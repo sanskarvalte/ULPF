@@ -350,12 +350,23 @@ def get_system_health() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Blockchain health check failed: {e}")
 
-    # AI engine check
+    # Real local Ollama AI health check
+    ai_status = "offline"
+    ollama_info: Dict[str, Any] = {}
     try:
-        from sklearn.ensemble import IsolationForest
-        ai_status = "online"
+        from app.ai.telemetry import check_ollama_status
+        ollama_info = check_ollama_status()
+        if ollama_info.get("status") == "CONNECTED":
+            ai_status = "online"
+        elif ollama_info.get("status") == "MODEL_NOT_FOUND":
+            ai_status = "model_missing"
+        elif ollama_info.get("status") == "TIMEOUT":
+            ai_status = "timeout"
+        else:
+            ai_status = "offline"
     except Exception as e:
-        logger.error(f"AI engine health check failed: {e}")
+        logger.error(f"Ollama health check failed: {e}")
+        ai_status = "offline"
 
     all_online = (db_status == "online" and bc_status == "online" and ai_status == "online")
 
@@ -365,6 +376,9 @@ def get_system_health() -> Dict[str, Any]:
         "api": "online",
         "database": db_status,
         "ai": ai_status,
+        "ollama_status": ollama_info.get("status", "UNAVAILABLE"),
+        "ollama_model": ollama_info.get("model", "qwen3:4b"),
+        "ollama_available": ollama_info.get("available", False),
         "blockchain": bc_status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

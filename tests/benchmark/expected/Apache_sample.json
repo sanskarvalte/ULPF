@@ -1,0 +1,51 @@
+{
+  "dataset": "Apache_sample",
+  "version": "1.0",
+  "events": [
+    {
+      "id": "apache_001",
+      "expected": {
+        "category_name": "Network Activity",
+        "class_name": "HTTP Activity",
+        "activity_name": "GET",
+        "status": "Success",
+        "src_ip": "192.168.1.10",
+        "status_code": "200"
+      },
+      "aliases": {
+        "category": ["Network"],
+        "activity": ["Get", "Request"]
+      }
+    },
+    {
+      "id": "apache_002",
+      "expected": {
+        "category_name": "Network Activity",
+        "class_name": "HTTP Activity",
+        "activity_name": "POST",
+        "status": "Failure",
+        "src_ip": "192.168.1.11",
+        "status_code": "401"
+      },
+      "aliases": {
+        "category": ["Network"],
+        "activity": ["Post", "Request"]
+      }
+    },
+    {
+      "id": "apache_003",
+      "expected": {
+        "category_name": "Network Activity",
+        "class_name": "HTTP Activity",
+        "activity_name": "GET",
+        "status": "Success",
+        "src_ip": "192.168.1.12",
+        "status_code": "304"
+      },
+      "aliases": {
+        "category": ["Network"],
+        "activity": ["Get", "Request"]
+      }
+    }
+  ]
+}
