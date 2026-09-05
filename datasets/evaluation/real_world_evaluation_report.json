@@ -1,6 +1,6 @@
 {
   "benchmark": "ULPF Real-World Unknown Log Evaluation",
-  "timestamp": "2026-09-05T09:28:04.689364+00:00",
+  "timestamp": "2026-09-05T15:46:02.030825+00:00",
   "total_categories_tested": 13,
   "total_test_events": 36,
   "aggregate_metrics": {
@@ -13,8 +13,8 @@
     "ocsf_classification_accuracy": 100.0,
     "unknown_field_preservation": 93.59,
     "total_ollama_calls": 0,
-    "total_processing_time_seconds": 0.2705,
-    "aggregate_events_per_second": 133.08
+    "total_processing_time_seconds": 0.1748,
+    "aggregate_events_per_second": 205.91
   },
   "category_results": [
     {
@@ -31,8 +31,8 @@
       "unknown_field_preservation": 75.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001323,
-      "events_per_second": 2267.92,
+      "processing_time_seconds": 0.001707,
+      "events_per_second": 1757.47,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -130,8 +130,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001352,
-      "events_per_second": 2219.1,
+      "processing_time_seconds": 0.000981,
+      "events_per_second": 3058.42,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -228,9 +228,9 @@
       "ocsf_classification_accuracy": 100.0,
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
-      "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.089505,
-      "events_per_second": 33.52,
+      "cache_hit_rate": 66.67,
+      "processing_time_seconds": 0.032577,
+      "events_per_second": 92.09,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -328,8 +328,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.077916,
-      "events_per_second": 38.5,
+      "processing_time_seconds": 0.048904,
+      "events_per_second": 61.34,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -427,8 +427,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001556,
-      "events_per_second": 1927.53,
+      "processing_time_seconds": 0.001449,
+      "events_per_second": 2070.82,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -526,8 +526,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.00287,
-      "events_per_second": 1045.15,
+      "processing_time_seconds": 0.000885,
+      "events_per_second": 3389.06,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -625,8 +625,8 @@
       "unknown_field_preservation": 75.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001667,
-      "events_per_second": 1800.18,
+      "processing_time_seconds": 0.002149,
+      "events_per_second": 1396.06,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -724,8 +724,8 @@
       "unknown_field_preservation": 66.67,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000894,
-      "events_per_second": 2238.14,
+      "processing_time_seconds": 0.000742,
+      "events_per_second": 2693.6,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -797,8 +797,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.04181,
-      "events_per_second": 71.75,
+      "processing_time_seconds": 0.031856,
+      "events_per_second": 94.17,
       "uncertain_events_count": 1,
       "uncertainty_notes": [
         "kv_logfmt_payment_fail: insufficient_semantic_evidence"
@@ -898,8 +898,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.047791,
-      "events_per_second": 62.77,
+      "processing_time_seconds": 0.051389,
+      "events_per_second": 58.38,
       "uncertain_events_count": 2,
       "uncertainty_notes": [
         "delim_semicolon_fail: insufficient_semantic_evidence",
@@ -1000,8 +1000,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000664,
-      "events_per_second": 3013.41,
+      "processing_time_seconds": 0.000399,
+      "events_per_second": 5010.02,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -1073,8 +1073,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001503,
-      "events_per_second": 1330.58,
+      "processing_time_seconds": 0.000958,
+      "events_per_second": 2088.55,
       "uncertain_events_count": 1,
       "uncertainty_notes": [
         "xml_inventory_entry: insufficient_semantic_evidence"
@@ -1148,8 +1148,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.001672,
-      "events_per_second": 1793.72,
+      "processing_time_seconds": 0.000835,
+      "events_per_second": 3591.09,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -1242,8 +1242,8 @@
       "parse_success_rate": 100.0,
       "event_count_accuracy": 100.0,
       "ollama_calls": 0,
-      "processing_time_seconds": 0.1356,
-      "events_per_second": 14754.65
+      "processing_time_seconds": 0.0738,
+      "events_per_second": 27086.18
     },
     {
       "dataset_name": "Mac_2k.log",
@@ -1252,8 +1252,29 @@
       "parse_success_rate": 100.0,
       "event_count_accuracy": 100.0,
       "ollama_calls": 0,
-      "processing_time_seconds": 0.2841,
-      "events_per_second": 7040.53
+      "processing_time_seconds": 0.1126,
+      "events_per_second": 17759.84
     }
+  ],
+  "generated_at": "2026-09-05T15:46:02.031143+00:00",
+  "framework_version": "ULPF-1.0.0-Phase1",
+  "ai_metrics": {
+    "known_formats_total_ollama_calls": 0,
+    "known_formats_zero_calls_verified": true,
+    "ollama_calls": 0
+  },
+  "performance_metrics": {
+    "aggregate_events_per_second": 205.91,
+    "total_processing_time_seconds": 0.1748
+  },
+  "ocsf_metrics": {
+    "ocsf_classification_accuracy": 100.0
+  },
+  "unknown_preservation": {
+    "unknown_field_preservation": 93.59
+  },
+  "failures": [],
+  "limitations": [
+    "Local Ollama latency on consumer CPU can be 30-60s on cold initial unknown format inference."
   ]
 }

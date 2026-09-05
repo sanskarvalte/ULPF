@@ -20,10 +20,11 @@ __pycache__/
 my_result.*
 converted_vbox.json
 
-# Exports
+# Exports & Uploads
 exports/*.parquet
 exports/*.json
 exports/*.csv
+data/uploads/
 
 # Operating System Files
 .DS_Store

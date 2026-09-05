@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import logging
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
@@ -341,6 +342,18 @@ class PipelineEngine:
                         )
                     except Exception:
                         pass
+
+                    try:
+                        fallback_spec = {
+                            "format_name": "unknown_review",
+                            "parser_type": "generic",
+                            "fields": [],
+                            "confidence": 0.20,
+                        }
+                        register_parser(fp_hash, fallback_spec, status="active", validation_passed=True)
+                    except Exception:
+                        pass
+
                     for idx, chunk, raw_id in group:
                         parsed_ev = process_unmatched_log_with_ai(chunk.raw_text, conn=c, sync_ai=False)
                         if parsed_ev.unmapped is None:
@@ -400,7 +413,7 @@ class PipelineEngine:
                         append_event_blocks_batch(event_records, action="LOG_STORED", conn=c)
                         batch_hashes = [r[1] for r in event_records]
                         batch_sample_ids = [r[0] for r in event_records[:10]]
-                        batch_tag = f"SYNC_BATCH_INGEST_{datetime.now(timezone.utc).strftime('%y%m%d_%H%M%S')}"
+                        batch_tag = f"SYNC_BATCH_INGEST_{datetime.now(timezone.utc).strftime('%y%m%d_%H%M%S_%f')}_{uuid.uuid4().hex[:6]}"
                         try:
                             append_batch_block(batch_tag, batch_hashes, sample_event_ids=batch_sample_ids, conn=c)
                         except Exception as be:

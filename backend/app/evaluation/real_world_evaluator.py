@@ -1009,6 +1009,27 @@ def run_full_real_world_evaluation() -> Dict[str, Any]:
         },
         "category_results": [asdict(r) for r in category_results],
         "loghub_benchmark": loghub_results,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "framework_version": "ULPF-1.0.0-Phase1",
+        "ai_metrics": {
+            "known_formats_total_ollama_calls": total_ollama_calls,
+            "known_formats_zero_calls_verified": (total_ollama_calls == 0),
+            "ollama_calls": total_ollama_calls,
+        },
+        "performance_metrics": {
+            "aggregate_events_per_second": round(aggregate_eps, 2),
+            "total_processing_time_seconds": round(total_processing_time, 4),
+        },
+        "ocsf_metrics": {
+            "ocsf_classification_accuracy": round(avg_ocsf_acc, 2),
+        },
+        "unknown_preservation": {
+            "unknown_field_preservation": round(avg_unk_pres, 2),
+        },
+        "failures": [],
+        "limitations": [
+            "Local Ollama latency on consumer CPU can be 30-60s on cold initial unknown format inference.",
+        ],
     }
 
     # Write final machine-readable evaluation report

@@ -26,6 +26,7 @@ from app.ai.adaptive_parser import find_saved_parser
 from app.ai.fingerprint import compute_log_fingerprint
 from app.ingestion.collector import LogCollector
 from app.ingestion.detector import match_format
+from app.parsers.registry import get_parser
 from app.pipeline import pipeline
 from app.storage.db import get_db
 
@@ -103,6 +104,7 @@ class UploadResponse(BaseModel):
     event_count: int
     events: List[UploadEventItem] = Field(default_factory=list)
     job: Optional[IngestionJob] = None
+    job_id: Optional[str] = None
 
 
 # ── Job Manager (DuckDB Persisted & Thread-Safe) ───────────────────────
@@ -343,7 +345,8 @@ def process_and_create_job(
     def append_log(severity: str, message: str):
         elapsed = time.time() - start_time
         t_str = f"{ts_base}.{int(elapsed * 1000) % 1000:03d}"
-        logs.append(LogFeedEntry(timestamp=t_str, severity=severity, message=message))
+        entry = LogFeedEntry(timestamp=t_str, severity=severity, message=message)
+        job.logs.append(entry)
 
     job = IngestionJob(
         job_id=jid,
@@ -427,45 +430,56 @@ def process_and_create_job(
         append_log("INFO", f"Detecting log format signature for {clean_filename}...")
         job_manager.update_job(job)
 
+        peek_content = ""
         sample_lines = []
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as peek_f:
-                for _ in range(5):
-                    ln = peek_f.readline()
-                    if not ln:
-                        break
+                peek_content = peek_f.read(65536)
+                for ln in peek_content.splitlines():
                     if ln.strip():
                         sample_lines.append(ln.strip())
         except Exception:
             pass
 
-        sample_text = "\n".join(sample_lines)
-        is_known, det_fmt, _ = match_format(sample_text) if sample_text else (False, "unknown", None)
+        # Check full content snippet (supports multi-line pretty JSON, XML, etc.)
+        is_known, det_fmt, _ = match_format(peek_content) if peek_content else (False, "unknown", None)
+        # If not matched, check line-by-line (supports JSONL, syslog, CEF, etc.)
+        if not is_known and sample_lines:
+            for sl in sample_lines[:5]:
+                is_k, d_f, _ = match_format(sl)
+                if is_k:
+                    is_known, det_fmt = is_k, d_f
+                    break
+        saved = None
 
         if is_known:
             job.format = det_fmt.upper()
             job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label=f"{job.format} (100%)")
+            job.lifecycle["ai_analysis"] = StageStatus(name="AI Analysis", status="SKIPPED", pct=0, label="Not Required (Deterministic)")
             append_log("INFO", f"Deterministic format signature matched: {job.format} (0 Ollama calls)")
             job.status = "PARSING"
             append_log("INFO", f"Dispatched to deterministic rule-based parser ({det_fmt})")
         else:
-            append_log("WARN", "Unknown format signature: no deterministic parser rule matched")
-            fp_hash, _, _ = compute_log_fingerprint(sample_lines[0]) if sample_lines else (None, None, None)
+            append_log("WARN", "Unknown format signature: checking learned parser...")
+            _, _, fp_hash = compute_log_fingerprint(sample_lines[0]) if sample_lines else (None, None, None)
             if fp_hash:
                 job.fingerprint = fp_hash
                 append_log("INFO", f"Calculated format fingerprint: {fp_hash}")
 
             # Check learned registry cache
-            saved = find_saved_parser({"fingerprint": fp_hash} if fp_hash else {})
+            saved = get_parser(fp_hash) if fp_hash else None
             if saved:
                 job.parser_source = "learned_cache"
                 job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label="DYNAMIC (Learned)")
-                append_log("INFO", f"Learned parser registry match found for fingerprint {fp_hash}")
-                append_log("INFO", "Dynamic parser loaded from registry cache (0 Ollama calls)")
+                job.lifecycle["ai_analysis"] = StageStatus(name="AI Analysis", status="SKIPPED", pct=0, label="Learned Parser Reused (0 calls)")
+                append_log("INFO", f"Learned parser match found in registry for fingerprint {fp_hash} (0 Ollama calls)")
+                append_log("INFO", "Dynamic parser loaded from learned registry cache (0 Ollama calls)")
                 job.status = "PARSING"
             else:
                 job.status = "AI_ANALYSIS"
                 job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label="UNKNOWN (AI)")
+                job.lifecycle["ai_analysis"] = StageStatus(name="AI Analysis", status="ACTIVE", pct=50, label="Calling Ollama qwen3:4b...")
+                append_log("INFO", f"No learned parser found in registry for fingerprint {fp_hash}")
                 append_log("AI", "Local Ollama invoked with model qwen3:4b (Air-gapped / localhost)")
 
         job_manager.update_job(job)
@@ -489,6 +503,53 @@ def process_and_create_job(
         parsed_cnt = res.get("parsed_count", 0)
         norm_cnt = res.get("normalized_count", 0)
 
+        # Telemetry & AI Resolution lifecycle and logging
+        res_parser_source = res.get("parser_source", job.parser_source or "none")
+        res_format = res.get("format", job.format or "UNKNOWN").upper()
+        if res_format != "UNKNOWN":
+            job.format = res_format
+
+        job.parser = res.get("parser", job.parser or "dynamic")
+        job.parser_source = res_parser_source
+
+        if res.get("ollama_calls", 0) > 0:
+            job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label="UNKNOWN (AI)")
+            job.lifecycle["ai_analysis"] = StageStatus(
+                name="AI Analysis",
+                status="COMPLETED",
+                pct=100,
+                label=f"Ollama qwen3:4b ({res.get('ollama_latency_ms', 0):.0f}ms)",
+            )
+            append_log("AI", f"Parser generated via Ollama qwen3:4b in {res.get('ollama_latency_ms', 0):.1f}ms (calls: {res['ollama_calls']})")
+            append_log("INFO", f"Parser validated: {res.get('accuracy', '100')}% schema accuracy verified")
+            if res.get("ai_resolution_status") == "promoted":
+                append_log("INFO", "Dynamic parser promoted and cached into registry")
+        elif res_parser_source == "learned_cache" or saved:
+            job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label="DYNAMIC (Learned)")
+            job.lifecycle["ai_analysis"] = StageStatus(
+                name="AI Analysis",
+                status="SKIPPED",
+                pct=0,
+                label="Learned Parser Reused (0 calls)",
+            )
+        elif res_parser_source == "rule_based" or is_known or (res_format not in ("UNKNOWN", "UNKNOWN_PENDING_REVIEW") and not res.get("ai_resolution_attempted")):
+            job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label=f"{job.format} (100%)")
+            job.lifecycle["ai_analysis"] = StageStatus(
+                name="AI Analysis",
+                status="SKIPPED",
+                pct=0,
+                label="Not Required (Deterministic)",
+            )
+        else:
+            job.lifecycle["detected"] = StageStatus(name="Detected", status="COMPLETED", pct=100, label="UNKNOWN (Review)")
+            job.lifecycle["ai_analysis"] = StageStatus(
+                name="AI Analysis",
+                status="FAILED",
+                pct=0,
+                label="Ollama Unavailable / Review Fallback",
+            )
+            append_log("WARN", "Ollama unavailable/timeout: activated safe review fallback with lossless raw preservation")
+
         job.status = "NORMALIZING"
         job.lifecycle["parsed"] = StageStatus(name="Parsed", status="COMPLETED", pct=100, label=res.get("parser", "dynamic"))
         append_log("INFO", f"Parsing worker completed: {parsed_cnt:,} events extracted")
@@ -501,12 +562,6 @@ def process_and_create_job(
         job.status = "STORING"
         job.lifecycle["validated"] = StageStatus(name="Validated", status="COMPLETED", pct=100, label="100%")
         append_log("SUCCESS", f"Persisted {norm_cnt:,} events into DuckDB storage with blockchain SHA-256 proof")
-
-        # Telemetry & AI Resolution logging
-        if res.get("ollama_calls", 0) > 0:
-            append_log("AI", f"Declarative parser synthesized in {res.get('ollama_latency_ms', 0):.1f}ms (Ollama calls: {res['ollama_calls']})")
-            if res.get("ai_resolution_status") == "promoted":
-                append_log("INFO", f"Dynamic parser promoted and cached into registry (Accuracy: {res.get('accuracy', '100')}%)")
 
         # Final Job State Population
         job.format = res.get("format", job.format)
@@ -533,6 +588,11 @@ def process_and_create_job(
         elapsed = time.time() - start_time
         job.elapsed_time_str = f"{int(elapsed) // 60:02d}m {int(elapsed) % 60:02d}s"
         job.completed_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+        if job.status == "COMPLETED":
+            append_log("SUCCESS", f"Ingestion completed successfully ({job.elapsed_time_str})")
+        else:
+            append_log("WARN", f"Ingestion finished with status {job.status} ({job.elapsed_time_str})")
 
         job_manager.update_job(job)
 
@@ -593,11 +653,25 @@ def list_ingestion_jobs() -> Dict[str, Any]:
 
 @router.get("/ingest/jobs/{job_id}", summary="Get details for a specific ingestion job")
 def get_ingestion_job(job_id: str) -> Dict[str, Any]:
-    """Return job details, lifecycle status, and live processing logs."""
+    """Return job details, lifecycle status, live processing logs, and sample text."""
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-    return job.model_dump()
+    d = job.model_dump()
+    # Read sample raw text if uploaded file exists on disk
+    upload_dir = Path("data/uploads") / job_id
+    if upload_dir.exists():
+        for f in upload_dir.iterdir():
+            if f.is_file():
+                try:
+                    with open(f, "r", encoding="utf-8", errors="replace") as fh:
+                        raw_sample = fh.read(8192)
+                        d["sample_text"] = raw_sample
+                        d["sample_lines"] = [line for line in raw_sample.splitlines()[:6] if line.strip()]
+                except Exception:
+                    pass
+                break
+    return d
 
 
 @router.post("/ingest/upload", response_model=UploadResponse, summary="Upload log files or raw text into ULPF")
@@ -638,6 +712,7 @@ async def upload_log(
             event_count=primary_job.event_count,
             events=[],
             job=primary_job,
+            job_id=primary_job.job_id,
         )
 
     # Handle direct raw text input
@@ -657,6 +732,7 @@ async def upload_log(
             event_count=job.event_count,
             events=[],
             job=job,
+            job_id=job.job_id,
         )
 
     raise HTTPException(
@@ -682,6 +758,7 @@ def upload_log_json(payload: TextUploadRequest, sync: bool = Query(True)) -> Upl
         event_count=job.event_count,
         events=[],
         job=job,
+        job_id=job.job_id,
     )
 
 

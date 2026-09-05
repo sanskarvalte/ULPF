@@ -138,25 +138,32 @@ def discover_fields_from_log(raw_text: str) -> List[Dict[str, Any]]:
             "confidence": 0.99,
         }
 
-    # 2. Syslog Timestamp: Oct 27 08:14:22
-    ts_match = re.search(r"\b(?P<ts>(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\b", first_line)
-    if ts_match:
+    # 2. Timestamps: BIND, Syslog, Apache, ISO
+    bind_ts_match = re.search(r"\b(?P<ts>\d{1,2}-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\b", first_line)
+    syslog_ts_match = re.search(r"\b(?P<ts>(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\b", first_line)
+    iso_match = re.search(r"\b(?P<ts>\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)\b", first_line)
+
+    if bind_ts_match:
         discovered["timestamp"] = {
             "name": "timestamp",
-            "sample_value": ts_match.group("ts"),
+            "sample_value": bind_ts_match.group("ts"),
             "type": TYPE_DATETIME,
             "confidence": 0.99,
         }
-    else:
-        # ISO timestamp check
-        iso_match = re.search(r"\b(?P<ts>\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)\b", first_line)
-        if iso_match:
-            discovered["timestamp"] = {
-                "name": "timestamp",
-                "sample_value": iso_match.group("ts"),
-                "type": TYPE_DATETIME,
-                "confidence": 0.99,
-            }
+    elif syslog_ts_match:
+        discovered["timestamp"] = {
+            "name": "timestamp",
+            "sample_value": syslog_ts_match.group("ts"),
+            "type": TYPE_DATETIME,
+            "confidence": 0.99,
+        }
+    elif iso_match:
+        discovered["timestamp"] = {
+            "name": "timestamp",
+            "sample_value": iso_match.group("ts"),
+            "type": TYPE_DATETIME,
+            "confidence": 0.99,
+        }
 
     # 3. Hostname after timestamp
     host_match = re.search(r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<host>[a-zA-Z0-9_\-\.]+)\b", first_line)
@@ -184,9 +191,23 @@ def discover_fields_from_log(raw_text: str) -> List[Dict[str, Any]]:
             "confidence": 0.88,
         }
 
-    # 5. IP:Port or IP/Port pairs: 192.168.1.100/54321->10.0.0.5/443
+    # 5. IP:Port or IP/Port or client IP#Port pairs
+    bind_client = re.search(r"\bclient\s+(?P<src_ip>(?:\d{1,3}\.){3}\d{1,3})#(?P<src_port>\d{1,5})\b", first_line)
     flow_match = re.search(r"(?P<src_ip>(?:\d{1,3}\.){3}\d{1,3})[/:(?P<src_port>\d{1,5})]?\s*(?:->|-&gt;)\s*(?P<dst_ip>(?:\d{1,3}\.){3}\d{1,3})[/:(?P<dst_port>\d{1,5})]?", first_line)
-    if flow_match:
+    if bind_client:
+        discovered["src_ip"] = {
+            "name": "src_ip",
+            "sample_value": bind_client.group("src_ip"),
+            "type": TYPE_IPV4,
+            "confidence": 0.99,
+        }
+        discovered["src_port"] = {
+            "name": "src_port",
+            "sample_value": bind_client.group("src_port"),
+            "type": TYPE_PORT,
+            "confidence": 0.99,
+        }
+    elif flow_match:
         discovered["src_ip"] = {
             "name": "src_ip",
             "sample_value": flow_match.group("src_ip"),
@@ -231,25 +252,136 @@ def discover_fields_from_log(raw_text: str) -> List[Dict[str, Any]]:
                 "confidence": 0.99,
             }
 
-    # 6. Delimited key-value extraction: key=val or key:val or key="val"
+    # 6. Service / Subsystem before client or query
+    svc_match = re.search(r"\b(?P<svc>[a-zA-Z0-9_\-]+):\s+client\b", first_line)
+    if svc_match and "service" not in discovered:
+        discovered["service"] = {
+            "name": "service",
+            "sample_value": svc_match.group("svc"),
+            "type": TYPE_STRING,
+            "confidence": 0.95,
+        }
+
+    # 7. Query Domain or Quoted Resource
+    query_match = re.search(r"'(?P<query>[^']+)'", first_line)
+    if query_match and "query" not in discovered:
+        discovered["query"] = {
+            "name": "query",
+            "sample_value": query_match.group("query"),
+            "type": TYPE_STRING,
+            "confidence": 0.96,
+        }
+
+    # 8. Action or Disposition Tokens
+    act_match = re.search(r"\b(?P<act>denied|allowed|permitted|dropped|rejected|success|failed|normal|warning|shutdown)\b", first_line, re.IGNORECASE)
+    if act_match and "action" not in discovered:
+        discovered["action"] = {
+            "name": "action",
+            "sample_value": act_match.group("act"),
+            "type": TYPE_CATEGORICAL,
+            "confidence": 0.95,
+        }
+
+    # 8.5 ZooKeeper / Cluster Node, Severity, and Thread extraction
+    zk_node = re.search(r"\[(?P<node>myid:\d+)\]", first_line)
+    if zk_node and "node_id" not in discovered:
+        discovered["node_id"] = {
+            "name": "node_id",
+            "sample_value": zk_node.group("node"),
+            "type": TYPE_STRING,
+            "confidence": 0.98,
+        }
+
+    zk_level = re.search(r"\b(?P<lvl>INFO|WARN|WARNING|ERROR|FATAL|DEBUG|TRACE)\b", first_line)
+    if zk_level and "level" not in discovered:
+        discovered["level"] = {
+            "name": "level",
+            "sample_value": zk_level.group("lvl"),
+            "type": TYPE_CATEGORICAL,
+            "confidence": 0.99,
+        }
+
+    zk_thrd = re.search(r"-\s+(?:[A-Z]+\s+)?\[(?P<thrd>.+?)\]\s+-", first_line)
+    if zk_thrd and "thread" not in discovered:
+        discovered["thread"] = {
+            "name": "thread",
+            "sample_value": zk_thrd.group("thrd"),
+            "type": TYPE_STRING,
+            "confidence": 0.95,
+        }
+
+    # 8.8 Apache Web Access Log extraction (Common/Combined Log Format)
+    apache_clf = re.match(
+        r'^(?P<client_ip>\S+)\s+(?P<ident>\S+)\s+(?P<auth_user>\S+)\s+\[(?P<ts>[^\]]+)\]\s+"(?P<method>[A-Z]+)\s+(?P<uri>\S+)(?:\s+(?P<proto>[^"]+))?"\s+(?P<status>\d{3})\s+(?P<bytes>\S+)(?:\s+"(?P<ref>[^"]*)"\s+"(?P<agent>[^"]*)")?',
+        first_line
+    )
+    if apache_clf:
+        discovered["client_ip"] = {
+            "name": "client_ip",
+            "sample_value": apache_clf.group("client_ip"),
+            "type": TYPE_IPV4,
+            "confidence": 0.99,
+        }
+        discovered["timestamp"] = {
+            "name": "timestamp",
+            "sample_value": apache_clf.group("ts"),
+            "type": TYPE_DATETIME,
+            "confidence": 0.99,
+        }
+        discovered["http_method"] = {
+            "name": "http_method",
+            "sample_value": apache_clf.group("method"),
+            "type": TYPE_CATEGORICAL,
+            "confidence": 0.99,
+        }
+        discovered["request_uri"] = {
+            "name": "request_uri",
+            "sample_value": apache_clf.group("uri"),
+            "type": TYPE_STRING,
+            "confidence": 0.99,
+        }
+        discovered["status_code"] = {
+            "name": "status_code",
+            "sample_value": apache_clf.group("status"),
+            "type": TYPE_INTEGER,
+            "confidence": 0.99,
+        }
+        bytes_val = apache_clf.group("bytes")
+        discovered["response_bytes"] = {
+            "name": "response_bytes",
+            "sample_value": bytes_val,
+            "type": TYPE_INTEGER if bytes_val and bytes_val.isdigit() else TYPE_STRING,
+            "confidence": 0.95,
+        }
+        agent_val = apache_clf.group("agent")
+        if agent_val:
+            discovered["user_agent"] = {
+                "name": "user_agent",
+                "sample_value": agent_val,
+                "type": TYPE_STRING,
+                "confidence": 0.95,
+            }
+
+    # 9. Delimited key-value extraction: key=val or key:val or key="val"
     kv_pattern = re.compile(r"""\b(?P<k>[a-zA-Z_][a-zA-Z0-9_\-\.]*)[=:](?P<v>"[^"]*"|'[^']*'|[^\s,;]+)""")
     for m in kv_pattern.finditer(first_line):
         k = m.group("k").strip()
         v = m.group("v").strip().strip("\"'")
         if not v or v.lower() in ("null", "none", "n/a", "-"):
             continue
-        if k in ("syslog_pri", "ts", "timestamp", "Oct", "Nov", "Dec", "RT_FLOW", "RT_IDS"):
+        if k in ("syslog_pri", "ts", "timestamp", "Oct", "Nov", "Dec", "RT_FLOW", "RT_IDS", "client"):
             continue
 
         inferred_type, conf = infer_field_type(k, v)
-        discovered[k] = {
-            "name": k,
-            "sample_value": v,
-            "type": inferred_type,
-            "confidence": conf,
-        }
+        if k not in discovered:
+            discovered[k] = {
+                "name": k,
+                "sample_value": v,
+                "type": inferred_type,
+                "confidence": conf,
+            }
 
-    # 7. Protocol and Interface tokens (e.g. junos-https, ge-0/0/1.0, tcp, udp)
+    # 10. Protocol and Interface tokens (e.g. junos-https, ge-0/0/1.0, tcp, udp)
     proto_match = re.search(r"\b(tcp|udp|icmp|junos-[a-z0-9\-]+)\b", first_line, re.IGNORECASE)
     if proto_match and "protocol" not in discovered:
         discovered["protocol"] = {
@@ -268,7 +400,7 @@ def discover_fields_from_log(raw_text: str) -> List[Dict[str, Any]]:
             "confidence": 0.93,
         }
 
-    # 8. User extraction
+    # 11. User extraction
     user_match = re.search(r"\b(?:user|usr|username|account)[=:\s]+(?P<u>[a-zA-Z0-9_\-\.]+)\b", first_line, re.IGNORECASE)
     if user_match and "user" not in discovered:
         discovered["user"] = {
@@ -279,7 +411,7 @@ def discover_fields_from_log(raw_text: str) -> List[Dict[str, Any]]:
         }
 
     # Return fields sorted with high priority/standard attributes first
-    priority_keys = ["timestamp", "hostname", "module", "event_type", "src_ip", "src_port", "dst_ip", "dst_port", "protocol", "action", "user", "severity", "message"]
+    priority_keys = ["timestamp", "service", "hostname", "module", "event_type", "src_ip", "src_port", "dst_ip", "dst_port", "protocol", "action", "query", "user", "severity", "message"]
     ordered_fields = []
     for pk in priority_keys:
         if pk in discovered:
@@ -304,6 +436,31 @@ def infer_template_from_log(raw_text: str, fields: List[Dict[str, Any]]) -> Tupl
         first_line = raw_text.strip()
 
     # Check known vendor/format archetypes
+    if "[myid:" in first_line or "QuorumPeer" in first_line or "NIOServerCnxn" in first_line or "SyncThread" in first_line or "zookeeper" in first_line.lower():
+        format_name = "zookeeper-cluster-log"
+        grok = "%{TIMESTAMP_ISO8601:timestamp} \\[%{NOTSPACE:node_id}\\] - %{LOGLEVEL:level}\\s+\\[%{DATA:thread}\\] - %{GREEDYDATA:message}"
+        regex = r"^(?P<timestamp>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s+\[(?P<node_id>[^\]]+)\]\s+-\s+(?P<level>[A-Z]+)\s+\[(?P<thread>.+?)\]\s+-\s+(?P<message>.*)$"
+        return format_name, grok, regex
+
+    if ("security: client" in first_line or "queries: client" in first_line or "client" in first_line) and ("query" in first_line or "denied" in first_line):
+        format_name = "bind-dns-query"
+        grok = "%{MONTHDAY}-%{MONTH}-%{YEAR} %{TIME:timestamp} %{WORD:service}: client %{IPV4:src_ip}#%{POSINT:src_port}: %{GREEDYDATA:message_body}"
+        regex = r"^(?P<timestamp>\d{1,2}-[A-Za-z]{3}-\d{4}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+(?P<service>\w+):\s+client\s+(?P<src_ip>\d{1,3}(?:\.\d{1,3}){3})#(?P<src_port>\d+)(?::\s+|\s+)(?P<message_body>.*)$"
+        return format_name, grok, regex
+
+    if "turbine=" in first_line or "vibration=" in first_line or "rpm=" in first_line:
+        format_name = "turbine-sensor-telemetry"
+        grok = "%{TIMESTAMP_ISO8601:timestamp} %{GREEDYDATA:kv_pairs}"
+        regex = r"^(?P<timestamp>\S+)\s+(?P<kv_pairs>.*)$"
+        return format_name, grok, regex
+
+    apache_clf_check = re.match(r'^(?P<client_ip>\S+)\s+(?P<ident>\S+)\s+(?P<auth_user>\S+)\s+\[(?P<ts>[^\]]+)\]\s+"(?P<method>[A-Z]+)\s+(?P<uri>\S+)', first_line)
+    if apache_clf_check or ('"' in first_line and re.search(r'\b(?:GET|POST|PUT|DELETE|HEAD|OPTIONS)\s+\/\S*\s+HTTP\/', first_line)):
+        format_name = "apache-combined-access"
+        grok = '%{IPORHOST:client_ip} %{USER:ident} %{USER:auth_user} \\[%{HTTPDATE:timestamp}\\] "%{WORD:http_method} %{NOTSPACE:request_uri}(?: HTTP/%{NUMBER:http_version})?" %{NUMBER:status_code} %{NUMBER:response_bytes}(?: "%{NOTSPACE:referrer}" "%{GREEDYDATA:user_agent}")?'
+        regex = r'^(?P<client_ip>\S+)\s+(?P<ident>\S+)\s+(?P<auth_user>\S+)\s+\[(?P<timestamp>[^\]]+)\]\s+"(?P<http_method>[A-Z]+)\s+(?P<request_uri>\S+)(?:\s+HTTP/(?P<http_version>[0-9\.]+))?"\s+(?P<status_code>\d{3})\s+(?P<response_bytes>\S+)(?:\s+"(?P<referrer>[^"]*)"\s+"(?P<user_agent>[^"]*)")?$'
+        return format_name, grok, regex
+
     if "<" in first_line and "RT_FLOW" in first_line:
         format_name = "juniper-srx-syslog"
         grok = "<%{INT:syslog_pri}>%{SYSLOGTIMESTAMP:timestamp} %{HOSTNAME:hostname} %{WORD:module}: %{WORD:event_type}: %{GREEDYDATA:message_body}"

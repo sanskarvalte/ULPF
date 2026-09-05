@@ -95,6 +95,7 @@ app.add_middleware(
 app.include_router(dashboard_router)
 app.include_router(ingest_router)
 app.include_router(ingest_router, prefix="/api")
+app.include_router(ingest_router, prefix="/api/v1")
 app.include_router(blockchain_router)
 app.include_router(review_router)
 app.include_router(sources_router)

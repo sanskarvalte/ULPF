@@ -156,16 +156,21 @@ def record_ai_resolution(
         "fingerprint": str(fingerprint),
         "source": str(source or "unknown_log"),
         "format": str(format_name or "learned_custom"),
+        "format_name": str(format_name or "learned_custom"),
         "parser_type": str(parser_type),
         "ai_used": bool(ai_used),
         "model": str(active_model),
+        "reviewer": str(active_model) if ai_used else "learned_cache",
         "ollama_calls": int(ollama_calls),
         "latency_ms": round(float(latency_ms), 2),
         "resolution_status": str(resolution_status),
+        "action": str(resolution_status),
+        "reason": f"Resolution {resolution_status} via {parser_type}",
         "accuracy": round(float(accuracy), 1) if accuracy is not None else None,
         "confidence": round(float(confidence), 2) if confidence is not None else None,
         "promoted_status": str(promoted_status or ("promoted" if resolution_status == "promoted" else "pending_review")),
         "timestamp": ts_str,
+        "created_at": ts_str,
     }
 
     with _RESOLUTIONS_LOCK:
@@ -250,16 +255,21 @@ def get_recent_ai_resolutions(limit: int = 20) -> List[Dict[str, Any]]:
                 "fingerprint": fp,
                 "source": cfg_data.get("source") or r[2] or "persisted_log",
                 "format": r[3] or "custom_format",
+                "format_name": r[3] or "custom_format",
                 "parser_type": cfg_data.get("parser_type") or ("ai_generated_dynamic" if r[5] == "promoted" else "review_fallback"),
                 "ai_used": cfg_data.get("ai_used", r[6] != "learned_cache"),
                 "model": cfg_data.get("model") or r[6] or "qwen3:4b",
+                "reviewer": r[6] or "qwen3:4b",
                 "ollama_calls": cfg_data.get("ollama_calls", 1 if r[5] == "promoted" else 0),
                 "latency_ms": cfg_data.get("latency_ms", 0.0),
                 "resolution_status": r[5] or "unknown",
+                "action": r[5] or "unknown",
+                "reason": r[7] or f"Resolution {r[5]}",
                 "accuracy": cfg_data.get("accuracy"),
                 "confidence": r[4],
                 "promoted_status": "promoted" if r[5] == "promoted" else "pending_review",
                 "timestamp": created_ts,
+                "created_at": created_ts,
             })
     except Exception as exc:
         logger.debug(f"Could not load ai_history: {exc}")

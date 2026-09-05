@@ -499,6 +499,9 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 bg-[#0284c7]/20 hover:bg-[#0284c7]/30 text-[#38bdf8] border border-[#0284c7]/40 rounded font-code-xs text-code-xs transition-colors flex items-center gap-1.5 cursor-pointer font-bold" onclick="app.closeModal(); app.analyzeEventInAiWorkbench(app.currentModalEvent)" title="Send this event payload into AI Workbench for structural discovery and Grok/Regex parsing">
+                  <span class="material-symbols-outlined text-[15px]">auto_fix_high</span> AI Workbench
+                </button>
                 <button class="px-3 py-1.5 bg-secondary-container hover:bg-surface-container-highest text-primary rounded font-code-xs text-code-xs border border-primary/30 transition-colors flex items-center gap-1.5 cursor-pointer" onclick="app.closeModal(); app.investigateEvent(app.currentModalEvent ? app.currentModalEvent.event_id : null)">
                   <span class="material-symbols-outlined text-[15px]">policy</span> Full Investigation
                 </button>
@@ -564,6 +567,7 @@
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-[18px] text-primary">security</span>
                   <span class="font-label-caps text-label-caps text-on-surface font-semibold">BLOCKCHAIN INTEGRITY PROOF</span>
+                  <span id="modal-integrity-badge"></span>
                 </div>
                 <div class="flex items-center gap-2">
                   <button class="px-2.5 py-1 bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 rounded font-code-xs text-code-xs transition-colors cursor-pointer flex items-center gap-1" onclick="app.verifyCurrentModalEventHash()">
@@ -960,7 +964,7 @@
                     <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
                       <div class="text-[10px] uppercase font-mono text-on-surface-variant font-semibold">Validation Rate</div>
                       <div class="mt-1 font-mono text-[11px] text-on-surface font-semibold">
-                        ${selectedJob.validation_rate != null ? (selectedJob.validation_rate * 100).toFixed(1) + '%' : '--'}
+                        ${selectedJob.validation_rate != null ? (selectedJob.validation_rate <= 1.0 ? selectedJob.validation_rate * 100 : selectedJob.validation_rate).toFixed(1) + '%' : '--'}
                       </div>
                     </div>
                     <div class="bg-surface-container-high/60 rounded p-2.5 border border-outline-variant/40">
@@ -968,6 +972,28 @@
                       <div class="mt-1 font-mono text-[11px] text-[#4ade80] flex items-center gap-1 font-medium">
                         <span class="material-symbols-outlined text-[13px]">verified</span> DuckDB + Block
                       </div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-6 mt-3 pt-3 border-t border-outline-variant/60 flex flex-wrap items-center justify-between gap-3 bg-surface-container-high/40 rounded p-3">
+                      <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-primary text-xl">psychology</span>
+                        <div>
+                          <div class="text-xs font-bold text-on-surface flex items-center gap-2">
+                            <span>AI Intelligence Workbench Bridge</span>
+                            <span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono font-bold">ACTIVE</span>
+                          </div>
+                          <div class="text-[11px] text-on-surface-variant">
+                            Inspect learned pattern rules, field extractions, and structure templates for this job's log format (${escapeHtml(selectedJob.format || 'unknown')}).
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        onclick="event.stopPropagation(); app.openInAiWorkbench('${selectedJob.job_id}')" 
+                        class="px-3.5 py-1.5 bg-primary hover:bg-primary/90 text-on-primary font-label-caps text-label-caps rounded font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer text-xs"
+                      >
+                        <span class="material-symbols-outlined text-sm">auto_fix_high</span>
+                        <span>Inspect in AI Workbench</span>
+                        <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                      </button>
                     </div>
                   </div>
                 ` : ''}
@@ -999,13 +1025,14 @@
                         <th class="py-2.5 px-4 font-semibold text-center">AI Used</th>
                         <th class="py-2.5 px-4 font-semibold text-right">Events</th>
                         <th class="py-2.5 px-4 font-semibold text-center">Status</th>
+                        <th class="py-2.5 px-3 font-semibold text-center">AI Workbench</th>
                         <th class="py-2.5 px-4 font-semibold text-right">Time</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant/40 font-code-xs">
                       ${jobs.length === 0 ? `
                         <tr>
-                          <td colspan="7" class="py-8 text-center text-on-surface-variant opacity-70">
+                          <td colspan="8" class="py-8 text-center text-on-surface-variant opacity-70">
                             No recent ingestion jobs found. Drop a log file above to start ingesting.
                           </td>
                         </tr>
@@ -1063,6 +1090,15 @@
                                   </span>
                                 `
                               }
+                            </td>
+                            <td class="py-2.5 px-3 text-center" onclick="event.stopPropagation()">
+                              <button 
+                                onclick="app.openInAiWorkbench('${j.job_id}')" 
+                                class="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded text-[11px] font-bold font-mono transition-colors inline-flex items-center gap-1 cursor-pointer" 
+                                title="Open this format in AI Intelligence Workbench"
+                              >
+                                <span class="material-symbols-outlined text-[13px]">psychology</span> AI Inspect
+                              </button>
                             </td>
                             <td class="py-3 px-4 text-right text-on-surface-variant font-mono">${escapeHtml(j.elapsed_time_str || '--')}</td>
                           </tr>
@@ -2806,6 +2842,14 @@
               </div>
             </div>
             <div class="flex items-center gap-2.5">
+              <button onclick="app.navigate('ingestion')" class="px-2.5 py-1.5 text-xs text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2433] rounded border border-[#2e374d] transition-colors flex items-center gap-1.5 font-medium cursor-pointer" title="Go to Log Ingestion">
+                <span class="material-symbols-outlined text-[15px]">arrow_back</span>
+                Log Ingestion
+              </button>
+              <button onclick="app.navigate('explorer')" class="px-2.5 py-1.5 text-xs text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2433] rounded border border-[#2e374d] transition-colors flex items-center gap-1.5 font-medium cursor-pointer" title="Explore raw & normalized events">
+                <span class="material-symbols-outlined text-[15px]">travel_explore</span>
+                Log Explorer
+              </button>
               <button onclick="app.openAiModal('upload-sample')" class="px-3.5 py-1.5 text-xs font-label uppercase tracking-wider bg-[#1e2433] hover:bg-[#283145] text-[#cbd5e1] transition-colors rounded border border-[#333d54] flex items-center gap-1.5 font-medium cursor-pointer">
                 <span class="material-symbols-outlined text-[15px]">upload_file</span>
                 Upload Sample
@@ -2877,10 +2921,10 @@
               </div>
               <div class="flex items-center gap-2">
                 <!-- Log Selector Dropdown -->
-                <select onchange="app.selectUnknownLog(this.value)" class="bg-[#1b202e] border border-[#2e374d] text-xs text-[#cbd5e1] rounded px-2.5 py-1 focus:outline-none focus:border-primary cursor-pointer">
+                <select onchange="app.selectUnknownLog(this.value)" class="bg-[#1b202e] border border-[#2e374d] text-xs text-[#cbd5e1] rounded px-2.5 py-1 focus:outline-none focus:border-primary cursor-pointer font-medium max-w-[280px]">
                   ${unknownLogs.map(l => `
                     <option value="${l.id}" ${selectedLog && selectedLog.id === l.id ? 'selected' : ''}>
-                      ${l.format_guess || l.source} (${l.sibling_count || 1}x)
+                      ${escapeHtml(l.format_guess || l.source)} (${Number(l.sibling_count || 1).toLocaleString()}x)
                     </option>
                   `).join('')}
                 </select>
@@ -2908,10 +2952,17 @@
               </div>
             </div>
 
-            <!-- Left Panel Footer: Metadata -->
+            <!-- Left Panel Footer: Metadata & Deep Links -->
             <div class="flex-none px-4 py-2 bg-[#121620] border-t border-[#232734] flex items-center justify-between text-[11px] text-[#64748b]">
-              <span>Source: <strong class="text-[#94a3b8] font-mono">${(selectedLog && selectedLog.source) || 'unknown-syslog'}</strong></span>
-              <span>Status: <span class="text-[#38bdf8] font-semibold uppercase">${(selectedLog && selectedLog.status) || 'PENDING_REVIEW'}</span></span>
+              <div class="flex items-center gap-3">
+                <span>Source: <strong class="text-[#94a3b8] font-mono">${(selectedLog && selectedLog.source) || 'unknown-syslog'}</strong></span>
+                <span>Status: <span class="text-[#38bdf8] font-semibold uppercase">${(selectedLog && selectedLog.status) || 'PENDING_REVIEW'}</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="app.viewInLogExplorer((selectedLog && selectedLog.source) || '')" class="text-primary hover:text-primary-container flex items-center gap-1 font-medium transition-colors cursor-pointer text-[11px]" title="Search this source in Log Explorer">
+                  <span class="material-symbols-outlined text-[13px]">search</span> View in Explorer &rarr;
+                </button>
+              </div>
             </div>
           </section>
 
@@ -3348,20 +3399,29 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
                 </tr>
               </thead>
               <tbody class="divide-y divide-[#1e2433] font-mono text-[11px]">
-                ${historyItems.map(h => `
+                ${historyItems.map(h => {
+                  const ts = h.created_at || h.timestamp;
+                  const fmt = h.format_name || h.format || 'unknown';
+                  const act = h.action || h.resolution_status || 'recorded';
+                  const rev = h.reviewer || h.model || 'analyst';
+                  const conf = h.confidence != null ? h.confidence : (h.accuracy != null ? h.accuracy / 100 : 0.95);
+                  const rsn = h.reason || (h.ollama_calls ? `Ollama (${h.model || 'qwen3:4b'}) generated parser (${h.latency_ms || 0}ms)` : 'Learned parser reused');
+                  const isApproved = act === 'approved' || act === 'promoted';
+                  const isCached = act === 'cached';
+                  return `
                   <tr class="hover:bg-[#181d2a]/50 transition-colors">
-                    <td class="p-3 text-[#64748b]">${h.created_at ? h.created_at.slice(0, 19).replace('T', ' ') : '—'}</td>
-                    <td class="p-3 font-bold text-[#f1f5f9]">${h.format_name}</td>
+                    <td class="p-3 text-[#64748b]">${ts ? ts.slice(0, 19).replace('T', ' ') : '—'}</td>
+                    <td class="p-3 font-bold text-[#f1f5f9]">${escapeHtml(fmt)}</td>
                     <td class="p-3">
-                      <span class="px-2 py-0.5 rounded text-[10px] ${h.action === 'approved' ? 'bg-[#064e3b] text-[#34d399] border border-[#059669]' : 'bg-[#7f1d1d] text-[#f87171] border border-[#dc2626]'} uppercase font-bold">
-                        ${h.action}
+                      <span class="px-2 py-0.5 rounded text-[10px] ${isApproved ? 'bg-[#064e3b] text-[#34d399] border border-[#059669]' : (isCached ? 'bg-[#1e293b] text-[#38bdf8] border border-[#334155]' : 'bg-[#7f1d1d] text-[#f87171] border border-[#dc2626]')} uppercase font-bold">
+                        ${escapeHtml(act)}
                       </span>
                     </td>
-                    <td class="p-3 text-[#94a3b8]">${h.reviewer || 'analyst'}</td>
-                    <td class="p-3 text-[#38bdf8]">${Math.round((h.confidence || 0.9) * 100)}%</td>
-                    <td class="p-3 text-[#94a3b8] max-w-sm truncate">${h.reason || 'Standard review action'}</td>
+                    <td class="p-3 text-[#94a3b8]">${escapeHtml(rev)}</td>
+                    <td class="p-3 text-[#38bdf8]">${Math.round(conf * 100)}%</td>
+                    <td class="p-3 text-[#94a3b8] max-w-sm truncate" title="${escapeHtml(rsn)}">${escapeHtml(rsn)}</td>
                   </tr>
-                `).join('')}
+                `;}).join('')}
               </tbody>
             </table>
           </div>
@@ -6560,10 +6620,12 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         }
         await this.refreshCurrentPage();
 
-        // 8-second auto-refresh interval for live dashboard telemetry
+        // 8-second auto-refresh interval for live dashboard telemetry & AI Intelligence
         setInterval(() => {
           if (this.currentPage === 'dashboard' && document.visibilityState !== 'hidden') {
             this.refreshDashboardData(false);
+          } else if (this.currentPage === 'ai-intelligence' && !this.aiState.isAnalyzing && !this.aiState.isValidating && !this.aiState.isRegistering && !this.aiState.activeModal && document.visibilityState !== 'hidden') {
+            this.loadAiWorkbenchData();
           }
         }, 8000);
       }
@@ -7990,7 +8052,7 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
 
                 // Reactive refresh of global dashboard statistics & AI intelligence
                 if (typeof this.loadDashboardData === 'function') this.loadDashboardData();
-                if (typeof this.loadAiData === 'function') this.loadAiData();
+                if (typeof this.loadAiWorkbenchData === 'function') this.loadAiWorkbenchData();
                 if (typeof this.loadAnalyticsData === 'function') this.loadAnalyticsData();
 
                 if (this.currentPage === 'ingestion' || this.currentPage === 'converter') {
@@ -8162,10 +8224,10 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
             integEl.innerHTML = renderIntegrityBadge(data.integrity_status || (data.blockchain_proof && data.blockchain_proof.status));
           }
 
-          const normEl = document.getElementById('modal-normalized-json');
+          const normEl = document.getElementById('modal-ocsf-payload') || document.getElementById('modal-normalized-json');
           if (normEl) normEl.innerText = JSON.stringify(ocsfCopy, null, 2);
 
-          const rawEl = document.getElementById('modal-raw-text');
+          const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
           if (rawEl) rawEl.innerText = rawText;
 
           const badge = document.getElementById('modal-integrity-badge');
@@ -8187,6 +8249,28 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
 
       closeModal() {
         document.getElementById('trace-modal').classList.remove('active');
+      }
+
+      copyRawFromModal() {
+        const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
+        const text = (rawEl && rawEl.innerText) || (this.currentModalEvent && (this.currentModalEvent.raw_text || this.currentModalEvent.raw_event || this.currentModalEvent.message)) || '';
+        if (navigator.clipboard && text) {
+          navigator.clipboard.writeText(text);
+          alert('✓ Raw untouched payload copied to clipboard');
+        }
+      }
+
+      copyOcsfFromModal() {
+        const normEl = document.getElementById('modal-ocsf-payload') || document.getElementById('modal-normalized-json');
+        const text = (normEl && normEl.innerText) || (this.currentModalEvent ? JSON.stringify(this.currentModalEvent, null, 2) : '');
+        if (navigator.clipboard && text) {
+          navigator.clipboard.writeText(text);
+          alert('✓ Normalized OCSF entity copied to clipboard');
+        }
+      }
+
+      verifyCurrentModalEventHash() {
+        return this.verifyCurrentModalEventIntegrity();
       }
 
       async loadBlockchainData() {
@@ -8475,6 +8559,10 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
               badge.className = 'px-2 py-0.5 rounded font-code-xs text-[10px] font-bold bg-[#10b981]/15 text-[#86efac] border border-[#10b981]/40';
               badge.innerText = '✓ CRYPTOGRAPHICALLY VERIFIED';
             }
+            const integMetaEl = document.getElementById('modal-meta-integrity');
+            if (integMetaEl) {
+              integMetaEl.innerHTML = renderIntegrityBadge('VERIFIED');
+            }
             if (details) {
               details.innerHTML = `
                 <div class="col-span-1 md:col-span-2 text-[#86efac] font-bold mb-1">✅ ${data.message}</div>
@@ -8488,6 +8576,10 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
             if (badge) {
               badge.className = 'px-2 py-0.5 rounded font-code-xs text-[10px] font-bold bg-error/15 text-error border border-error/40';
               badge.innerText = '🔴 TAMPER DETECTED';
+            }
+            const integMetaEl = document.getElementById('modal-meta-integrity');
+            if (integMetaEl) {
+              integMetaEl.innerHTML = renderIntegrityBadge('TAMPERED');
             }
             if (details) {
               details.innerHTML = `
@@ -8514,6 +8606,10 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           if (res.ok) {
             const data = await res.json();
             alert(`⚠️ TAMPERING SIMULATED FOR TEST/DEMO:\n\n${data.message}\n\nNow running integrity verification...`);
+            const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
+            if (rawEl && !rawEl.innerText.includes('[UNAUTHORIZED_MODIFICATION_TEST]')) {
+              rawEl.innerText = rawEl.innerText.trimEnd() + ' [UNAUTHORIZED_MODIFICATION_TEST]';
+            }
             await this.verifyCurrentModalEventIntegrity();
             return;
           }
@@ -8528,6 +8624,10 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         this.currentModalEvent.blockchain_proof.status = 'FAILED';
         this.currentModalEvent.blockchain_proof.expected_hash = this.currentModalEvent.blockchain_proof.event_hash || '9f83c12a884e912b73a5a7b05f23bcde9812401f8012b18420956bc109fbc812';
         this.currentModalEvent.blockchain_proof.event_hash = 'TAMPERED_' + Math.random().toString(16).slice(2) + 'badhash';
+        const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
+        if (rawEl && !rawEl.innerText.includes('[UNAUTHORIZED_MODIFICATION_TEST]')) {
+          rawEl.innerText = rawEl.innerText.trimEnd() + ' [UNAUTHORIZED_MODIFICATION_TEST]';
+        }
         alert('⚠️ TAMPERING SIMULATED (Offline Demo Mode):\n\nLog payload was altered in memory. Expected hash and calculated hash now differ.\n\nRunning cryptographic integrity verification...');
         this.verifyCurrentModalEventIntegrity();
       }
@@ -8547,7 +8647,7 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
             if (evRes.ok) {
               const evData = await evRes.json();
               const rawText = evData.raw_text || evData.raw_event || '';
-              const rawEl = document.getElementById('modal-raw-text');
+              const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
               if (rawEl && rawText) rawEl.innerText = rawText;
             }
             await this.verifyCurrentModalEventIntegrity();
@@ -8559,6 +8659,9 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
 
         if (this._originalOfflineEvent) {
           this.currentModalEvent = JSON.parse(JSON.stringify(this._originalOfflineEvent));
+          const rawText = this._originalOfflineEvent.raw_text || this._originalOfflineEvent.raw_event || this._originalOfflineEvent.message || '';
+          const rawEl = document.getElementById('modal-raw-payload') || document.getElementById('modal-raw-text');
+          if (rawEl && rawText) rawEl.innerText = rawText;
         } else if (this.currentModalEvent.blockchain_proof) {
           this.currentModalEvent.blockchain_proof.status = 'VERIFIED';
           this.currentModalEvent.blockchain_proof.event_hash = this.currentModalEvent.blockchain_proof.expected_hash || '9f83c12a884e912b73a5a7b05f23bcde9812401f8012b18420956bc109fbc812';
@@ -8710,7 +8813,15 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
             });
           }
           if (logsRes && logsRes.ok) {
-            this.aiState.unknownLogs = await logsRes.json();
+            const fetchedLogs = await logsRes.json();
+            const customEntries = (this.aiState.unknownLogs || []).filter(l => l.id && (l.id.startsWith('evt-') || l.id.startsWith('job-')));
+            const merged = [...customEntries];
+            for (const item of fetchedLogs) {
+              if (!merged.find(m => m.id === item.id)) {
+                merged.push(item);
+              }
+            }
+            this.aiState.unknownLogs = merged;
           }
           if (realResRes && realResRes.ok) {
             const rData = await realResRes.json();
@@ -8744,11 +8855,18 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         this.aiState.isAnalyzing = true;
         this.renderView();
 
+        const selectedItem = (this.aiState.unknownLogs || []).find(l => l.id === this.aiState.selectedLogId);
+        const bodyPayload = {
+          log_id: this.aiState.selectedLogId,
+          raw_log: selectedItem ? (selectedItem.raw_log || '') : '',
+          source: selectedItem ? (selectedItem.source || '') : ''
+        };
+
         try {
           const res = await fetch('/api/ai/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ log_id: this.aiState.selectedLogId }),
+            body: JSON.stringify(bodyPayload),
           });
 
           if (!res.ok) {
@@ -8760,7 +8878,6 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
           this.aiState.validationResult = data.validation_result || null;
         } catch (err) {
           console.error('Error running AI log analysis:', err);
-          alert('AI Analysis notice: ' + err.message);
         } finally {
           this.aiState.isAnalyzing = false;
           this.renderView();
@@ -8772,6 +8889,185 @@ ${(analysis && analysis.suggested_parser_yaml) || '# No parser configuration gen
         this.aiState.currentAnalysis = null;
         this.aiState.validationResult = null;
         await this.loadAiAnalysisForSelectedLog();
+      }
+
+      async openInAiWorkbench(jobId) {
+        let job = null;
+        try {
+          const res = await fetch('/ingest/jobs/' + jobId);
+          if (res.ok) {
+            job = await res.json();
+          }
+        } catch (e) {}
+
+        if (!job) {
+          const jobs = (this.ingestionState && this.ingestionState.jobs) || [];
+          job = jobs.find(j => j.job_id === jobId) || (this.ingestionState && this.ingestionState.selectedJob);
+        }
+
+        window.location.hash = '#ai-intelligence';
+        this.navigate('ai-intelligence');
+        this.aiState.activeTab = 'unknown-logs';
+
+        if (job && job.sample_text) {
+          const rawText = job.sample_text.trim();
+          const cleanName = job.file_name || 'uploaded_job.log';
+          const formatTitle = cleanName.toLowerCase().includes('zookeeper')
+            ? 'Apache ZooKeeper Cluster Log'
+            : (job.format ? job.format.replace(/_/g, ' ').toUpperCase() : 'Uploaded Log Sample');
+          const customId = 'job-' + (job.job_id || jobId);
+
+          const jobEntry = {
+            id: customId,
+            source: cleanName,
+            first_seen: job.created_at || new Date().toISOString(),
+            format_guess: formatTitle,
+            status: 'pending',
+            sibling_count: job.events_received || job.event_count || 1,
+            raw_log: rawText,
+            lines_count: rawText.split('\n').length
+          };
+
+          // Put jobEntry right at the top of unknownLogs
+          const existIdx = this.aiState.unknownLogs.findIndex(l => l.id === customId || l.source === cleanName || (l.id && l.id.includes('zookeeper') && cleanName.includes('zookeeper')));
+          if (existIdx >= 0) {
+            this.aiState.unknownLogs[existIdx] = jobEntry;
+          } else {
+            this.aiState.unknownLogs.unshift(jobEntry);
+          }
+          this.aiState.selectedLogId = customId;
+          this.renderView();
+
+          // Immediately trigger AI analysis for this uploaded log!
+          this.aiState.isAnalyzing = true;
+          this.renderView();
+          try {
+            const aRes = await fetch('/api/ai/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                raw_log: rawText,
+                source: cleanName
+              })
+            });
+            if (aRes.ok) {
+              const aData = await aRes.json();
+              this.aiState.currentAnalysis = aData;
+              this.aiState.validationResult = aData.validation_result || null;
+            }
+          } catch (err) {
+            console.error('Analysis error:', err);
+          } finally {
+            this.aiState.isAnalyzing = false;
+            this.renderView();
+          }
+          return;
+        }
+
+        // Fallback matching if sample_text was not present
+        setTimeout(async () => {
+          if (!this.aiState.unknownLogs || this.aiState.unknownLogs.length === 0) {
+            await this.loadAiWorkbenchData();
+          }
+          if (this.aiState.unknownLogs && this.aiState.unknownLogs.length > 0) {
+            const targetSource = (job && (job.file_name || job.filename || job.source) || '').toLowerCase();
+            const targetFormat = (job && job.format || '').toLowerCase().replace(/_/g, '-');
+            let matched = this.aiState.unknownLogs.find(l => {
+              const s = (l.source || '').toLowerCase();
+              const g = (l.format_guess || '').toLowerCase();
+              const id = (l.id || '').toLowerCase();
+              return (targetSource && (s.includes(targetSource) || targetSource.includes(s) || g.includes(targetSource))) ||
+                     (targetFormat && (id.includes(targetFormat) || g.includes(targetFormat.replace(/-/g, ' '))));
+            });
+            if (matched) {
+              await this.selectUnknownLog(matched.id);
+            }
+          }
+        }, 120);
+      }
+
+      async analyzeEventInAiWorkbench(event) {
+        if (!event) return;
+        const rawPayload = (event.raw_event || event.raw_text || event.message || '').trim();
+        if (!rawPayload) {
+          alert('No raw log payload available in this event to analyze.');
+          return;
+        }
+        const sourceName = event.source_display || event.src_hostname || event.format || 'explorer-event';
+        const customId = 'evt-' + (event.event_id || Date.now());
+
+        let formatTitle = 'Explorer Event (' + (event.class_name || 'raw') + ')';
+        const evFmt = (event.log_format || event.format || '').toLowerCase();
+        if (evFmt.includes('apache') || rawPayload.includes('HTTP/1.') || /^\S+\s+\S+\s+\S+\s+\[/.test(rawPayload)) {
+          formatTitle = 'Apache Web Server Access Log';
+        } else if (evFmt.includes('zookeeper') || rawPayload.includes('[myid:') || rawPayload.includes('QuorumPeer')) {
+          formatTitle = 'Apache ZooKeeper Cluster Log';
+        } else if (evFmt) {
+          formatTitle = evFmt.toUpperCase() + ' Event';
+        }
+
+        const customEntry = {
+          id: customId,
+          source: sourceName,
+          first_seen: event.timestamp || new Date().toISOString(),
+          format_guess: formatTitle,
+          status: 'pending',
+          sibling_count: 1,
+          raw_log: rawPayload,
+          lines_count: rawPayload.split('\n').length
+        };
+
+        if (!this.aiState.unknownLogs) this.aiState.unknownLogs = [];
+        const existingIdx = this.aiState.unknownLogs.findIndex(l => l.id === customId);
+        if (existingIdx >= 0) {
+          this.aiState.unknownLogs[existingIdx] = customEntry;
+        } else {
+          this.aiState.unknownLogs.unshift(customEntry);
+        }
+        this.aiState.selectedLogId = customId;
+        this.aiState.activeTab = 'unknown-logs';
+
+        window.location.hash = '#ai-intelligence';
+        this.navigate('ai-intelligence');
+        this.aiState.isAnalyzing = true;
+        this.renderView();
+
+        try {
+          const res = await fetch('/api/ai/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              log_id: customId,
+              raw_log: rawPayload,
+              source: sourceName
+            })
+          });
+          if (res.ok) {
+            const analysis = await res.json();
+            this.aiState.currentAnalysis = analysis;
+            this.aiState.validationResult = analysis.validation_result || null;
+          }
+        } catch (err) {
+          console.error('Failed to analyze event in AI Workbench:', err);
+        } finally {
+          this.aiState.isAnalyzing = false;
+          this.renderView();
+        }
+      }
+
+      viewInLogExplorer(query) {
+        window.location.hash = '#explorer';
+        this.navigate('explorer');
+        if (query) {
+          setTimeout(() => {
+            const searchInput = document.getElementById('search-query') || document.querySelector('input[placeholder*="Search"]');
+            if (searchInput) {
+              searchInput.value = query;
+              if (this.triggerSearch) this.triggerSearch();
+              else if (this.fetchEvents) this.fetchEvents();
+            }
+          }, 150);
+        }
       }
 
       async analyzeCurrentLog() {
