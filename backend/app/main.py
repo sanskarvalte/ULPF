@@ -139,11 +139,16 @@ if FRONTEND_DIR.exists():
 
     @app.get("/ulpf-logo.jpg", include_in_schema=False)
     @app.get("/assets/ulpf-logo.jpg", include_in_schema=False)
+    @app.get("/ulpf-logo.png", include_in_schema=False)
+    @app.get("/assets/ulpf-logo.png", include_in_schema=False)
     def serve_logo():
+        logo_png = FRONTEND_DIR / "assets" / "ulpf-logo.png"
+        if logo_png.exists():
+            return FileResponse(str(logo_png), media_type="image/png")
         logo_p = FRONTEND_DIR / "assets" / "ulpf-logo.jpg"
         if logo_p.exists():
             return FileResponse(str(logo_p), media_type="image/jpeg")
-        return RedirectResponse(url="/static/assets/ulpf-logo.jpg")
+        return RedirectResponse(url="/static/assets/ulpf-logo.png")
 else:
     @app.get("/", include_in_schema=False)
     def root():
