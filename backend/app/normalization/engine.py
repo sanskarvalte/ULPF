@@ -313,6 +313,29 @@ def normalize_event(event: UnifiedEvent) -> UnifiedEvent:
     # 2. Validate Temporal Attributes
     if d.get("timestamp"):
         d["timestamp"] = validate_timestamp(d["timestamp"])
+    elif d.get("unmapped"):
+        unm = d["unmapped"]
+        for ts_key in ("timestamp", "time", "ts", "event_time", "@timestamp", "datetime"):
+            if unm.get(ts_key) is not None:
+                candidate_ts = validate_timestamp(unm[ts_key])
+                if candidate_ts:
+                    d["timestamp"] = candidate_ts
+                    break
+        if not d.get("timestamp"):
+            import re
+            m = re.search(r'\b(?:timestamp|time|ts|datetime)=["\']?([^"\'\s,;]+)', raw_event)
+            if m:
+                candidate_ts = validate_timestamp(m.group(1))
+                if candidate_ts:
+                    d["timestamp"] = candidate_ts
+        if not d.get("timestamp"):
+            import re
+            # Floor check: leading ISO/standard timestamp (e.g. 2015-07-29 17:41:40,593 or 2026-09-01 10:15:30)
+            m_lead = re.match(r'^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?)', raw_event)
+            if m_lead:
+                candidate_ts = validate_timestamp(m_lead.group(1))
+                if candidate_ts:
+                    d["timestamp"] = candidate_ts
 
     # 3. Apply Losslessness Substring Guard
     _apply_losslessness_guard(d, raw_event)

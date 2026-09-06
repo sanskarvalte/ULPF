@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 ULPF Local Server Runner.
 Runs 100% locally on a specified port without any external online dependencies.
@@ -32,21 +32,30 @@ def main():
 
     try:
         from app.storage.normalized import get_total_events_count
+        from app.storage.db import reset_db_connection
         total_events = get_total_events_count()
+        reset_db_connection()
     except Exception as e:
         total_events = 0
 
     print("\n" + "=" * 68)
-    print("  🛡️   ULPF — Universal Log Pre-processing Framework")
+    print("  🚀  ULPF — Universal Log Pre-processing Framework")
     print("  🔒  Running 100% LOCALLY on port without any online dependencies")
-    print(f"  📊  Local DuckDB Storage: {total_events:,} events available")
+    print(f"  📦  Local DuckDB Storage: {total_events:,} events available")
     print(f"  🌐  Web App:       http://{args.host}:{args.port}")
-    print(f"  📋  Log Explorer:  http://{args.host}:{args.port}/#explorer")
-    print(f"  📚  Local API:     http://{args.host}:{args.port}/docs")
+    print(f"  🔍  Log Explorer:  http://{args.host}:{args.port}/#explorer")
+    print(f"  📖  Local API:     http://{args.host}:{args.port}/docs")
     print("=" * 68 + "\n")
 
     import uvicorn
-    uvicorn.run("app.main:app", host=args.host, port=args.port, reload=False)
+    try:
+        uvicorn.run("app.main:app", host=args.host, port=args.port, reload=False)
+    finally:
+        try:
+            from app.storage.db import reset_db_connection
+            reset_db_connection()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()

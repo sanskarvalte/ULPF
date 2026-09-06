@@ -31,7 +31,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(_BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(_BACKEND_DIR))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -51,7 +51,7 @@ from app.blockchain.ledger import init_blockchain
 from app.evaluation.evaluator import evaluate_ground_truth, evaluate_log_file
 from app.ingestion.detector import load_and_register_all_custom_parsers
 from app.pipeline import pipeline
-from app.storage.db import get_db
+from app.storage.db import get_db, reset_db_connection
 from app.storage.normalized import (
     export_to_parquet,
     get_all_events,
@@ -68,8 +68,10 @@ async def lifespan(app_instance: FastAPI):
     init_blockchain()
     count = load_and_register_all_custom_parsers()
     if count > 0:
-        print(f"🚀 [STARTUP] Loaded and registered {count} approved custom parser(s) into active pipeline.")
+        print(f"📦 [STARTUP] Loaded and registered {count} approved custom parser(s) into active pipeline.")
+    reset_db_connection()
     yield
+    reset_db_connection()
 
 
 # ── FastAPI App Setup ──────────────────────────────────────────────────
@@ -89,6 +91,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def db_lifecycle_middleware(request: Request, call_next):
+    """Ensure database connections opened during request handling are released."""
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        reset_db_connection()
 
 
 # Include modular API routers
@@ -324,6 +336,7 @@ Examples:
         import uvicorn
         from app.storage.normalized import get_total_events_count
         total_ev = get_total_events_count()
+        reset_db_connection()
         print("=" * 65)
         print("  🛡️  ULPF — Universal Log Pre-processing Framework")
         print("  🔒 Running 100% LOCALLY on port without online dependencies")
@@ -331,7 +344,10 @@ Examples:
         print(f"  🌐 URL: http://{args.host}:{args.port}")
         print(f"  📋 Log Explorer: http://{args.host}:{args.port}/#explorer")
         print("=" * 65)
-        uvicorn.run("app.main:app", host=args.host, port=args.port, reload=False)
+        try:
+            uvicorn.run("app.main:app", host=args.host, port=args.port, reload=False)
+        finally:
+            reset_db_connection()
         sys.exit(0)
 
     # 2. Config command
@@ -474,8 +490,11 @@ Examples:
                 sys.exit(1)
 
         out_p = Path(args.output) if args.output else None
-        rc = ingest_path(target_path, output_json_path=out_p, show_all=args.show_all)
-        sys.exit(rc)
+        try:
+            rc = ingest_path(target_path, output_json_path=out_p, show_all=args.show_all)
+            sys.exit(rc)
+        finally:
+            reset_db_connection()
     else:
         parser.print_help()
         sys.exit(0)
