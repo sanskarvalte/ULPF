@@ -299,7 +299,7 @@
       "format_name": "warm_format"
     },
     "status": "active",
-    "version": 1,
+    "version": 2,
     "versions": {
       "1": {
         "parser_spec": {
@@ -313,10 +313,23 @@
         "status": "active",
         "created_at": "2026-09-06T08:29:21.657098+00:00",
         "validation_passed": true
+      },
+      "2": {
+        "parser_spec": {
+          "regex": "WARM_LOG_SAMPLE id=(?P<msg_id>\\d+)",
+          "field_mapping": {
+            "msg_id": "unmapped.msg_id"
+          },
+          "confidence": 0.95,
+          "format_name": "warm_format"
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:36:22.686005+00:00",
+        "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-06T08:29:21.657110+00:00"
+    "updated_at": "2026-09-06T08:36:22.686020+00:00"
   },
   "c94ce32daf180286": {
     "parser_spec": {
