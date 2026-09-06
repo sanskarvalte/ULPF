@@ -49,6 +49,17 @@ COMMON_FIELD_MAP: Dict[str, str] = {
     "error": "message",
     "err": "message",
     "description": "message",
+    # Incident & Service Management
+    "incident_state": "status",
+    "opened_at": "timestamp",
+    "sys_created_at": "timestamp",
+    "caller_id": "user",
+    "opened_by": "user",
+    "closed_at": "end_time",
+    "resolved_at": "end_time",
+    "priority": "severity",
+    "impact": "severity",
+    "urgency": "severity",
     # Network
     "ip": "src_ip",
     "src_ip": "src_ip",
@@ -237,6 +248,12 @@ def parse_timestamp(
             "%b %d %H:%M:%S",
             "%b  %d %H:%M:%S",
             "%m-%d %H:%M:%S.%f",
+            "%d-%m-%Y %H:%M:%S",
+            "%d-%m-%Y %H:%M",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+            "%Y/%m/%d %H:%M:%S",
+            "%Y/%m/%d %H:%M",
         ):
             try:
                 dt = datetime.strptime(val, fmt)

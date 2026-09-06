@@ -17,12 +17,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.616204+00:00",
+        "created_at": "2026-09-06T08:29:12.783776+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.616214+00:00"
+    "updated_at": "2026-09-06T08:29:12.783789+00:00"
   },
   "2ac043b1ceeb0c7d": {
     "parser_spec": {
@@ -42,12 +42,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.636672+00:00",
+        "created_at": "2026-09-06T08:29:12.808447+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.636685+00:00"
+    "updated_at": "2026-09-06T08:29:12.808460+00:00"
   },
   "8ab7a38b8947444a": {
     "parser_spec": {
@@ -67,12 +67,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.658719+00:00",
+        "created_at": "2026-09-06T08:29:12.829174+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.658731+00:00"
+    "updated_at": "2026-09-06T08:29:12.829186+00:00"
   },
   "73f543035fcd9367": {
     "parser_spec": {
@@ -92,12 +92,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.683003+00:00",
+        "created_at": "2026-09-06T08:29:12.858420+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.683013+00:00"
+    "updated_at": "2026-09-06T08:29:12.858431+00:00"
   },
   "7f23efb1c76b4952": {
     "parser_spec": {
@@ -117,12 +117,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.706124+00:00",
+        "created_at": "2026-09-06T08:29:12.881446+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.706134+00:00"
+    "updated_at": "2026-09-06T08:29:12.881457+00:00"
   },
   "eadb11c4635561bf": {
     "parser_spec": {
@@ -142,12 +142,12 @@
           "confidence": 0.2
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:47.725726+00:00",
+        "created_at": "2026-09-06T08:29:12.904168+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:47.725736+00:00"
+    "updated_at": "2026-09-06T08:29:12.904181+00:00"
   },
   "6a58d9806095938e": {
     "parser_spec": {
@@ -203,11 +203,219 @@
           "confidence": 0.95
         },
         "status": "active",
-        "created_at": "2026-09-05T15:59:49.388515+00:00",
+        "created_at": "2026-09-06T08:29:19.033787+00:00",
         "validation_passed": true
       }
     },
     "validation_passed": true,
-    "updated_at": "2026-09-05T15:59:49.388526+00:00"
+    "updated_at": "2026-09-06T08:29:19.033800+00:00"
+  },
+  "0bed061283eaae89": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:20.284268+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:20.284279+00:00"
+  },
+  "b1f5a2da7a889bf8": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:20.304989+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:20.305001+00:00"
+  },
+  "d52b98fcc0cd4c3a": {
+    "parser_spec": {
+      "regex": "DEVICE_BOOT_EVENT id=(?P<device_id>\\d+) rev=(?P<revision>[\\d\\.]+) subsystem=(?P<subsystem>\\w+) status=(?P<status>\\w+)",
+      "field_mapping": {
+        "device_id": "unmapped.device_id"
+      },
+      "ocsf_class": "Base Event",
+      "format_name": "device_boot"
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "regex": "DEVICE_BOOT_EVENT id=(?P<device_id>\\d+) rev=(?P<revision>[\\d\\.]+) subsystem=(?P<subsystem>\\w+) status=(?P<status>\\w+)",
+          "field_mapping": {
+            "device_id": "unmapped.device_id"
+          },
+          "ocsf_class": "Base Event",
+          "format_name": "device_boot"
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.601393+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.601412+00:00"
+  },
+  "TEST_FP_WARM_CACHE": {
+    "parser_spec": {
+      "regex": "WARM_LOG_SAMPLE id=(?P<msg_id>\\d+)",
+      "field_mapping": {
+        "msg_id": "unmapped.msg_id"
+      },
+      "confidence": 0.95,
+      "format_name": "warm_format"
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "regex": "WARM_LOG_SAMPLE id=(?P<msg_id>\\d+)",
+          "field_mapping": {
+            "msg_id": "unmapped.msg_id"
+          },
+          "confidence": 0.95,
+          "format_name": "warm_format"
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.657098+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.657110+00:00"
+  },
+  "c94ce32daf180286": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.688539+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.688551+00:00"
+  },
+  "ccf3e8778e3c9596": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.719915+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.719927+00:00"
+  },
+  "e93e087106b4f53e": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.746479+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.746492+00:00"
+  },
+  "2e59eac44b90f3a8": {
+    "parser_spec": {
+      "format_name": "unknown_review",
+      "parser_type": "generic",
+      "fields": [],
+      "confidence": 0.2
+    },
+    "status": "active",
+    "version": 1,
+    "versions": {
+      "1": {
+        "parser_spec": {
+          "format_name": "unknown_review",
+          "parser_type": "generic",
+          "fields": [],
+          "confidence": 0.2
+        },
+        "status": "active",
+        "created_at": "2026-09-06T08:29:21.771416+00:00",
+        "validation_passed": true
+      }
+    },
+    "validation_passed": true,
+    "updated_at": "2026-09-06T08:29:21.771426+00:00"
   }
 }

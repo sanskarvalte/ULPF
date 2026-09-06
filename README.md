@@ -68,6 +68,72 @@ ULPF ingests, detects, parses, normalizes, and enriches heterogeneous security l
 
 ---
 
+---
+
+## Reusable Framework & Python SDK Architecture
+
+ULPF is designed as an **offline-first, headless reusable cybersecurity framework**. All interfaces (CLI, Python API, and REST endpoints) converge on the canonical `PipelineEngine`:
+
+```
+CLI (`ulpf process`) ──────────┐
+Python API (`from ulpf import`) ─┼──► PipelineEngine ──► 8-Node Canonical Processing Pipeline
+REST API (`/convert`, `/upload`) ─┘
+```
+
+### 1. Python SDK Usage
+
+```python
+from ulpf import PipelineEngine, ProcessingStatus, ProcessingResult
+
+engine = PipelineEngine()
+
+# Process a file
+result: ProcessingResult = engine.process_file("datasets/loghub/Mac_2k.log", persist=True)
+print(f"Status: {result.status.value}")
+print(f"Format: {result.format}")
+print(f"Events Processed: {result.total_events}")
+print(f"Validation Rate: {result.validation_rate * 100:.1f}%")
+
+# Process raw text or streams directly
+text_sample = "Jul 12 14:22:01 server sshd[1234]: Accepted password for root from 192.168.1.10 port 22 ssh2"
+res_text = engine.process_text(text_sample, persist=False)
+for event in res_text.events:
+    print(f"Normalized event: {event.category_name} / {event.class_name}")
+
+# Backward-compatible dictionary access
+assert result["format"] == "SYSLOG"
+assert result["status"] == "SUCCESS"
+```
+
+### 2. CLI Headless Usage
+
+```bash
+# Process and normalize any log file headlessly (no web dashboard required)
+ulpf process datasets/sample/install.log
+
+# Export normalized JSON output to file
+ulpf process datasets/loghub/Mac_2k.log -o normalized_mac.json
+
+# Check framework configuration & air-gap guarantees
+ulpf config
+
+# Run offline accuracy benchmarks
+ulpf evaluate
+```
+
+### 3. REST API Ingestion Endpoints
+
+```bash
+# Start local API server
+ulpf serve --port 8000
+
+# Direct log-to-JSON stream conversion (in-memory)
+curl -X POST http://localhost:8000/convert -F "raw_text=Jul 12 14:22:01 server sshd[1234]: Accepted password for root from 192.168.1.10 port 22 ssh2"
+
+# File upload with tracking job ID
+curl -X POST http://localhost:8000/upload -F "file=@datasets/sample/wifi.log"
+```
+
 ## 🚀 Quick Start (Local Offline Execution)
 
 ### 1. Activate Environment

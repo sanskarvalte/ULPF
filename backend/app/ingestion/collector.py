@@ -265,6 +265,46 @@ class LogCollector:
             except Exception:
                 pass
 
+        # Check if file is CSV (by suffix or header pattern)
+        is_csv_file = p.suffix.lower() in (".csv", ".tsv")
+        if not is_csv_file and p.suffix.lower() not in (".json", ".xml", ".ndjson") and sz > 0:
+            try:
+                with open(p, "r", encoding="utf-8", errors="replace") as peek_f:
+                    sample_sniff = [peek_f.readline() for _ in range(4)]
+                    from app.ingestion.detector import _looks_like_csv
+                    sniff_str = "".join(sample_sniff).strip()
+                    if not (sniff_str.startswith("{") or sniff_str.startswith("[") or sniff_str.startswith("<")):
+                        if _looks_like_csv(sniff_str):
+                            is_csv_file = True
+            except Exception:
+                pass
+
+        if is_csv_file:
+            with open(p, "r", encoding="utf-8", errors="replace") as f:
+                header_line = f.readline().rstrip("\r\n")
+                if header_line:
+                    csv_meta = dict(meta)
+                    csv_meta["log_format"] = "csv"
+                    csv_meta["csv_header"] = header_line
+                    csv_batch = []
+                    for line in f:
+                        line_clean = line.rstrip("\r\n")
+                        if not line_clean.strip():
+                            continue
+                        csv_batch.append(
+                            CollectedRawChunk(
+                                raw_text=line_clean,
+                                source_name=p.name,
+                                source_metadata=csv_meta,
+                            )
+                        )
+                        if len(csv_batch) >= chunk_size:
+                            yield csv_batch
+                            csv_batch = []
+                    if csv_batch:
+                        yield csv_batch
+            return
+
         batch: List[CollectedRawChunk] = []
         with open(p, "r", encoding="utf-8", errors="replace") as f:
             current_record: List[str] = []

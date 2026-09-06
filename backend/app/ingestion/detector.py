@@ -96,6 +96,9 @@ def _looks_like_syslog(s: str) -> bool:
 
 
 def _looks_like_csv(s: str) -> bool:
+    stripped = s.strip()
+    if stripped.startswith("{") or stripped.startswith("[") or stripped.startswith("<"):
+        return False
     lines = [l for l in s.splitlines() if l.strip()][:10]
     if len(lines) < 2:
         return False

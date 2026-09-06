@@ -485,8 +485,20 @@ def process_and_create_job(
         job_manager.update_job(job)
 
         # 4. Pipeline Execution via Convergence Core
+        def _on_progress(processed_cnt: int, total_hint: int):
+            job.events_parsed = processed_cnt
+            job.events_normalized = processed_cnt
+            job.events_stored = processed_cnt
+            job.event_count = processed_cnt
+            pct = min(99, int((processed_cnt / max(1, total_hint)) * 100)) if total_hint else 50
+            job.lifecycle["parsed"] = StageStatus(name="Parsed", status="ACTIVE", pct=pct, label=f"{processed_cnt:,} parsed")
+            job.lifecycle["normalized"] = StageStatus(name="Normalized", status="ACTIVE", pct=pct, label=f"{processed_cnt:,} norm")
+            job.lifecycle["stored"] = StageStatus(name="Stored", status="ACTIVE", pct=pct, label=f"{processed_cnt:,} stored")
+            append_log("INFO", f"Streamed & persisted {processed_cnt:,} events...")
+            job_manager.update_job(job)
+
         try:
-            res = pipeline.process_file(file_path, persist=True, auto_resolve_ai=True)
+            res = pipeline.process_file(file_path, persist=True, auto_resolve_ai=True, progress_callback=_on_progress)
         except Exception as proc_err:
             append_log("FAIL", f"Pipeline ingestion error: {str(proc_err)}")
             job.status = "FAILED"

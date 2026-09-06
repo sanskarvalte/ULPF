@@ -93,13 +93,37 @@ def _strip_key_prefix(key: str, val: Any) -> Optional[Any]:
 
 def _extract_all_delimited_key_values(raw_line: str) -> Dict[str, Any]:
     """
-    Extract all key:value and key=value pairs from unknown delimited logs (e.g. semicolon, space, comma).
-    Preserves all structured custom fields (e.g. sku, warehouse, qty_on_hand, reorder_point).
+    Extract all key:value, key=value pairs, or positional delimited columns from unknown logs.
+    Preserves all structured custom fields and positional columns losslessly.
     """
     pairs: Dict[str, Any] = {}
-    
-    # 1. Semicolon-delimited key:val or key=val
-    if ";" in raw_line and (":" in raw_line or "=" in raw_line):
+
+    # 1. Pipe-delimited records (e.g. 2026-09-01 10:15:30|TRADE_EXEC|ORD-99124|AAPL|BUY|150|182.50|NYSE|FILLED)
+    if "|" in raw_line and raw_line.count("|") >= 2:
+        parts = [s.strip() for s in raw_line.split("|")]
+        has_explicit_kv = any("=" in p or bool(re.search(r'\b[a-zA-Z_][a-zA-Z0-9_\-\.]*:[^\s]+', p)) for p in parts)
+        if has_explicit_kv:
+            for seg in parts:
+                if "=" in seg:
+                    k, v = seg.split("=", 1)
+                    k_c, v_c = k.strip(), _clean_val(v.strip().strip('"\''))
+                    if k_c and v_c is not None:
+                        pairs[k_c] = v_c
+                elif ":" in seg and re.match(r'^[a-zA-Z_][a-zA-Z0-9_\-\.]*:', seg.strip()):
+                    k, v = seg.split(":", 1)
+                    k_c, v_c = k.strip(), _clean_val(v.strip())
+                    if k_c and v_c is not None:
+                        pairs[k_c] = v_c
+        else:
+            # Positional delimited columns: preserve losslessly as extra_col_1..extra_col_N
+            for idx, p in enumerate(parts):
+                p_c = _clean_val(p)
+                if p_c is not None:
+                    pairs[f"extra_col_{idx + 1}"] = p_c
+            return pairs
+
+    # 2. Semicolon-delimited key:val or key=val
+    if not pairs and ";" in raw_line and (":" in raw_line or "=" in raw_line):
         segments = [s.strip() for s in raw_line.split(";") if s.strip()]
         for seg in segments:
             if ":" in seg:
@@ -115,7 +139,7 @@ def _extract_all_delimited_key_values(raw_line: str) -> Dict[str, Any]:
                 if k_clean and v_clean is not None:
                     pairs[k_clean] = v_clean
 
-    # 2. Space-delimited key=val pairs
+    # 3. Space-delimited key=val pairs
     if not pairs and "=" in raw_line:
         for match in re.finditer(r'([a-zA-Z0-9_\-\.]+)=(".*?"|\'.*?\'|[^\s]+)', raw_line):
             k_clean = match.group(1).strip()
@@ -123,13 +147,21 @@ def _extract_all_delimited_key_values(raw_line: str) -> Dict[str, Any]:
             if k_clean and v_clean is not None:
                 pairs[k_clean] = v_clean
 
-    # 3. Space-delimited key:val pairs (e.g. svc:inventory-sync sku:1000 qty:100 status:ok)
+    # 4. Space-delimited key:val pairs (key must start with letter/underscore to avoid time 10:15:30 matching)
     if not pairs and ":" in raw_line:
-        for match in re.finditer(r'([a-zA-Z0-9_\-\.]+):([^\s,;]+)', raw_line):
+        for match in re.finditer(r'([a-zA-Z_][a-zA-Z0-9_\-\.]*):([^\s,;]+)', raw_line):
             k_clean = match.group(1).strip()
             v_clean = _clean_val(match.group(2).strip().strip('"\''))
             if k_clean and v_clean is not None:
                 pairs[k_clean] = v_clean
+
+    # 5. Comma-delimited positional columns (when 2+ commas and no key=value)
+    if not pairs and "," in raw_line and raw_line.count(",") >= 2 and "=" not in raw_line:
+        parts = [s.strip() for s in raw_line.split(",")]
+        for idx, p in enumerate(parts):
+            p_c = _clean_val(p)
+            if p_c is not None:
+                pairs[f"extra_col_{idx + 1}"] = p_c
 
     return pairs
 

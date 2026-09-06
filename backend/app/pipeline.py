@@ -45,11 +45,24 @@ from app.config import ULPFConfig, get_config
 from app.ingestion.collector import CollectedRawChunk, LogCollector
 from app.ingestion.detector import match_format
 from app.models.event_schema import UnifiedEvent
+from app.models.result import ProcessingResult, ProcessingStatus
+from app.exceptions import (
+    ULPFError,
+    InvalidInputError,
+    EmptyInputError,
+    UnsupportedInputError,
+    ParserFailureError,
+    AIUnavailableError,
+    AITimeoutError,
+    ValidationFailureError,
+    StorageFailureError,
+    InternalFailureError,
+)
 from app.normalization.engine import normalize_event
 from app.parsers.csv_parser import parse_csv_log_all
 from app.parsers.registry import get_parser, has_parser, register_parser, reject_parser
 from app.parsers.xml_parser import parse_xml_log_all
-from app.storage.db import get_db
+from app.storage.db import get_db, reset_db_connection
 from app.storage.normalized import save_events_batch
 from app.storage.raw import hash_raw_log, save_raw_events_batch
 from app.storage.review_queue import enqueue_for_review
@@ -97,6 +110,31 @@ class PipelineEngine:
 
             # ── NODE 3: Format Matcher ("Known Format?") ────────────────
             is_known, fmt_name, parser_fn = match_format(raw_text)
+
+            # Streamed CSV row with attached header metadata
+            if chunk.source_metadata and chunk.source_metadata.get("csv_header"):
+                try:
+                    import csv
+                    import io
+                    from app.parsers.csv_parser import _row_to_event
+                    csv_header = chunk.source_metadata["csv_header"]
+                    reader = csv.DictReader(io.StringIO(f"{csv_header}\n{raw_text}"))
+                    row = next(reader, None)
+                    if row:
+                        ev = _row_to_event(row, raw_text)
+                        ev.raw_event_id = raw_id
+                        ev.log_format = "csv"
+                        if ev.unmapped is None:
+                            ev.unmapped = {}
+                        ev.unmapped["parser_source"] = "rule_based"
+                        ev.unmapped["ai_resolution_attempted"] = False
+                        ev.unmapped["ai_resolution_status"] = "skipped_known"
+                        ev.unmapped["parser_confidence"] = 0.99
+                        ev.unmapped["parser_accuracy"] = 100.0
+                        ordered_events.append((idx, ev, raw_id, source_name, chunk.source_metadata))
+                        continue
+                except Exception:
+                    pass
 
             # Multi-record format handling (CSV & XML audit logs)
             if is_known and fmt_name == "csv":
@@ -506,6 +544,116 @@ class PipelineEngine:
             )
             yield [item[0] for item in processed]
 
+    def _process_csv_file_fast(
+        self,
+        file_path: Path,
+        output_json_path: Optional[str | Path] = None,
+        persist: bool = True,
+        chunk_size: int = 5000,
+        progress_callback: Optional[Any] = None,
+    ) -> ProcessingResult:
+        import csv
+        import io
+        import time
+        from app.parsers.csv_parser import _row_to_event
+        from app.storage.raw import hash_raw_log
+        from app.storage.normalized import save_events_batch
+        from app.blockchain.ledger import append_event_blocks_batch, append_batch_block
+
+        _start_time = time.monotonic()
+        all_events: List[UnifiedEvent] = []
+        c = (self.conn or get_db()) if persist else None
+
+        raw_count = 0
+        batch: List[Tuple[UnifiedEvent, str, Optional[str]]] = []
+        batch_events: List[UnifiedEvent] = []
+
+        total_estimate = 0
+        try:
+            sz = file_path.stat().st_size
+            total_estimate = max(1, sz // 320)
+        except Exception:
+            pass
+
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                raw_text = ",".join([str(v) for v in row.values() if v is not None])
+                raw_id = hash_raw_log(raw_text)
+                ev = _row_to_event(row, raw_text)
+                ev.raw_event_id = raw_id
+                ev.log_format = "csv"
+                if ev.unmapped is None:
+                    ev.unmapped = {}
+                ev.unmapped["parser_source"] = "rule_based"
+                ev.unmapped["ai_resolution_attempted"] = False
+                ev.unmapped["ai_resolution_status"] = "skipped_known"
+                ev.unmapped["parser_confidence"] = 0.99
+                ev.unmapped["parser_accuracy"] = 100.0
+
+                batch.append((ev, raw_text, file_path.name))
+                batch_events.append(ev)
+                raw_count += 1
+
+                if len(batch) >= chunk_size:
+                    if persist and c is not None:
+                        save_events_batch(batch, conn=c)
+                        event_records = [
+                            (e.event_id, e.raw_event_id or hash_raw_log(rt))
+                            for e, rt, _ in batch
+                            if e.event_id and (e.raw_event_id or rt)
+                        ]
+                        if event_records:
+                            append_event_blocks_batch(event_records, action="LOG_STORED", conn=c)
+                            batch_hashes = [r[1] for r in event_records]
+                            batch_sample_ids = [r[0] for r in event_records[:10]]
+                            batch_tag = f"SYNC_CSV_BATCH_{datetime.now(timezone.utc).strftime('%y%m%d_%H%M%S_%f')}_{uuid.uuid4().hex[:6]}"
+                            try:
+                                append_batch_block(batch_tag, batch_hashes, sample_event_ids=batch_sample_ids, conn=c)
+                            except Exception:
+                                pass
+                    all_events.extend(batch_events)
+                    batch = []
+                    batch_events = []
+                    if progress_callback:
+                        try:
+                            progress_callback(raw_count, total_estimate)
+                        except Exception:
+                            pass
+
+            if batch:
+                if persist and c is not None:
+                    save_events_batch(batch, conn=c)
+                    event_records = [
+                        (e.event_id, e.raw_event_id or hash_raw_log(rt))
+                        for e, rt, _ in batch
+                        if e.event_id and (e.raw_event_id or rt)
+                    ]
+                    if event_records:
+                        append_event_blocks_batch(event_records, action="LOG_STORED", conn=c)
+                        batch_hashes = [r[1] for r in event_records]
+                        batch_sample_ids = [r[0] for r in event_records[:10]]
+                        batch_tag = f"SYNC_CSV_BATCH_{datetime.now(timezone.utc).strftime('%y%m%d_%H%M%S_%f')}_{uuid.uuid4().hex[:6]}"
+                        try:
+                            append_batch_block(batch_tag, batch_hashes, sample_event_ids=batch_sample_ids, conn=c)
+                        except Exception:
+                            pass
+                all_events.extend(batch_events)
+                if progress_callback:
+                    try:
+                        progress_callback(raw_count, raw_count)
+                    except Exception:
+                        pass
+
+        duration_ms = (time.monotonic() - _start_time) * 1000.0
+        return self._build_processing_result(
+            all_events=all_events,
+            raw_count=raw_count,
+            source_name=file_path.as_posix(),
+            output_json_path=output_json_path,
+            duration_ms=duration_ms,
+        )
+
     def process_file(
         self,
         file_path: str | Path,
@@ -514,25 +662,77 @@ class PipelineEngine:
         auto_resolve_ai: Optional[bool] = None,
         chunk_size: int = 1000,
         show_all: bool = False,
-    ) -> Dict[str, Any]:
+        raise_errors: bool = False,
+        progress_callback: Optional[Any] = None,
+    ) -> ProcessingResult:
         """
         Process a log file with bounded memory and return complete execution summary.
         Truthfully reports all observable telemetry.
         """
-        import json
-        from app.ai.ollama_client import get_ollama_telemetry, reset_ollama_telemetry
+        import time
+        from app.ai.ollama_client import reset_ollama_telemetry
         from app.ingestion.detector import match_format
 
         p = Path(file_path)
-        if not p.exists() or (p.is_file() and p.stat().st_size == 0):
-            return {
+        if not p.exists():
+            if raise_errors:
+                raise InvalidInputError(f"Log file '{file_path}' does not exist.")
+            res_dict = {
                 "file": p.as_posix(),
+                "source_name": p.as_posix(),
                 "format": "UNKNOWN",
                 "parser": "none",
                 "raw_count": 0,
                 "parsed_count": 0,
                 "normalized_count": 0,
                 "validation": "SKIPPED",
+                "validation_rate": 0.0,
+                "accuracy": "0.0",
+                "confidence": "0.0",
+                "ollama_calls": 0,
+                "ollama_successes": 0,
+                "ollama_failures": 0,
+                "ollama_latency_ms": 0.0,
+                "ai_resolution_attempted": False,
+                "ai_resolution_status": "skipped",
+                "fingerprint": None,
+                "parser_source": "none",
+                "parser_confidence": "0.0",
+                "parser_accuracy": "0.0",
+                "unknown_fields_preserved": 0,
+                "status": "FAILED",
+                "error": f"File '{p.as_posix()}' does not exist.",
+                "error_code": "INVALID_INPUT",
+                "events": [],
+            }
+            return ProcessingResult(
+                status=ProcessingStatus.FAILED,
+                format="UNKNOWN",
+                parser_source="none",
+                total_events=0,
+                valid_events=0,
+                invalid_events=0,
+                validation_rate=0.0,
+                confidence=0.0,
+                events=[],
+                source_name=p.as_posix(),
+                error=f"File '{p.as_posix()}' does not exist.",
+                details=res_dict,
+            )
+
+        if p.is_file() and p.stat().st_size == 0:
+            if raise_errors:
+                raise EmptyInputError(f"Log file '{file_path}' is empty (0 bytes).")
+            res_dict = {
+                "file": p.as_posix(),
+                "source_name": p.as_posix(),
+                "format": "UNKNOWN",
+                "parser": "none",
+                "raw_count": 0,
+                "parsed_count": 0,
+                "normalized_count": 0,
+                "validation": "SKIPPED",
+                "validation_rate": 0.0,
                 "accuracy": "0.0",
                 "confidence": "0.0",
                 "ollama_calls": 0,
@@ -547,28 +747,101 @@ class PipelineEngine:
                 "parser_accuracy": "0.0",
                 "unknown_fields_preserved": 0,
                 "status": "SKIPPED",
-                "error": "File does not exist or is empty.",
+                "error": f"File '{p.as_posix()}' is empty (0 bytes).",
+                "error_code": "EMPTY_INPUT",
                 "events": [],
             }
-
-        reset_ollama_telemetry()
-
-        should_resolve = self.config.ai_enabled if auto_resolve_ai is None else bool(auto_resolve_ai)
-        all_events: List[UnifiedEvent] = []
-        raw_count = 0
-
-        # Stream file in bounded batches
-        for chunk_batch in LogCollector.collect_from_file_stream(
-            file_path=p,
-            chunk_size=chunk_size,
-        ):
-            raw_count += len(chunk_batch)
-            processed = self.process_raw_chunks(
-                chunk_batch,
-                persist_normalized=persist,
-                auto_resolve_ai=should_resolve,
+            return ProcessingResult(
+                status=ProcessingStatus.SKIPPED,
+                format="UNKNOWN",
+                parser_source="none",
+                total_events=0,
+                valid_events=0,
+                invalid_events=0,
+                validation_rate=0.0,
+                confidence=0.0,
+                events=[],
+                source_name=p.as_posix(),
+                error=f"File '{p.as_posix()}' is empty (0 bytes).",
+                details=res_dict,
             )
-            all_events.extend([item[0] for item in processed])
+
+        # High-throughput fast path for CSV files
+        is_csv_file = p.suffix.lower() in (".csv", ".tsv")
+        if not is_csv_file and p.suffix.lower() not in (".json", ".xml", ".ndjson"):
+            try:
+                with open(p, "r", encoding="utf-8", errors="replace") as peek_f:
+                    sample_sniff = [peek_f.readline() for _ in range(4)]
+                    from app.ingestion.detector import _looks_like_csv
+                    sniff_str = "".join(sample_sniff).strip()
+                    if not (sniff_str.startswith("{") or sniff_str.startswith("[") or sniff_str.startswith("<")):
+                        if _looks_like_csv(sniff_str):
+                            is_csv_file = True
+            except Exception:
+                pass
+
+        if is_csv_file:
+            own_conn = self.conn is None and persist
+            try:
+                return self._process_csv_file_fast(
+                    file_path=p,
+                    output_json_path=output_json_path,
+                    persist=persist,
+                    chunk_size=max(chunk_size, 2000),
+                    progress_callback=progress_callback,
+                )
+            finally:
+                if own_conn:
+                    reset_db_connection()
+
+        own_conn = self.conn is None and persist
+        try:
+            reset_ollama_telemetry()
+            _start_time = time.monotonic()
+
+            should_resolve = self.config.ai_enabled if auto_resolve_ai is None else bool(auto_resolve_ai)
+            all_events: List[UnifiedEvent] = []
+            raw_count = 0
+
+            # Stream file in bounded batches
+            for chunk_batch in LogCollector.collect_from_file_stream(
+                file_path=p,
+                chunk_size=chunk_size,
+            ):
+                raw_count += len(chunk_batch)
+                processed = self.process_raw_chunks(
+                    chunk_batch,
+                    persist_normalized=persist,
+                    auto_resolve_ai=should_resolve,
+                )
+                all_events.extend([item[0] for item in processed])
+
+            duration_ms = (time.monotonic() - _start_time) * 1000.0
+            return self._build_processing_result(
+                all_events=all_events,
+                raw_count=raw_count,
+                source_name=p.as_posix(),
+                output_json_path=output_json_path,
+                duration_ms=duration_ms,
+            )
+        finally:
+            if own_conn:
+                reset_db_connection()
+
+
+    def _build_processing_result(
+        self,
+        all_events: List[UnifiedEvent],
+        raw_count: int,
+        source_name: str,
+        output_json_path: Optional[str | Path] = None,
+        duration_ms: float = 0.0,
+        error: Optional[str] = None,
+        error_code: Optional[str] = None,
+    ) -> ProcessingResult:
+        import json
+        from app.ai.ollama_client import get_ollama_telemetry
+        from app.ingestion.detector import match_format
 
         parsed_count = len(all_events)
         normalized_count = len(all_events)
@@ -585,7 +858,6 @@ class PipelineEngine:
         ollama_timeouts = telemetry.get("ollama_timeouts", 0)
         ollama_latency_ms = telemetry.get("ollama_latency_ms", 0.0)
 
-        # Gather metadata from processed events
         parser_sources = set()
         fp_set = set()
         ai_attempted = False
@@ -619,7 +891,6 @@ class PipelineEngine:
                     except (ValueError, TypeError):
                         pass
 
-        # Determine parser classification truthfully
         if is_known:
             parser_source = "rule_based"
             parser_type = f"rule-based ({det_fmt})"
@@ -676,15 +947,6 @@ class PipelineEngine:
             for ev in all_events if ev.unmapped
         )
 
-        status_str = "SUCCESS" if normalized_count > 0 else "FAILED"
-
-        if output_json_path:
-            out_p = Path(output_json_path)
-            out_p.parent.mkdir(parents=True, exist_ok=True)
-            dump_data = [ev.model_dump(mode="json") for ev in all_events]
-            out_p.write_text(json.dumps(dump_data, indent=2, default=str), encoding="utf-8")
-
-        # Determine semantic classification summary
         classification_name = "UNKNOWN"
         classification_status = "review"
         classification_reason = None
@@ -701,14 +963,26 @@ class PipelineEngine:
                 classification_status = "review"
                 classification_reason = reason or "insufficient semantic evidence"
 
-        return {
-            "file": p.as_posix(),
+        if output_json_path and all_events:
+            out_p = Path(output_json_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            dump_data = [ev.model_dump(mode="json") for ev in all_events]
+            out_p.write_text(json.dumps(dump_data, indent=2, default=str), encoding="utf-8")
+
+        status_enum = ProcessingStatus.SUCCESS if normalized_count > 0 else ProcessingStatus.FAILED
+        if error:
+            status_enum = ProcessingStatus.FAILED
+
+        res_dict = {
+            "file": source_name,
+            "source_name": source_name,
             "format": format_name,
             "parser": parser_type,
             "raw_count": raw_count,
             "parsed_count": parsed_count,
             "normalized_count": normalized_count,
             "validation": "100%",
+            "validation_rate": 1.0 if normalized_count > 0 else 0.0,
             "accuracy": accuracy,
             "confidence": confidence,
             "classification": classification_name,
@@ -728,9 +1002,163 @@ class PipelineEngine:
             "parser_confidence": confidence,
             "parser_accuracy": accuracy,
             "unknown_fields_preserved": preserved_fields,
-            "status": status_str,
+            "status": status_enum.value,
             "events": all_events,
+            "duration_ms": duration_ms,
+            "error": error,
+            "error_code": error_code,
         }
+
+        return ProcessingResult(
+            status=status_enum,
+            format=format_name,
+            parser_source=parser_source,
+            total_events=raw_count,
+            valid_events=normalized_count,
+            invalid_events=0,
+            validation_rate=1.0 if normalized_count > 0 else 0.0,
+            confidence=float(confidence) if confidence else 1.0,
+            events=all_events,
+            source_name=source_name,
+            quarantined_count=0,
+            duration_ms=duration_ms,
+            error=error,
+            details=res_dict,
+        )
+
+    def process_text(
+        self,
+        raw_text: str,
+        source_name: str = "text_input.log",
+        output_json_path: Optional[str | Path] = None,
+        persist: bool = True,
+        auto_resolve_ai: Optional[bool] = None,
+        raise_errors: bool = False,
+    ) -> ProcessingResult:
+        """Process raw text input directly through the canonical pipeline."""
+        if not raw_text or not raw_text.strip():
+            if raise_errors:
+                raise EmptyInputError("Input text is empty.")
+            res_dict = {
+                "file": source_name,
+                "source_name": source_name,
+                "format": "UNKNOWN",
+                "parser": "none",
+                "raw_count": 0,
+                "parsed_count": 0,
+                "normalized_count": 0,
+                "validation": "SKIPPED",
+                "validation_rate": 0.0,
+                "accuracy": "0.0",
+                "confidence": "0.0",
+                "ollama_calls": 0,
+                "ai_resolution_attempted": False,
+                "ai_resolution_status": "skipped",
+                "fingerprint": None,
+                "parser_source": "none",
+                "unknown_fields_preserved": 0,
+                "status": "SKIPPED",
+                "error": "Input text is empty.",
+                "error_code": "EMPTY_INPUT",
+                "events": [],
+            }
+            return ProcessingResult(
+                status=ProcessingStatus.SKIPPED,
+                format="UNKNOWN",
+                parser_source="none",
+                total_events=0,
+                valid_events=0,
+                invalid_events=0,
+                validation_rate=0.0,
+                confidence=0.0,
+                events=[],
+                source_name=source_name,
+                error="Input text is empty.",
+                details=res_dict,
+            )
+
+        lines = [ln for ln in raw_text.splitlines() if ln.strip()]
+        return self.process_lines(
+            lines=lines,
+            source_name=source_name,
+            output_json_path=output_json_path,
+            persist=persist,
+            auto_resolve_ai=auto_resolve_ai,
+            raise_errors=raise_errors,
+        )
+
+    def process_lines(
+        self,
+        lines: List[str],
+        source_name: str = "lines_input.log",
+        output_json_path: Optional[str | Path] = None,
+        persist: bool = True,
+        auto_resolve_ai: Optional[bool] = None,
+        raise_errors: bool = False,
+    ) -> ProcessingResult:
+        """Process log lines directly through the canonical pipeline."""
+        if not lines:
+            if raise_errors:
+                raise EmptyInputError("Input lines list is empty.")
+            res_dict = {
+                "file": source_name,
+                "source_name": source_name,
+                "format": "UNKNOWN",
+                "parser": "none",
+                "raw_count": 0,
+                "parsed_count": 0,
+                "normalized_count": 0,
+                "validation": "SKIPPED",
+                "validation_rate": 0.0,
+                "accuracy": "0.0",
+                "confidence": "0.0",
+                "ollama_calls": 0,
+                "ai_resolution_attempted": False,
+                "ai_resolution_status": "skipped",
+                "fingerprint": None,
+                "parser_source": "none",
+                "unknown_fields_preserved": 0,
+                "status": "SKIPPED",
+                "error": "Input lines list is empty.",
+                "error_code": "EMPTY_INPUT",
+                "events": [],
+            }
+            return ProcessingResult(
+                status=ProcessingStatus.SKIPPED,
+                format="UNKNOWN",
+                parser_source="none",
+                total_events=0,
+                valid_events=0,
+                invalid_events=0,
+                validation_rate=0.0,
+                confidence=0.0,
+                events=[],
+                source_name=source_name,
+                error="Input lines list is empty.",
+                details=res_dict,
+            )
+
+        import time
+        from app.ai.ollama_client import reset_ollama_telemetry
+        t0 = time.monotonic()
+        reset_ollama_telemetry()
+        own_conn = self.conn is None and persist
+        try:
+            should_resolve = self.config.ai_enabled if auto_resolve_ai is None else bool(auto_resolve_ai)
+            chunks = LogCollector.collect_from_lines(lines=lines, source_name=source_name)
+            processed = self.process_raw_chunks(chunks, persist_normalized=persist, auto_resolve_ai=should_resolve)
+            all_events = [item[0] for item in processed]
+            duration_ms = (time.monotonic() - t0) * 1000.0
+            return self._build_processing_result(
+                all_events=all_events,
+                raw_count=len(chunks),
+                source_name=source_name,
+                output_json_path=output_json_path,
+                duration_ms=duration_ms,
+            )
+        finally:
+            if own_conn:
+                reset_db_connection()
 
     def process(
         self,

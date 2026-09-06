@@ -1,6 +1,6 @@
 {
   "benchmark": "ULPF Real-World Unknown Log Evaluation",
-  "timestamp": "2026-09-05T15:59:45.874369+00:00",
+  "timestamp": "2026-09-06T08:29:02.685134+00:00",
   "total_categories_tested": 13,
   "total_test_events": 36,
   "aggregate_metrics": {
@@ -13,8 +13,8 @@
     "ocsf_classification_accuracy": 100.0,
     "unknown_field_preservation": 93.59,
     "total_ollama_calls": 0,
-    "total_processing_time_seconds": 0.2093,
-    "aggregate_events_per_second": 171.99
+    "total_processing_time_seconds": 0.2128,
+    "aggregate_events_per_second": 169.16
   },
   "category_results": [
     {
@@ -31,8 +31,8 @@
       "unknown_field_preservation": 75.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000691,
-      "events_per_second": 4344.05,
+      "processing_time_seconds": 0.000695,
+      "events_per_second": 4313.44,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -130,8 +130,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000459,
-      "events_per_second": 6540.22,
+      "processing_time_seconds": 0.00044,
+      "events_per_second": 6825.94,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -229,8 +229,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 33.33,
-      "processing_time_seconds": 0.047535,
-      "events_per_second": 63.11,
+      "processing_time_seconds": 0.046584,
+      "events_per_second": 64.4,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -328,8 +328,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.057338,
-      "events_per_second": 52.32,
+      "processing_time_seconds": 0.062791,
+      "events_per_second": 47.78,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -427,8 +427,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000549,
-      "events_per_second": 5464.48,
+      "processing_time_seconds": 0.001013,
+      "events_per_second": 2962.67,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -526,8 +526,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000985,
-      "events_per_second": 3045.99,
+      "processing_time_seconds": 0.001727,
+      "events_per_second": 1737.02,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -625,8 +625,8 @@
       "unknown_field_preservation": 75.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000573,
-      "events_per_second": 5237.43,
+      "processing_time_seconds": 0.00102,
+      "events_per_second": 2941.75,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -724,8 +724,8 @@
       "unknown_field_preservation": 66.67,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000313,
-      "events_per_second": 6397.95,
+      "processing_time_seconds": 0.000547,
+      "events_per_second": 3653.64,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -797,8 +797,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.043237,
-      "events_per_second": 69.39,
+      "processing_time_seconds": 0.040653,
+      "events_per_second": 73.8,
       "uncertain_events_count": 1,
       "uncertainty_notes": [
         "kv_logfmt_payment_fail: insufficient_semantic_evidence"
@@ -898,8 +898,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.05566,
-      "events_per_second": 53.9,
+      "processing_time_seconds": 0.055365,
+      "events_per_second": 54.19,
       "uncertain_events_count": 2,
       "uncertainty_notes": [
         "delim_semicolon_fail: insufficient_semantic_evidence",
@@ -1000,8 +1000,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000394,
-      "events_per_second": 5070.99,
+      "processing_time_seconds": 0.000424,
+      "events_per_second": 4720.32,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -1073,8 +1073,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000779,
-      "events_per_second": 2566.41,
+      "processing_time_seconds": 0.0008,
+      "events_per_second": 2501.25,
       "uncertain_events_count": 1,
       "uncertainty_notes": [
         "xml_inventory_entry: insufficient_semantic_evidence"
@@ -1148,8 +1148,8 @@
       "unknown_field_preservation": 100.0,
       "ollama_calls": 0,
       "cache_hit_rate": 0.0,
-      "processing_time_seconds": 0.000807,
-      "events_per_second": 3717.47,
+      "processing_time_seconds": 0.000756,
+      "events_per_second": 3969.3,
       "uncertain_events_count": 0,
       "uncertainty_notes": [],
       "item_details": [
@@ -1242,8 +1242,8 @@
       "parse_success_rate": 100.0,
       "event_count_accuracy": 100.0,
       "ollama_calls": 0,
-      "processing_time_seconds": 0.078,
-      "events_per_second": 25653.06
+      "processing_time_seconds": 0.0727,
+      "events_per_second": 27518.57
     },
     {
       "dataset_name": "Mac_2k.log",
@@ -1252,11 +1252,11 @@
       "parse_success_rate": 100.0,
       "event_count_accuracy": 100.0,
       "ollama_calls": 0,
-      "processing_time_seconds": 0.1128,
-      "events_per_second": 17732.4
+      "processing_time_seconds": 0.1074,
+      "events_per_second": 18617.26
     }
   ],
-  "generated_at": "2026-09-05T15:59:45.874696+00:00",
+  "generated_at": "2026-09-06T08:29:02.685431+00:00",
   "framework_version": "ULPF-1.0.0-Phase1",
   "ai_metrics": {
     "known_formats_total_ollama_calls": 0,
@@ -1264,8 +1264,8 @@
     "ollama_calls": 0
   },
   "performance_metrics": {
-    "aggregate_events_per_second": 171.99,
-    "total_processing_time_seconds": 0.2093
+    "aggregate_events_per_second": 169.16,
+    "total_processing_time_seconds": 0.2128
   },
   "ocsf_metrics": {
     "ocsf_classification_accuracy": 100.0

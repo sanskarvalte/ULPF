@@ -413,8 +413,15 @@ def parse_with_spec(
     Returns a normalized UnifiedEvent with unmapped fields preserved.
     """
     parser_type = str(parser_spec.get("parser_type", "delimited")).lower()
+    fields: List[Dict[str, Any]] = parser_spec.get("fields", [])
 
-    if parser_type == "delimited":
+    if parser_type in ("generic", "unknown_review") or not fields:
+        # Fallback or generic: extract all delimited key-values and positional columns dynamically
+        from app.ai.ollama_detector import _extract_all_delimited_key_values
+        extracted = _extract_all_delimited_key_values(raw)
+        if not extracted:
+            extracted = {"extra_col_1": raw.strip()}
+    elif parser_type == "delimited":
         extracted = _parse_delimited(raw, parser_spec)
     elif parser_type == "csv":
         extracted = _parse_csv(raw, parser_spec)
