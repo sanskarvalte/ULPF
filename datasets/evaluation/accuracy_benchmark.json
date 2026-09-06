@@ -1,0 +1,263 @@
+{
+  "timestamp": "2026-09-06T06:10:58.330852+00:00",
+  "total_datasets_evaluated": 6,
+  "metric_definitions": {
+    "parser_success": "fraction of events successfully structured without unhandled exception",
+    "validation_rate": "fraction of events structurally conforming to OCSF temporal and network schema",
+    "confidence": "mean model/parser heuristic self-assessment score (0.0 to 1.0), never equated to accuracy",
+    "event_count_accuracy": "min(actual_events, expected_events) / max(actual_events, expected_events) * 100.0",
+    "field_presence_accuracy": "detected_expected_fields / total_expected_fields * 100.0",
+    "field_value_accuracy": "matching_field_values / total_evaluated_fields * 100.0",
+    "field_name_accuracy": "matching_field_names / total_expected_fields * 100.0",
+    "ocsf_semantic_accuracy": "correctly_classified_or_review_guarded / total_evaluated * 100.0",
+    "unknown_field_preservation": "preserved_unknown_fields / present_unknown_fields * 100.0"
+  },
+  "format_detection_accuracy_percent": 100.0,
+  "event_count_accuracy_percent": 100.0,
+  "field_presence_accuracy_percent": 100.0,
+  "field_value_accuracy_percent": 100.0,
+  "ocsf_semantic_accuracy_percent": 100.0,
+  "unknown_field_preservation_percent": 100.0,
+  "validation_rate_percent": 100.0,
+  "average_confidence": 0.718,
+  "blockchain_chain_valid": true,
+  "dataset_results": [
+    {
+      "id": "A_android_logcat",
+      "dataset": "A. Known Android",
+      "category_type": "known",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 0.99,
+      "ollama_calls": 0,
+      "parser_source": "rule_based",
+      "detected_format": "android",
+      "duration_sec": 0.0144,
+      "passed": true
+    },
+    {
+      "id": "B_mac_syslog",
+      "dataset": "B. Known Syslog/Mac",
+      "category_type": "known",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 1.0,
+      "ollama_calls": 0,
+      "parser_source": "rule_based",
+      "detected_format": "syslog",
+      "duration_sec": 0.0074,
+      "passed": true
+    },
+    {
+      "id": "C_linux_ssh",
+      "dataset": "C. Known Linux or Hadoop",
+      "category_type": "known",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 1.0,
+      "ollama_calls": 0,
+      "parser_source": "rule_based",
+      "detected_format": "syslog",
+      "duration_sec": 0.0004,
+      "passed": true
+    },
+    {
+      "id": "D_unknown_zookeeper",
+      "dataset": "D. Unknown ZooKeeper",
+      "category_type": "unknown",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 0.92,
+      "ollama_calls": 0,
+      "parser_source": "review_fallback",
+      "detected_format": "unknown_pending_review",
+      "duration_sec": 0.0935,
+      "passed": true
+    },
+    {
+      "id": "E_unknown_turbine_telemetry",
+      "dataset": "E. Unknown inventory/turbine-style log",
+      "category_type": "unknown",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 0.2,
+      "ollama_calls": 0,
+      "parser_source": "review_fallback",
+      "detected_format": "unknown_pending_review",
+      "duration_sec": 0.0491,
+      "passed": true
+    },
+    {
+      "id": "F_unknown_trade_delimited",
+      "dataset": "F. Positional/delimited unknown log",
+      "category_type": "unknown",
+      "parser_success": 100.0,
+      "format_detection_accuracy": 100.0,
+      "event_count_accuracy": 100.0,
+      "field_presence_accuracy": 100.0,
+      "field_value_accuracy": 100.0,
+      "field_name_accuracy": 100.0,
+      "timestamp_accuracy": 100.0,
+      "ocsf_semantic_accuracy": 100.0,
+      "unknown_field_preservation": 100.0,
+      "validation_rate": 100.0,
+      "confidence": 0.2,
+      "ollama_calls": 0,
+      "parser_source": "review_fallback",
+      "detected_format": "unknown_pending_review",
+      "duration_sec": 0.0368,
+      "passed": true
+    }
+  ],
+  "unknown_format_evaluations": [
+    {
+      "dataset_name": "Unknown Metric Recorder",
+      "fingerprint": "904619c4dc462cf8",
+      "cold_run": {
+        "ollama_calls": 2,
+        "ai_invoked": true,
+        "parser_source": "ai_generated_dynamic",
+        "extraction_accuracy": 100.0,
+        "heuristic_confidence": 0.99,
+        "duration_sec": 51.208,
+        "promoted": true
+      },
+      "warm_run": {
+        "ollama_calls": 0,
+        "learned_parser_reused": true,
+        "parser_source": "learned_cache",
+        "extraction_accuracy": 100.0,
+        "heuristic_confidence": 0.99,
+        "duration_sec": 0.098,
+        "identical_output": true
+      }
+    },
+    {
+      "dataset_name": "Unknown Turbine Telemetry",
+      "fingerprint": "d604488f61c7fc0d",
+      "cold_run": {
+        "ollama_calls": 1,
+        "ai_invoked": true,
+        "parser_source": "ai_generated_dynamic",
+        "extraction_accuracy": 100.0,
+        "heuristic_confidence": 0.99,
+        "duration_sec": 17.183,
+        "promoted": true
+      },
+      "warm_run": {
+        "ollama_calls": 0,
+        "learned_parser_reused": true,
+        "parser_source": "learned_cache",
+        "extraction_accuracy": 100.0,
+        "heuristic_confidence": 0.99,
+        "duration_sec": 0.058,
+        "identical_output": true
+      }
+    }
+  ],
+  "dataset_f_confusion_matrix": [
+    {
+      "expected_field": "extra_col_1",
+      "expected_value": "2026-09-01 10:15:30",
+      "actual_field": "extra_col_1",
+      "actual_value": "2026-09-01 10:15:30",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_2",
+      "expected_value": "TRADE_EXEC",
+      "actual_field": "extra_col_2",
+      "actual_value": "TRADE_EXEC",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_3",
+      "expected_value": "ORD-99124",
+      "actual_field": "extra_col_3",
+      "actual_value": "ORD-99124",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_4",
+      "expected_value": "AAPL",
+      "actual_field": "extra_col_4",
+      "actual_value": "AAPL",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_5",
+      "expected_value": "BUY",
+      "actual_field": "extra_col_5",
+      "actual_value": "BUY",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_6",
+      "expected_value": "150",
+      "actual_field": "extra_col_6",
+      "actual_value": "150",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_7",
+      "expected_value": "182.50",
+      "actual_field": "extra_col_7",
+      "actual_value": "182.50",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_8",
+      "expected_value": "NYSE",
+      "actual_field": "extra_col_8",
+      "actual_value": "NYSE",
+      "match": true
+    },
+    {
+      "expected_field": "extra_col_9",
+      "expected_value": "FILLED",
+      "actual_field": "extra_col_9",
+      "actual_value": "FILLED",
+      "match": true
+    }
+  ]
+}

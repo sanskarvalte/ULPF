@@ -107,8 +107,8 @@ def _parse_syslog_timestamp(
         if len(parts) == 4:
             dt = datetime.strptime(clean_ts, "%b %d %Y %H:%M:%S")
             return dt.replace(tzinfo=timezone.utc), False
-        dt = datetime.strptime(clean_ts, "%b %d %H:%M:%S")
-        return dt.replace(year=target_year, tzinfo=timezone.utc), True
+        dt = datetime.strptime(f"{target_year} {clean_ts}", f"%Y %b %d %H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc), True
     except ValueError:
         return None, False
 

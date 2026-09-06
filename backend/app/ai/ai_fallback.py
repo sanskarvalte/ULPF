@@ -182,7 +182,7 @@ def resolve_unknown_log(
         "success": True,
         "status": resolution.get("status", "promoted"),
         "fallback": False,
-        "confidence": resolution.get("accuracy") if resolution.get("accuracy") is not None else 0.95,
+        "confidence": (parser_spec.get("confidence", 0.90) if isinstance(parser_spec, dict) else 0.90),
         "parser_spec": parser_spec,
         "events": events,
         "accuracy": resolution.get("accuracy"),

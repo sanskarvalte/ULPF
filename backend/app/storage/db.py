@@ -1,11 +1,14 @@
-"""
+﻿"""
 Local DuckDB database connection and table initialization for ULPF.
 """
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import os
 from pathlib import Path
+import re
+import time
 from typing import Optional
 
 import duckdb
@@ -20,8 +23,58 @@ DEFAULT_DB_PATH = Path(
 _GLOBAL_CONN: Optional[duckdb.DuckDBPyConnection] = None
 
 
+class DatabaseLockError(duckdb.IOException):
+    """Raised when DuckDB database file is locked by another process on Windows/POSIX."""
+
+    def __init__(self, db_path: str, message: str, pid: Optional[int] = None):
+        super().__init__(message)
+        self.db_path = db_path
+        self.pid = pid
+
+
+def is_lock_error(exc: Exception) -> bool:
+    """Check if exception represents a file locking conflict on Windows or Unix."""
+    msg = str(exc).lower()
+    return (
+        "being used by another process" in msg
+        or "could not set lock" in msg
+        or ("cannot open file" in msg and "used by another process" in msg)
+        or "file is already open" in msg
+        or "lock conflict" in msg
+    )
+
+
+def connect_with_retry(
+    path: str,
+    read_only: bool = False,
+    timeout: float = 5.0,
+    retry_interval: float = 0.05,
+) -> duckdb.DuckDBPyConnection:
+    """Connect to DuckDB with bounded retry for handling transient cross-process Windows locks."""
+    t0 = time.time()
+    while True:
+        try:
+            return duckdb.connect(path, read_only=read_only)
+        except duckdb.IOException as exc:
+            if not is_lock_error(exc):
+                raise
+            elapsed = time.time() - t0
+            if elapsed >= timeout:
+                match = re.search(r"\(PID\s+(\d+)\)", str(exc))
+                pid = int(match.group(1)) if match else None
+                mode_str = "read-only" if read_only else "read-write"
+                pid_info = f" (held by process PID {pid})" if pid else ""
+                err_msg = (
+                    f"DuckDB lock conflict: database file '{path}' is locked by another process{pid_info}. "
+                    f"Failed to acquire {mode_str} lock after {timeout:.1f}s. "
+                    "Ensure any concurrent operations have completed."
+                )
+                raise DatabaseLockError(db_path=path, message=err_msg, pid=pid) from exc
+            time.sleep(retry_interval)
+
+
 def reset_db_connection():
-    """Reset the global DuckDB connection singleton (primarily for testing)."""
+    """Reset and explicitly close the global DuckDB connection singleton."""
     global _GLOBAL_CONN
     if _GLOBAL_CONN is not None:
         try:
@@ -31,47 +84,39 @@ def reset_db_connection():
         _GLOBAL_CONN = None
 
 
-def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duckdb.DuckDBPyConnection:
-    """Connect to local DuckDB and initialize tables with cached singleton."""
+def close_db_connection(conn: Optional[duckdb.DuckDBPyConnection] = None):
+    """Explicitly close a DuckDB connection or the global connection singleton."""
     global _GLOBAL_CONN
-
-    env_path = os.getenv("ULPF_DB_PATH") or os.getenv("ULPF_DATABASE_PATH")
-    path = str(db_path or (Path(env_path) if env_path else DEFAULT_DB_PATH))
-
-    # If caller requests read_only, and we already have an active read-write singleton, reuse cursor
-    if read_only and db_path is None and _GLOBAL_CONN is not None:
+    if conn is not None and conn is not _GLOBAL_CONN:
         try:
-            return _GLOBAL_CONN.cursor()
+            conn.close()
         except Exception:
-            _GLOBAL_CONN = None
+            pass
+    reset_db_connection()
 
-    # If caller requests read-write, return singleton cursor if available
-    if not read_only and db_path is None and _GLOBAL_CONN is not None:
-        try:
-            return _GLOBAL_CONN.cursor()
-        except Exception:
-            _GLOBAL_CONN = None
 
-    is_ro = read_only
+@contextmanager
+def get_db_connection(
+    db_path: Optional[str | Path] = None,
+    read_only: bool = False,
+    timeout: Optional[float] = None,
+):
+    """Context manager for scoped DuckDB access that guarantees resource release on exit."""
+    conn = get_db(db_path=db_path, read_only=read_only, timeout=timeout)
     try:
-        conn = duckdb.connect(path, read_only=is_ro)
-    except duckdb.IOException as e:
-        if "Could not set lock" in str(e):
-            is_ro = True
-            conn = duckdb.connect(path, read_only=True)
+        yield conn
+    finally:
+        if db_path is not None or read_only:
+            try:
+                conn.close()
+            except Exception:
+                pass
         else:
-            raise e
+            reset_db_connection()
 
-    # ONLY cache read-write connections in _GLOBAL_CONN
-    if not is_ro:
-        if db_path is None:
-            _GLOBAL_CONN = conn
-        elif _GLOBAL_CONN is None:
-            _GLOBAL_CONN = conn
 
-    if is_ro:
-        return conn.cursor()
-
+def _init_db_schema(conn: duckdb.DuckDBPyConnection) -> None:
+    """Initialize all ULPF database tables, columns, and indexes idempotently."""
     # 1. Raw events table with hash-chaining ledger columns
     conn.execute("""
     CREATE TABLE IF NOT EXISTS raw_events (
@@ -250,4 +295,48 @@ def get_db(db_path: Optional[str | Path] = None, read_only: bool = False) -> duc
     except Exception:
         pass
 
+
+def get_db(
+    db_path: Optional[str | Path] = None,
+    read_only: bool = False,
+    timeout: Optional[float] = None,
+) -> duckdb.DuckDBPyConnection:
+    """Connect to local DuckDB and initialize tables with cached singleton."""
+    global _GLOBAL_CONN
+
+    lock_timeout = (
+        timeout
+        if timeout is not None
+        else float(os.getenv("ULPF_DB_LOCK_TIMEOUT", "5.0"))
+    )
+    env_path = os.getenv("ULPF_DB_PATH") or os.getenv("ULPF_DATABASE_PATH")
+    path = str(db_path or (Path(env_path) if env_path else DEFAULT_DB_PATH))
+
+    # If caller requests read_only, and we already have an active read-write singleton, reuse cursor
+    if read_only and db_path is None and _GLOBAL_CONN is not None:
+        try:
+            return _GLOBAL_CONN.cursor()
+        except Exception:
+            _GLOBAL_CONN = None
+
+    # If caller requests read-write, return singleton cursor if available
+    if not read_only and db_path is None and _GLOBAL_CONN is not None:
+        try:
+            return _GLOBAL_CONN.cursor()
+        except Exception:
+            _GLOBAL_CONN = None
+
+    conn = connect_with_retry(path, read_only=read_only, timeout=lock_timeout)
+
+    # ONLY cache read-write connections in _GLOBAL_CONN
+    if not read_only:
+        if db_path is None:
+            _GLOBAL_CONN = conn
+        elif _GLOBAL_CONN is None:
+            _GLOBAL_CONN = conn
+
+    if read_only:
+        return conn
+
+    _init_db_schema(conn)
     return conn

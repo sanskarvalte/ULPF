@@ -1,0 +1,171 @@
+[
+  {
+    "id": "A_android_logcat",
+    "dataset_name": "A. Known Android",
+    "category_type": "known",
+    "raw": "03-17 16:13:38.811  1702  2395 D ActivityManager: Start proc 11370:com.google.android.gm/u0a83 for service {com.google.android.gm/com.google.android.gm.provider.MailProvider}",
+    "expected_format": "android",
+    "expected_event_count": 1,
+    "expected_timestamp": "03-17 16:13:38.811",
+    "expected_fields": {
+      "vendor": "Google",
+      "product": "Android",
+      "service_name": "ActivityManager",
+      "severity": "Informational",
+      "pid": "1702",
+      "tid": "2395",
+      "log_level": "D"
+    },
+    "expected_unmapped_keys": [
+      "pid",
+      "tid",
+      "log_level"
+    ],
+    "expected_ocsf": {
+      "category_name": "Application Activity",
+      "class_name": "Application Lifecycle",
+      "activity_name": "Process Management",
+      "classification_status": "classified"
+    }
+  },
+  {
+    "id": "B_mac_syslog",
+    "dataset_name": "B. Known Syslog/Mac",
+    "category_type": "known",
+    "raw": "Jul  1 09:00:55 localhost com.apple.xpc.launchd[1] (com.apple.quicklook[167]): Endpoint has been activated through legacy launch(3) APIs.",
+    "expected_format": "syslog",
+    "expected_event_count": 1,
+    "expected_timestamp": "07-01 09:00:55",
+    "expected_fields": {
+      "vendor": "Apple",
+      "product": "com.apple.xpc.launchd",
+      "log_name": "localhost",
+      "pid": "1",
+      "context": "com.apple.quicklook[167]"
+    },
+    "expected_unmapped_keys": [
+      "pid",
+      "context"
+    ],
+    "expected_ocsf": {
+      "category_name": "System Activity",
+      "class_name": "Process Activity",
+      "activity_name": "Execute",
+      "classification_status": "classified"
+    }
+  },
+  {
+    "id": "C_linux_ssh",
+    "dataset_name": "C. Known Linux or Hadoop",
+    "category_type": "known",
+    "raw": "Jan 04 15:16:01 combo sshd[24047]: authentication failure; rhost=218.188.2.4 user=root",
+    "expected_format": "syslog",
+    "expected_event_count": 1,
+    "expected_timestamp": "01-04 15:16:01",
+    "expected_fields": {
+      "vendor": "Linux",
+      "product": "sshd",
+      "src_ip": "218.188.2.4",
+      "user": "root",
+      "status": "Failure",
+      "severity": "High",
+      "pid": "24047"
+    },
+    "expected_unmapped_keys": [
+      "pid"
+    ],
+    "expected_ocsf": {
+      "category_name": "Identity & Access Management",
+      "class_name": "Authentication",
+      "activity_name": "Logon",
+      "classification_status": "classified"
+    }
+  },
+  {
+    "id": "D_unknown_zookeeper",
+    "dataset_name": "D. Unknown ZooKeeper",
+    "category_type": "unknown",
+    "raw": "2015-07-29 17:41:40,593 - INFO  [main:Environment@97] - Server environment:zookeeper.version=3.4.6-1569965",
+    "expected_format": "unknown",
+    "expected_event_count": 1,
+    "expected_timestamp": "2015-07-29 17:41:40",
+    "expected_fields": {
+      "message": "Server environment:zookeeper.version=3.4.6-1569965"
+    },
+    "expected_unmapped_keys": [
+      "zookeeper.version",
+      "fingerprint"
+    ],
+    "expected_ocsf": {
+      "category_name": null,
+      "class_name": null,
+      "activity_name": null,
+      "classification_status": "review"
+    }
+  },
+  {
+    "id": "E_unknown_turbine_telemetry",
+    "dataset_name": "E. Unknown inventory/turbine-style log",
+    "category_type": "unknown",
+    "raw": "timestamp=2026-09-01T12:00:00Z unit_id=TURB-402 rpm=1450.5 temp_c=78.2 vibration_g=0.04 status=NOMINAL",
+    "expected_format": "unknown",
+    "expected_event_count": 1,
+    "expected_timestamp": "2026-09-01T12:00:00",
+    "expected_fields": {
+      "unit_id": "TURB-402",
+      "rpm": "1450.5",
+      "temp_c": "78.2",
+      "vibration_g": "0.04",
+      "status": "NOMINAL"
+    },
+    "expected_unmapped_keys": [
+      "unit_id",
+      "rpm",
+      "temp_c",
+      "vibration_g"
+    ],
+    "expected_ocsf": {
+      "category_name": null,
+      "class_name": null,
+      "activity_name": null,
+      "classification_status": "review"
+    }
+  },
+  {
+    "id": "F_unknown_trade_delimited",
+    "dataset_name": "F. Positional/delimited unknown log",
+    "category_type": "unknown",
+    "raw": "2026-09-01 10:15:30|TRADE_EXEC|ORD-99124|AAPL|BUY|150|182.50|NYSE|FILLED",
+    "expected_format": "unknown",
+    "expected_event_count": 1,
+    "expected_timestamp": "2026-09-01 10:15:30",
+    "expected_fields": {
+      "extra_col_1": "2026-09-01 10:15:30",
+      "extra_col_2": "TRADE_EXEC",
+      "extra_col_3": "ORD-99124",
+      "extra_col_4": "AAPL",
+      "extra_col_5": "BUY",
+      "extra_col_6": "150",
+      "extra_col_7": "182.50",
+      "extra_col_8": "NYSE",
+      "extra_col_9": "FILLED"
+    },
+    "expected_unmapped_keys": [
+      "extra_col_1",
+      "extra_col_2",
+      "extra_col_3",
+      "extra_col_4",
+      "extra_col_5",
+      "extra_col_6",
+      "extra_col_7",
+      "extra_col_8",
+      "extra_col_9"
+    ],
+    "expected_ocsf": {
+      "category_name": null,
+      "class_name": null,
+      "activity_name": null,
+      "classification_status": "review"
+    }
+  }
+]

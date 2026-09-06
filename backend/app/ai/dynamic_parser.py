@@ -140,9 +140,13 @@ def _convert_value(
             "%d/%b/%Y:%H:%M:%S",
         ):
             try:
-                dt = datetime.strptime(value_str, fmt)
-                if dt.year == 1900:
-                    dt = dt.replace(year=datetime.now(timezone.utc).year)
+                if "%Y" not in fmt and "%y" not in fmt:
+                    cur_yr = datetime.now(timezone.utc).year
+                    dt = datetime.strptime(f"{cur_yr} {value_str}", f"%Y {fmt}")
+                else:
+                    dt = datetime.strptime(value_str, fmt)
+                    if dt.year == 1900:
+                        dt = dt.replace(year=datetime.now(timezone.utc).year)
                 return dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
@@ -194,7 +198,14 @@ def _store_field(
 ) -> None:
     """Store an extracted field either in mapped UnifiedEvent or unmapped."""
     unified_name = _map_field_name(field_name)
-    if unified_name in UNIFIED_FIELDS:
+    if unified_name == "timestamp" and value is not None and not isinstance(value, datetime):
+        from app.normalization.field_mapping import parse_timestamp
+        parsed = parse_timestamp(str(value))
+        if parsed:
+            mapped["timestamp"] = parsed
+        else:
+            unmapped[field_name] = value
+    elif unified_name in UNIFIED_FIELDS:
         mapped[unified_name] = value
     else:
         unmapped[field_name] = value
@@ -413,8 +424,15 @@ def parse_with_spec(
     Returns a normalized UnifiedEvent with unmapped fields preserved.
     """
     parser_type = str(parser_spec.get("parser_type", "delimited")).lower()
+    fields: List[Dict[str, Any]] = parser_spec.get("fields", [])
 
-    if parser_type == "delimited":
+    if parser_type in ("generic", "unknown_review") or not fields:
+        # Fallback or generic: extract all delimited key-values and positional columns dynamically
+        from app.ai.ollama_detector import _extract_all_delimited_key_values
+        extracted = _extract_all_delimited_key_values(raw)
+        if not extracted:
+            extracted = {"extra_col_1": raw.strip()}
+    elif parser_type == "delimited":
         extracted = _parse_delimited(raw, parser_spec)
     elif parser_type == "csv":
         extracted = _parse_csv(raw, parser_spec)
@@ -441,6 +459,13 @@ def parse_with_spec(
         ts_val = extracted[timestamp_field]
         if ts_val is not None:
             mapped["timestamp"] = _convert_value(ts_val, "datetime")
+    elif not mapped.get("timestamp"):
+        for ts_candidate in ("timestamp", "time", "ts", "event_time", "@timestamp", "datetime"):
+            if ts_candidate in extracted and extracted[ts_candidate] is not None:
+                parsed_ts = _convert_value(extracted[ts_candidate], "datetime")
+                if isinstance(parsed_ts, datetime):
+                    mapped["timestamp"] = parsed_ts
+                    break
 
     # Ensure message is populated
     if not mapped.get("message"):

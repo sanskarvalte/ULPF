@@ -1,0 +1,69 @@
+{
+  "tests": [
+    {
+      "dataset": "datasets/loghub/Android_2k.log",
+      "format": "ANDROID",
+      "parser": "android_logcat_parser (rule_based)",
+      "events": 2000,
+      "stored": 2000,
+      "ollama_calls": 0,
+      "elapsed_seconds": 20.939,
+      "events_per_second": 95.5,
+      "ocsf_class": "Application Lifecycle (6001)",
+      "ocsf_category": "Application Activity (6)"
+    },
+    {
+      "dataset": "datasets/loghub/Mac_2k.log",
+      "format": "SYSLOG",
+      "parser": "syslog_parser (rule_based)",
+      "events": 2000,
+      "stored": 2000,
+      "ollama_calls": 0,
+      "elapsed_seconds": 20.674,
+      "events_per_second": 96.7,
+      "ocsf_class": "Kernel Activity (1003)",
+      "ocsf_category": "System Activity (1)"
+    },
+    {
+      "dataset": "tests/real_unknown_logs/20_zookeeper.log (first_run)",
+      "format": "UNKNOWN",
+      "parser": "ai_generated_dynamic (qwen3:4b)",
+      "events": 3,
+      "stored": 3,
+      "ollama_calls": 6,
+      "elapsed_seconds": 75.547,
+      "events_per_second": 0.04,
+      "ai_status": "promoted",
+      "confidence": 0.96,
+      "ocsf_status": "review (insufficient_semantic_evidence)"
+    },
+    {
+      "dataset": "tests/real_unknown_logs/20_zookeeper.log (learned_second_run)",
+      "format": "UNKNOWN (fingerprint: f465f07d29323fe8)",
+      "parser": "learned_cache",
+      "events": 3,
+      "stored": 3,
+      "ollama_calls": 0,
+      "elapsed_seconds": 0.291,
+      "events_per_second": 10.3,
+      "ai_status": "cached",
+      "confidence": 0.96,
+      "ocsf_status": "review (insufficient_semantic_evidence)"
+    }
+  ],
+  "duckdb_verification": {
+    "database_file": "ulpf.duckdb",
+    "raw_events_present": true,
+    "normalized_events_present": true,
+    "total_raw_events": 205032,
+    "total_normalized_events": 413786,
+    "stored_counts_verified_against_deltas": true
+  },
+  "pytest_summary": {
+    "command": "python -m pytest -q",
+    "status": "PASSED",
+    "passed": 261,
+    "failed": 0,
+    "duration_seconds": 58.34
+  }
+}

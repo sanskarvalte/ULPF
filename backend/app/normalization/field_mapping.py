@@ -239,9 +239,12 @@ def parse_timestamp(
             "%m-%d %H:%M:%S.%f",
         ):
             try:
-                dt = datetime.strptime(val, fmt)
-                if dt.year == 1900:  # Inferred year
-                    dt = dt.replace(year=target_year)
+                if "%Y" not in fmt and "%y" not in fmt:
+                    dt = datetime.strptime(f"{target_year} {val}", f"%Y {fmt}")
+                else:
+                    dt = datetime.strptime(val, fmt)
+                    if dt.year == 1900:  # Inferred year
+                        dt = dt.replace(year=target_year)
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
                 return dt.astimezone(timezone.utc)

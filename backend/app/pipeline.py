@@ -49,7 +49,7 @@ from app.normalization.engine import normalize_event
 from app.parsers.csv_parser import parse_csv_log_all
 from app.parsers.registry import get_parser, has_parser, register_parser, reject_parser
 from app.parsers.xml_parser import parse_xml_log_all
-from app.storage.db import get_db
+from app.storage.db import get_db, reset_db_connection
 from app.storage.normalized import save_events_batch
 from app.storage.raw import hash_raw_log, save_raw_events_batch
 from app.storage.review_queue import enqueue_for_review
@@ -469,17 +469,22 @@ class PipelineEngine:
         Standard Python API entrypoint for ingesting a log file.
         Uses bounded-memory streaming internally and returns the list of normalized events.
         """
-        should_resolve = self.config.ai_enabled if auto_resolve_ai is None else bool(auto_resolve_ai)
-        all_events: List[UnifiedEvent] = []
-        for batch in self.ingest_file_stream(
-            file_path=file_path,
-            chunk_size=chunk_size,
-            source_metadata=source_metadata,
-            persist=persist,
-            auto_resolve_ai=should_resolve,
-        ):
-            all_events.extend(batch)
-        return all_events
+        own_conn = self.conn is None and persist
+        try:
+            should_resolve = self.config.ai_enabled if auto_resolve_ai is None else bool(auto_resolve_ai)
+            all_events: List[UnifiedEvent] = []
+            for batch in self.ingest_file_stream(
+                file_path=file_path,
+                chunk_size=chunk_size,
+                source_metadata=source_metadata,
+                persist=persist,
+                auto_resolve_ai=should_resolve,
+            ):
+                all_events.extend(batch)
+            return all_events
+        finally:
+            if own_conn:
+                reset_db_connection()
 
     def ingest_file_stream(
         self,
@@ -519,6 +524,29 @@ class PipelineEngine:
         Process a log file with bounded memory and return complete execution summary.
         Truthfully reports all observable telemetry.
         """
+        own_conn = self.conn is None and persist
+        try:
+            return self._process_file_impl(
+                file_path=file_path,
+                output_json_path=output_json_path,
+                persist=persist,
+                auto_resolve_ai=auto_resolve_ai,
+                chunk_size=chunk_size,
+                show_all=show_all,
+            )
+        finally:
+            if own_conn:
+                reset_db_connection()
+
+    def _process_file_impl(
+        self,
+        file_path: str | Path,
+        output_json_path: Optional[str | Path] = None,
+        persist: bool = True,
+        auto_resolve_ai: Optional[bool] = None,
+        chunk_size: int = 1000,
+        show_all: bool = False,
+    ) -> Dict[str, Any]:
         import json
         from app.ai.ollama_client import get_ollama_telemetry, reset_ollama_telemetry
         from app.ingestion.detector import match_format
@@ -769,11 +797,15 @@ def run_pipeline(
     """
     Convenience wrapper to run text through pipeline and return summary dict.
     """
-    events = pipeline.ingest_text(raw_text, source_name=filename, persist=save_to_db)
-    det_fmt = events[0].log_format if events else "unknown"
-    return {
-        "format": det_fmt,
-        "events": events,
-        "count": len(events),
-        "unparsed_count": 0,
-    }
+    try:
+        events = pipeline.ingest_text(raw_text, source_name=filename, persist=save_to_db)
+        det_fmt = events[0].log_format if events else "unknown"
+        return {
+            "format": det_fmt,
+            "events": events,
+            "count": len(events),
+            "unparsed_count": 0,
+        }
+    finally:
+        if save_to_db:
+            reset_db_connection()
